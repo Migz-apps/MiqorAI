@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Med-Pass",
+    "slug": "medpass-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0A5C6E"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A5C6E"
+      },
+      "edgeToEdgeEnabled": true
+    }
+  }
+}
