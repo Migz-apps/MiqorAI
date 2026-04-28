@@ -113,10 +113,11 @@ export function FamilyScreen() {
     <ScreenContainer>
       <Header title="Your Family" subtitle="Manage family member profiles" />
 
-      <Pressable
-        style={[styles.meCard, isCompact ? styles.meCardCompact : null, !activeFamilyMemberId ? styles.activeCard : null]}
-        onPress={() => setActiveFamilyMember(null)}
-      >
+      <View style={styles.headerSpacing}>
+        <Pressable
+          style={[styles.meCard, isCompact ? styles.meCardCompact : null, !activeFamilyMemberId ? styles.activeCard : null]}
+          onPress={() => setActiveFamilyMember(null)}
+        >
         <View style={[styles.meLeft, isCompact ? styles.meLeftCompact : null]}>
           <View>
             <Avatar name={`${profile?.firstName} ${profile?.lastName}`} size="lg" />
@@ -140,9 +141,11 @@ export function FamilyScreen() {
           </View>
         </View>
         {!activeFamilyMemberId ? <Text style={styles.activeText}>Active</Text> : null}
-      </Pressable>
+        </Pressable>
+      </View>
 
-      <SectionHeader title="Family Members" action={{ label: 'Add', onPress: () => setShowAddSheet(true) }} />
+      <View style={styles.sectionSpacing}>
+        <SectionHeader title="Family Members" action={{ label: 'Add', onPress: () => setShowAddSheet(true) }} />
 
       {familyMembers.length ? (
         <View style={styles.stack}>
@@ -217,6 +220,7 @@ export function FamilyScreen() {
           action={{ label: 'Add Family Member', onPress: () => setShowAddSheet(true) }}
         />
       )}
+      </View>
 
       <View style={styles.infoCard}>
         <View style={styles.infoIcon}>
@@ -372,6 +376,12 @@ function DetailRow({ label, value }: { label: string; value?: string }) {
 }
 
 const styles = StyleSheet.create({
+  headerSpacing: {
+    marginTop: spacing.xl,
+  },
+  sectionSpacing: {
+    marginTop: spacing.xl,
+  },
   stack: {
     gap: spacing.md,
   },

@@ -121,14 +121,18 @@ export function ShareScreen() {
     <ScreenContainer>
       <Header title="Access Control" subtitle="Manage who can see your records" />
 
-      <SegmentedControl
-        value={viewMode}
-        onChange={setViewMode}
-        options={[
-          { value: 'grants', label: `Active Grants (${activeGrants.length})` },
-          { value: 'log', label: 'Access Log' },
-        ]}
-      />
+      <View style={styles.headerSpacing}>
+        <SegmentedControl
+          value={viewMode}
+          onChange={setViewMode}
+          options={[
+            { value: 'grants', label: `Active Grants (${activeGrants.length})` },
+            { value: 'log', label: 'Access Log' },
+          ]}
+        />
+      </View>
+
+      <View style={styles.contentSection}>
 
       {viewMode === 'grants' ? (
         <View style={styles.stack}>
@@ -254,6 +258,7 @@ export function ShareScreen() {
           )}
         </View>
       )}
+      </View>
 
       <BottomSheet
         isOpen={showNewGrantSheet}
@@ -386,6 +391,12 @@ function DetailRow({ label, value }: { label: string; value?: string }) {
 }
 
 const styles = StyleSheet.create({
+  headerSpacing: {
+    marginTop: spacing.xl,
+  },
+  contentSection: {
+    marginTop: spacing.xl,
+  },
   stack: {
     gap: spacing.md,
   },

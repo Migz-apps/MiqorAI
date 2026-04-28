@@ -9,7 +9,7 @@ import {
   Sparkles,
   TrendingUp,
 } from 'lucide-react-native'
-import React from 'react'
+import React, { useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { format, parseISO } from 'date-fns'
 
@@ -34,7 +34,12 @@ import { getAppointmentLabel } from '../utils'
 export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
   const { activePatient, allergies, appointments, activityLog, healthInsights } = usePatientStore()
   const { isCompact, isLargePhone, isTablet, cardColumns } = useResponsive()
-  const quickActionWidth = isTablet ? '18.4%' : cardColumns >= 2 ? '31.5%' : '48.2%'
+  const quickActionWidth = isTablet ? '23%' : cardColumns >= 2 ? '31.5%' : '48.2%'
+  
+  // State for expandable sections
+  const [showAllAllergies, setShowAllAllergies] = useState(false)
+  const [showAllAppointments, setShowAllAppointments] = useState(false)
+  const [showAllActivity, setShowAllActivity] = useState(false)
 
   if (!activePatient) {
     return (
@@ -47,11 +52,11 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
   const upcomingAppointments = appointments
     .filter((appointment) => appointment.status === 'upcoming')
     .sort((left, right) => new Date(left.dateTime).getTime() - new Date(right.dateTime).getTime())
-    .slice(0, 2)
+    .slice(0, showAllAppointments ? appointments.filter(a => a.status === 'upcoming').length : 2)
 
   const recentActivity = [...activityLog]
     .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
-    .slice(0, 3)
+    .slice(0, showAllActivity ? activityLog.length : 3)
 
   const latestInsight = healthInsights[0]
 
@@ -66,11 +71,10 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
         <QRDisplay />
       </View>
 
-      <View>
+      <View style={styles.quickActionsSection}>
         {isLargePhone ? (
           <View style={[styles.quickActionsGrid, { gap: spacing.md }]}>
             {[
-              { icon: <AlertTriangle color={colors.error} size={20} />, label: 'Allergies', variant: 'danger' as const, tab: 'records' as const },
               { icon: <Pill color={colors.primary} size={20} />, label: 'Medications', variant: 'default' as const, tab: 'records' as const },
               { icon: <Share2 color={colors.primary} size={20} />, label: 'Share', variant: 'default' as const, tab: 'share' as const },
               { icon: <Calendar color={colors.primary} size={20} />, label: 'Appointments', variant: 'default' as const, tab: 'records' as const },
@@ -83,12 +87,6 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
           </View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickActionsRow}>
-            <QuickAction
-              icon={<AlertTriangle color={colors.error} size={20} />}
-              label="Allergies"
-              variant="danger"
-              onPress={() => onNavigate('records')}
-            />
             <QuickAction
               icon={<Pill color={colors.primary} size={20} />}
               label="Medications"
@@ -113,12 +111,12 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
         )}
       </View>
 
-      {allergies.length ? <AllergyAlertCard allergies={allergies} onViewAll={() => onNavigate('records')} /> : null}
+      {allergies.length ? <View style={styles.allergySection}><AllergyAlertCard allergies={allergies.slice(0, showAllAllergies ? allergies.length : 3)} onViewAll={() => setShowAllAllergies(!showAllAllergies)} showAll={showAllAllergies} /></View> : null}
 
-      <View>
+      <View style={styles.upcomingSection}>
         <SectionHeader
           title="Upcoming"
-          action={upcomingAppointments.length ? { label: 'View All', onPress: () => onNavigate('records') } : undefined}
+          action={upcomingAppointments.length ? { label: showAllAppointments ? 'View Less' : 'View All', onPress: () => setShowAllAppointments(!showAllAppointments) } : undefined}
         />
 
         {upcomingAppointments.length ? (
@@ -149,10 +147,10 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
         )}
       </View>
 
-      <View>
+      <View style={styles.activitySection}>
         <SectionHeader
           title="Recent Activity"
-          action={recentActivity.length ? { label: 'View All', onPress: () => onNavigate('share') } : undefined}
+          action={recentActivity.length ? { label: showAllActivity ? 'View Less' : 'View All', onPress: () => setShowAllActivity(!showAllActivity) } : undefined}
         />
         {recentActivity.length ? (
           <View style={styles.sectionList}>
@@ -176,7 +174,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
       </View>
 
       {latestInsight ? (
-        <View>
+        <View style={styles.insightSection}>
           <SectionHeader title="Health Insights" />
           <View
             style={[
@@ -236,17 +234,33 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
 const styles = StyleSheet.create({
   qrSection: {
     alignItems: 'center',
+    marginBottom: spacing.xxl,
+  },
+  quickActionsSection: {
+    marginBottom: spacing.xxxl,
   },
   quickActionsRow: {
     gap: spacing.md,
     paddingBottom: spacing.sm,
   },
+  allergySection: {
+    marginBottom: spacing.xxxl,
+  },
+  upcomingSection: {
+    marginBottom: spacing.xxxl,
+  },
+  activitySection: {
+    marginBottom: spacing.xxxl,
+  },
+  insightSection: {
+    marginBottom: spacing.xl,
+  },
+  sectionList: {
+    gap: spacing.lg,
+  },
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-  },
-  sectionList: {
-    gap: spacing.md,
   },
   appointmentCard: {
     borderRadius: radius.lg,

@@ -196,9 +196,11 @@ export function AllergyBadge({
 export function AllergyAlertCard({
   allergies,
   onViewAll,
+  showAll = false,
 }: {
   allergies: Array<{ name: string; severity: 'mild' | 'moderate' | 'severe' }>
   onViewAll?: () => void
+  showAll?: boolean
 }) {
   if (!allergies.length) {
     return null
@@ -213,12 +215,12 @@ export function AllergyAlertCard({
         </View>
         {onViewAll ? (
           <Pressable onPress={onViewAll}>
-            <Text style={styles.sectionAction}>View All</Text>
+            <Text style={styles.sectionAction}>{showAll ? 'View Less' : 'View All'}</Text>
           </Pressable>
         ) : null}
       </View>
       <View style={styles.allergyAlertList}>
-        {allergies.slice(0, 3).map((allergy) => (
+        {allergies.map((allergy) => (
           <View key={allergy.name} style={styles.allergyAlertItem}>
             <Text style={styles.allergyAlertItemName}>{allergy.name}</Text>
             <View

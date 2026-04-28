@@ -96,10 +96,13 @@ export function RecordsScreen() {
     <ScreenContainer>
       <Header title="Medical Records" subtitle="Your complete health history" />
 
-      <SearchInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search records..." />
+      <View style={styles.headerSpacing}>
+        <SearchInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search records..." />
+      </View>
 
-      {isLargePhone ? (
-        <View style={styles.tabGrid}>
+      <View style={styles.tabSection}>
+        {isLargePhone ? (
+          <View style={styles.tabGrid}>
           {tabs.map((tab) => {
             const active = tab.id === activeTab
             const Icon = tab.icon
@@ -123,9 +126,9 @@ export function RecordsScreen() {
             )
           })}
         </View>
-      ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
-          {tabs.map((tab) => {
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
+            {tabs.map((tab) => {
             const active = tab.id === activeTab
             const Icon = tab.icon
             return (
@@ -147,34 +150,36 @@ export function RecordsScreen() {
               </Pressable>
             )
           })}
-        </ScrollView>
-      )}
+          </ScrollView>
+        )}
+      </View>
 
-      <View style={styles.list}>
-        {activeTab === 'conditions' ? (
-          filteredData.length ? (
-            (filteredData as typeof conditions).map((condition) => (
-              <HealthCard
-                key={condition.id}
-                title={condition.name}
-                subtitle={condition.treatingDoctor}
-                timestamp={condition.diagnosedDate}
-                icon={<Stethoscope color={colors.primary} size={20} />}
-                badge={{
-                  label: condition.status.charAt(0).toUpperCase() + condition.status.slice(1),
-                  variant: condition.status === 'resolved' ? 'success' : 'warning',
-                }}
-                onPress={() => openDetail(condition, 'conditions')}
+      <View style={styles.contentSection}>
+        <View style={styles.list}>
+          {activeTab === 'conditions' ? (
+            filteredData.length ? (
+              (filteredData as typeof conditions).map((condition) => (
+                <HealthCard
+                  key={condition.id}
+                  title={condition.name}
+                  subtitle={condition.treatingDoctor}
+                  timestamp={condition.diagnosedDate}
+                  icon={<Stethoscope color={colors.primary} size={20} />}
+                  badge={{
+                    label: condition.status.charAt(0).toUpperCase() + condition.status.slice(1),
+                    variant: condition.status === 'resolved' ? 'success' : 'warning',
+                  }}
+                  onPress={() => openDetail(condition, 'conditions')}
+                />
+              ))
+            ) : (
+              <EmptyState
+                icon={<Stethoscope color={colors.mutedForeground} size={26} />}
+                title={searchQuery ? 'No conditions found' : 'No conditions recorded'}
+                message={searchQuery ? 'Try a different search term' : 'Your medical conditions will appear here'}
               />
-            ))
-          ) : (
-            <EmptyState
-              icon={<Stethoscope color={colors.mutedForeground} size={26} />}
-              title={searchQuery ? 'No conditions found' : 'No conditions recorded'}
-              message={searchQuery ? 'Try a different search term' : 'Your medical conditions will appear here'}
-            />
-          )
-        ) : null}
+            )
+          ) : null}
 
         {activeTab === 'medications' ? (
           filteredData.length ? (
@@ -314,6 +319,7 @@ export function RecordsScreen() {
             />
           )
         ) : null}
+      </View>
       </View>
 
       <BottomSheet
@@ -519,6 +525,15 @@ function renderDetailContent(item: unknown, type: RecordTab) {
 }
 
 const styles = StyleSheet.create({
+  headerSpacing: {
+    marginTop: spacing.xl,
+  },
+  tabSection: {
+    marginTop: spacing.lg,
+  },
+  contentSection: {
+    marginTop: spacing.xl,
+  },
   tabRow: {
     gap: spacing.sm,
     paddingBottom: spacing.sm,
@@ -569,7 +584,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   list: {
-    gap: spacing.md,
+    gap: spacing.lg,
   },
   resultRow: {
     flexDirection: 'row',

@@ -26,7 +26,7 @@ export function ScreenContainer({ children, noPadding = false }: ScreenContainer
           styles.screenContent,
           {
             paddingHorizontal: noPadding ? 0 : horizontalPadding,
-            paddingTop: noPadding ? 0 : isTablet ? spacing.lg : spacing.md,
+            paddingTop: noPadding ? 0 : isTablet ? spacing.xl : spacing.lg,
           },
           noPadding ? styles.screenContentNoPadding : styles.screenContentCentered,
         ]}
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     paddingBottom: 112,
-    gap: spacing.xl,
+    gap: spacing.xxxl,
     alignItems: 'center',
   },
   screenContentNoPadding: {

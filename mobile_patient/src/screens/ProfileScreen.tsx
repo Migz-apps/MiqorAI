@@ -96,6 +96,8 @@ export function ProfileScreen() {
     <ScreenContainer>
       <Header title="Profile" subtitle="Manage your account" />
 
+      <View style={styles.headerSpacing}>
+
       <LinearGradient colors={[colors.primary, '#0D7188']} style={[styles.heroCard, isCompact ? styles.heroCardCompact : null]}>
         <View style={[styles.heroAvatar, isCompact ? styles.heroAvatarCompact : null]}>
           <Text style={styles.heroAvatarText}>
@@ -125,6 +127,7 @@ export function ProfileScreen() {
           </View>
         </View>
       </LinearGradient>
+      </View>
 
       <View style={styles.sectionStack}>
         <SectionHeader title="Personal Information" />
@@ -199,7 +202,7 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.sectionStack}>
+      <View style={styles.sectionSpacing}>
         <SectionHeader title="App Settings" />
         <View style={styles.settingsCard}>
           <SettingRow
@@ -227,7 +230,7 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.sectionStack}>
+      <View style={styles.sectionSpacing}>
         <SectionHeader title="Data & Privacy" />
         <View style={styles.settingsCard}>
           <SettingRow
@@ -246,7 +249,7 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.sectionStack}>
+      <View style={styles.sectionSpacing}>
         <SectionHeader title="About" />
         <View style={styles.settingsCard}>
           <SettingRow icon={<HelpCircle color={colors.textSecondary} size={18} />} label="Help & Support" />
@@ -442,6 +445,12 @@ function SettingRow({
 }
 
 const styles = StyleSheet.create({
+  headerSpacing: {
+    marginTop: spacing.xl,
+  },
+  sectionSpacing: {
+    marginTop: spacing.xl,
+  },
   heroCard: {
     borderRadius: radius.xl,
     padding: spacing.xxl,
