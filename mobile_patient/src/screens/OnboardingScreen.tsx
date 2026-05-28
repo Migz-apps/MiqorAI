@@ -169,7 +169,7 @@ export function OnboardingScreen() {
           <View style={[styles.mark, isCompact ? styles.markCompact : null]}>
             <Text style={styles.markText}>M+</Text>
           </View>
-          <Text style={[styles.welcomeTitle, isCompact ? styles.welcomeTitleCompact : null]}>Med-Pass</Text>
+          <Text style={[styles.welcomeTitle, isCompact ? styles.welcomeTitleCompact : null]}>MediPass</Text>
           <Text style={[styles.welcomeSubtitle, isCompact ? styles.welcomeSubtitleCompact : null]}>Patient Portal</Text>
           <Text style={[styles.tagline, isCompact ? styles.taglineCompact : null]}>Your health records.{"\n"}In your pocket.{"\n"}Always.</Text>
 
@@ -304,13 +304,13 @@ export function OnboardingScreen() {
 
             <View style={styles.phraseGrid}>
               {recoveryWords.map((word, index) => (
-              <View
-                key={word}
-                style={[
-                  styles.phraseCell,
-                  { width: phraseCellWidth },
-                ]}
-              >
+                <View
+                  key={word}
+                  style={[
+                    styles.phraseCell,
+                    { width: phraseCellWidth },
+                  ]}
+                >
                   <Text style={styles.phraseIndex}>{index + 1}.</Text>
                   <Text style={styles.phraseWord}>{showPhrase ? word : '****'}</Text>
                 </View>
@@ -414,11 +414,11 @@ export function OnboardingScreen() {
           </View>
           <Text style={styles.completeTitle}>You&apos;re All Set!</Text>
           <Text style={styles.completeText}>
-            Your Med-Pass account is ready. Your health records are now secure and always with you.
+            Your MediPass account is ready. Your health records are now secure and always with you.
           </Text>
           <View style={styles.completeButtonWrap}>
             <PrimaryButton fullWidth size="lg" onPress={handleComplete} isLoading={isLoading}>
-              Start Using Med-Pass
+              Start Using MediPass
             </PrimaryButton>
           </View>
         </View>

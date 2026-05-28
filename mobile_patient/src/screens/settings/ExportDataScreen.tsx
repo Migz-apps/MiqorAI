@@ -22,7 +22,7 @@ export function ExportDataScreen({ onBack }: { onBack: () => void }) {
         >
             <View className="py-2.5 gap-4">
                 <Text className="text-[15px] leading-6 text-text-primary">
-                    You can download a full archive of your health records. This file will be encrypted and can be imported back into Med-Pass or viewed with a compatible reader.
+                    You can download a full archive of your health records. This file will be encrypted and can be imported back into MediPass or viewed with a compatible reader.
                 </Text>
                 <View className="mt-6">
                     <PrimaryButton fullWidth>Prepare Export Archive</PrimaryButton>

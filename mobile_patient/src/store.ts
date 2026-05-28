@@ -309,15 +309,15 @@ export const usePatientStore = create<PatientStore>()(
             grants: state.grants.filter((entry) => entry.id !== grantId),
             activityLog: grant
               ? [
-                  ...state.activityLog,
-                  {
-                    id: createId('log'),
-                    timestamp: new Date().toISOString(),
-                    action: 'updated',
-                    provider: grant.providerName,
-                    details: `Access revoked from ${grant.providerName}`,
-                  },
-                ]
+                ...state.activityLog,
+                {
+                  id: createId('log'),
+                  timestamp: new Date().toISOString(),
+                  action: 'updated',
+                  provider: grant.providerName,
+                  details: `Access revoked from ${grant.providerName}`,
+                },
+              ]
               : state.activityLog,
           }
         }),
@@ -684,8 +684,8 @@ export const usePatientStore = create<PatientStore>()(
           {
             id: 'insight-003',
             type: 'milestone',
-            title: '1 Year on Med-Pass',
-            description: 'You have been using Med-Pass for 1 year!',
+            title: '1 Year on MediPass',
+            description: 'You have been using MediPass for 1 year!',
             date: '2025-01-15',
           },
         ]

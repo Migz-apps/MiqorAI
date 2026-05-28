@@ -41,8 +41,8 @@ export const translations = {
             fullscreen: 'Fullscreen',
             share: 'Share',
             copyId: 'Copy ID',
-            shareTitle: 'My Med-Pass QR Code',
-            shareMessage: 'Scan this Med-Pass QR code to securely access my medical records',
+            shareTitle: 'My MediPass QR Code',
+            shareMessage: 'Scan this MediPass QR code to securely access my medical records',
         },
         family: {
             yourFamily: 'Your Family',
@@ -120,7 +120,7 @@ export const translations = {
             fullscreen: 'Yagure',
             share: 'Sangiza',
             copyId: 'Koporura ID',
-            shareTitle: 'Med-Pass QR Yanjye',
+            shareTitle: 'MediPass QR Yanjye',
             shareMessage: 'Sikanisha iyi QR code ngo ubone amadosiye yanjye',
         },
         family: {
@@ -199,7 +199,7 @@ export const translations = {
             fullscreen: 'Plein écran',
             share: 'Partager',
             copyId: 'Copier l\'ID',
-            shareTitle: 'Mon Code QR Med-Pass',
+            shareTitle: 'Mon Code QR MediPass',
             shareMessage: 'Scannez ce code QR pour accéder à mes dossiers médicaux',
         },
         family: {

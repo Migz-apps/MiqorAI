@@ -98,8 +98,8 @@ export function QRDisplay({
               leftIcon={<Share2 color={colors.textPrimary} size={14} />}
               onPress={async () => {
                 await Share.share({
-                  title: 'My Med-Pass QR Code',
-                  message: 'Scan this Med-Pass QR code to securely access my medical records.',
+                  title: 'My MediPass QR Code',
+                  message: 'Scan this MediPass QR code to securely access my medical records.',
                 })
               }}
             >
@@ -116,7 +116,7 @@ export function QRDisplay({
             <Text style={styles.qrFullName}>
               {activePatient.firstName} {activePatient.lastName}
             </Text>
-            <Text style={styles.qrFullSubtitle}>Med-Pass Patient ID</Text>
+            <Text style={styles.qrFullSubtitle}>MediPass Patient ID</Text>
             <View style={styles.qrFullBox}>
               <QRCode value={qrValue} size={fullscreenQrSize} color={colors.primary} backgroundColor="#FFFFFF" />
             </View>

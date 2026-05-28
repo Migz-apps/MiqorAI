@@ -55,7 +55,7 @@ function MedPassApp() {
   }, [activePatient, isAuthenticated, isHydrated, loadMockData])
 
   if (!isHydrated) {
-    return <LoadingOverlay fullScreen message="Loading Med-Pass..." />
+    return <LoadingOverlay fullScreen message="Loading MediPass..." />
   }
 
   if (showSplash) {

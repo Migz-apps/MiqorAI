@@ -23,7 +23,7 @@ export function HelpSupportScreen({ onBack }: { onBack: () => void }) {
             <View className="py-2.5 gap-4">
                 <Text className="text-[20px] font-[800] mb-2 text-text-primary">How can we help?</Text>
                 <Text className="text-[15px] leading-6 text-text-secondary">
-                    If you are experiencing issues with Med-Pass, please check our FAQ or contact our support team.
+                    If you are experiencing issues with MediPass, please check our FAQ or contact our support team.
                 </Text>
 
                 <View className="mt-6 gap-3">

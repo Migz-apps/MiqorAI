@@ -4,7 +4,6 @@ node_modules/
 # Expo / React Native
 .expo/
 .expo-shared/
-dist/
 web-build/
 android/
 ios/
@@ -24,3 +23,70 @@ pnpm-debug.log*
 # OS / editor files
 .DS_Store
 Thumbs.db
+
+# Web Apps & Bundlers
+.next/
+out/
+.nuxt/
+.netlify/
+.vercel/
+.output/
+.parcel-cache/
+dist-ssr/
+build/
+coverage/
+
+# General Cache & Testing
+.cache/
+.eslintcache
+.stylelintcache
+cypress/videos/
+cypress/screenshots/
+
+# Extra Web Frameworks & Generators
+.svelte-kit/
+.astro/
+.solid/
+.quasar/
+.docusaurus/
+.vuepress/
+.serverless/
+storybook-static/
+.webpack/
+
+# Package managers & Dependencies
+bower_components/
+web_modules/
+.pnp
+.pnp.*
+.bun/
+
+# Logs & Diagnostics
+logs/
+*.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage & Testing Extra
+.nyc_output/
+lib-cov
+*.lcov
+.vitest/
+.playwright/
+playwright-report/
+test-results/
+
+# IDE & Editor
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
