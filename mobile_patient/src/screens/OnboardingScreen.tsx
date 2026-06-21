@@ -169,7 +169,7 @@ export function OnboardingScreen() {
           <View style={[styles.mark, isCompact ? styles.markCompact : null]}>
             <Text style={styles.markText}>M+</Text>
           </View>
-          <Text style={[styles.welcomeTitle, isCompact ? styles.welcomeTitleCompact : null]}>MediPass</Text>
+          <Text style={[styles.welcomeTitle, isCompact ? styles.welcomeTitleCompact : null]}>MiqorAI</Text>
           <Text style={[styles.welcomeSubtitle, isCompact ? styles.welcomeSubtitleCompact : null]}>Patient Portal</Text>
           <Text style={[styles.tagline, isCompact ? styles.taglineCompact : null]}>Your health records.{"\n"}In your pocket.{"\n"}Always.</Text>
 
@@ -414,11 +414,11 @@ export function OnboardingScreen() {
           </View>
           <Text style={styles.completeTitle}>You&apos;re All Set!</Text>
           <Text style={styles.completeText}>
-            Your MediPass account is ready. Your health records are now secure and always with you.
+            Your MiqorAI account is ready. Your health records are now secure and always with you.
           </Text>
           <View style={styles.completeButtonWrap}>
             <PrimaryButton fullWidth size="lg" onPress={handleComplete} isLoading={isLoading}>
-              Start Using MediPass
+              Start Using MiqorAI
             </PrimaryButton>
           </View>
         </View>

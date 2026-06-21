@@ -34,6 +34,7 @@ import {
   ScreenContainer,
   SectionHeader,
   SecondaryButton,
+  useAppToast,
 } from '../components/ui'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
@@ -66,6 +67,7 @@ export function ProfileScreen() {
     setOnboardingComplete,
   } = usePatientStore()
 
+  const { showToast } = useAppToast()
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -83,6 +85,7 @@ export function ProfileScreen() {
   const handleLogout = () => {
     setAuthenticated(false)
     setShowLogoutConfirm(false)
+    showToast("You've been signed out.", 'info')
   }
 
   const handleDelete = () => {
@@ -289,7 +292,7 @@ export function ProfileScreen() {
             <SecondaryButton fullWidth onPress={() => setShowEditProfile(false)}>
               Cancel
             </SecondaryButton>
-            <PrimaryButton fullWidth onPress={() => setShowEditProfile(false)}>
+            <PrimaryButton fullWidth onPress={() => { setShowEditProfile(false); showToast('Profile updated.', 'success') }}>
               Save Changes
             </PrimaryButton>
           </View>
@@ -361,7 +364,10 @@ export function ProfileScreen() {
             fullWidth
             variant="ghost"
             leftIcon={<Copy color={colors.textPrimary} size={16} />}
-            onPress={() => Clipboard.setStringAsync(recoveryPhrase.join(' '))}
+            onPress={() => {
+              Clipboard.setStringAsync(recoveryPhrase.join(' '))
+              showToast('Recovery phrase copied.', 'success')
+            }}
           >
             Copy to Clipboard
           </PrimaryButton>

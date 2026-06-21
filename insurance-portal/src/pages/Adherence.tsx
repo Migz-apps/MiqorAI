@@ -8,10 +8,10 @@ import { Activity, AlertTriangle, Phone, Download, MessageSquare } from "lucide-
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
-import { PageHeader } from "@/components/medpass/PageHeader";
-import { AdherenceGauge } from "@/components/medpass/AdherenceGauge";
-import { ProgressBar } from "@/components/medpass/ProgressBar";
-import { KpiCard } from "@/components/medpass/KpiCard";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { AdherenceGauge } from "@/components/MiqorAI/AdherenceGauge";
+import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
+import { KpiCard } from "@/components/MiqorAI/KpiCard";
 import { KPI, MED_ADHERENCE, NON_ADHERENT } from "@/lib/mockData";
 import { fmtKsh, fmtNum, fmtPct } from "@/lib/format";
 

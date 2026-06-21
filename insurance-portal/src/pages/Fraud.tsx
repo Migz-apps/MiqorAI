@@ -7,10 +7,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ShieldAlert, Search, FileSearch, FlaskConical, Building, Download } from "lucide-react";
-import { PageHeader } from "@/components/medpass/PageHeader";
-import { KpiCard } from "@/components/medpass/KpiCard";
-import { ProgressBar } from "@/components/medpass/ProgressBar";
-import { StatusPill } from "@/components/medpass/StatusPill";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { KpiCard } from "@/components/MiqorAI/KpiCard";
+import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
+import { StatusPill } from "@/components/MiqorAI/StatusPill";
 import { FLAGGED_CLAIMS, PROVIDERS } from "@/lib/mockData";
 import { fmtKsh, fmtNum } from "@/lib/format";
 import { Input } from "@/components/ui/input";

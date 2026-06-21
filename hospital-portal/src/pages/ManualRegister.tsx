@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/select";
 import { UserPlus } from "lucide-react";
 import { useSync } from "@/store/sync";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
+import { MESSAGES } from "@/lib/user-messages";
 
 export default function ManualRegister() {
   const nav = useNavigate();
@@ -25,8 +26,14 @@ export default function ManualRegister() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const labels: Record<string, string> = {
+      name: "full name", phone: "phone", dob: "date of birth", allergies: "allergies",
+    };
     const missing = required.filter(k => !form[k].trim());
-    if (missing.length) { toast.error(`Missing: ${missing.join(", ")}`); return; }
+    if (missing.length) {
+      toast.error(MESSAGES.form.missingFields(missing.map(k => labels[k] ?? k)));
+      return;
+    }
     enqueue({ type: "registration", patientName: form.name });
     toast.success("Patient registered. Sticker queued for printing.");
     setTimeout(() => nav("/stickers"), 600);
@@ -36,7 +43,7 @@ export default function ManualRegister() {
     <div className="max-w-[800px] mx-auto space-y-lg">
       <div>
         <h1 className="h1 flex items-center gap-sm"><UserPlus className="h-6 w-6 text-primary" /> Manual registration</h1>
-        <p className="body text-text-secondary">For patients without a Med-Pass card. A QR sticker prints automatically.</p>
+        <p className="body text-text-secondary">For patients without a MiqorAI card. A QR sticker prints automatically.</p>
       </div>
 
       <Card>

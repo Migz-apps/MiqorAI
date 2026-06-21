@@ -14,7 +14,7 @@ import { Plus, Mail, KeyRound, Power } from "lucide-react";
 import type { Role } from "@/lib/types";
 import { ROLE_LABEL } from "@/store/auth";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 const roleColor: Record<Role, string> = {
   receptionist: "bg-role-reception-light text-[hsl(var(--reception-accent))]",

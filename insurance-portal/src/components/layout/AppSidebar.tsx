@@ -61,7 +61,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-sidebar-foreground truncate">MediPass</div>
+              <div className="text-sm font-semibold text-sidebar-foreground truncate">MiqorAI</div>
               <div className="text-[11px] text-sidebar-foreground/60 truncate">Insurer Portal</div>
             </div>
           )}
@@ -90,7 +90,7 @@ export function AppSidebar() {
           );
         })}
         <div className="mt-auto p-md text-[10px] text-sidebar-foreground/40">
-          v1.0 · {session.insurerCode} · MediPass network
+          v1.0 · {session.insurerCode} · MiqorAI network
         </div>
       </SidebarContent>
     </Sidebar>

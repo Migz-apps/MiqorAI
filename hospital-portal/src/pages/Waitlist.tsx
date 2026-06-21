@@ -12,7 +12,7 @@ import { Phone, AlertTriangle, UserX, Clock, Bell } from "lucide-react";
 import { PATIENTS, DEPARTMENTS, STAFF } from "@/lib/mockData";
 import { useWaitlist, waitMinutes } from "@/store/waitlist";
 import type { Department, Priority } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 const priorityBadge: Record<Priority, string> = {
   normal: "border-success/30 text-success bg-success/10",
@@ -57,7 +57,7 @@ export default function Waitlist() {
   };
 
   const callAll = () => {
-    if (selected.size === 0) { toast("Select patients first"); return; }
+    if (selected.size === 0) { toast.warning("Select at least one patient first"); return; }
     toast.success(`SMS sent to ${selected.size} patient${selected.size > 1 ? "s" : ""}`);
     setSelected(new Set());
   };

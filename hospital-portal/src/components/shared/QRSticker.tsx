@@ -16,7 +16,7 @@ export const QRSticker = ({ patientName, patientId, visitId, department, showAct
   return (
     <div className="space-y-sm">
       <div className="print-area inline-block border-2 border-foreground rounded-md p-md bg-background w-[280px]">
-        <div className="text-[10px] font-bold tracking-wider text-primary">MED-PASS</div>
+        <div className="text-[10px] font-bold tracking-wider text-primary">MiqorAI</div>
         <div className="font-semibold text-base mt-1 leading-tight">{patientName}</div>
         <div className="text-[11px] text-text-secondary mt-0.5">Patient ID: {patientId}</div>
         <div className="text-[11px] text-text-secondary">Visit: {visitId}</div>
@@ -25,7 +25,7 @@ export const QRSticker = ({ patientName, patientId, visitId, department, showAct
           <QRCodeSVG value={payload} size={140} bgColor="#ffffff" fgColor="#0A5C6E" includeMargin={false} />
         </div>
         <div className="text-[9px] text-center text-text-secondary leading-tight">
-          Keep this sticker in your wallet.<br />Show it at any hospital using Med-Pass.
+          Keep this sticker in your wallet.<br />Show it at any hospital using MiqorAI.
         </div>
       </div>
       {showActions && (

@@ -122,7 +122,7 @@ export const SAVINGS_RECORDS: SavingsRecord[] = Array.from({ length: 24 }, (_, i
     firstProvider: provs[i % provs.length],
     attemptedDate: `2026-04-${String(Math.min(28, ((i * 3) % 28) + 3)).padStart(2, "0")}`,
     attemptedProvider: provs[(i + 2) % provs.length],
-    preventionMethod: "MediPass duplicate alert",
+    preventionMethod: "MiqorAI duplicate alert",
     savings: t.save,
     timestamp: `2026-04-${day}T09:23:15Z`,
   };

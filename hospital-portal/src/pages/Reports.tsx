@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Calendar } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 const reports = [
   { name: "Daily Census", description: "Patients checked in per day", formats: ["CSV", "PDF"] },

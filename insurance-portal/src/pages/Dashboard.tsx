@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
-import { KpiCard } from "@/components/medpass/KpiCard";
-import { PageHeader } from "@/components/medpass/PageHeader";
-import { AnomalyAlert } from "@/components/medpass/AnomalyAlert";
-import { ProgressBar } from "@/components/medpass/ProgressBar";
+import { KpiCard } from "@/components/MiqorAI/KpiCard";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { AnomalyAlert } from "@/components/MiqorAI/AnomalyAlert";
+import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
 import { useAuth } from "@/store/auth";
 import {
   KPI, SAVINGS_TREND, HOSPITALS, MED_ADHERENCE, ALERTS,
@@ -53,7 +53,7 @@ export default function Dashboard() {
         <KpiCard icon={TrendingUp} label="Total savings" value={fmtKshShort(KPI.totalSavings)} delta={KPI.totalSavingsDelta} deltaLabel="vs last month" accent="success" />
         <KpiCard icon={Users} label="Members covered" value={fmtNum(KPI.members)} delta={KPI.membersDelta} deltaLabel="vs Mar 2026" accent="insurer" />
         <KpiCard icon={Activity} label="Adherence rate" value={fmtPct(KPI.adherence)} delta={-3} deltaLabel={`Target ${KPI.adherenceTarget}%`} accent="secondary" positive="up-good" />
-        <KpiCard icon={Sparkles} label="ROI" value={`${KPI.roi}×`} hint="Net savings ÷ MediPass fee" accent="primary" />
+        <KpiCard icon={Sparkles} label="ROI" value={`${KPI.roi}×`} hint="Net savings ÷ MiqorAI fee" accent="primary" />
       </div>
 
       {/* Main row */}
@@ -182,7 +182,7 @@ export default function Dashboard() {
             <div className="text-xs opacity-75 uppercase tracking-wide">Quick actions</div>
             <div className="text-lg font-semibold mt-1">Ready to share this month's results?</div>
             <div className="text-xs opacity-80 mt-1">
-              Generate your monthly board report in PDF, or schedule a sync with the MediPass team.
+              Generate your monthly board report in PDF, or schedule a sync with the MiqorAI team.
             </div>
           </div>
           <div className="flex flex-wrap gap-sm">

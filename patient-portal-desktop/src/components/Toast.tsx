@@ -1,41 +1,61 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from "react";
-import { FiCheckCircle, FiAlertCircle, FiX } from "react-icons/fi";
+import { FiCheckCircle, FiAlertCircle, FiInfo, FiAlertTriangle, FiX } from "react-icons/fi";
+import { toUserMessage } from "@/lib/user-messages";
 
-type T = { id: number; message: string; type: "success" | "error" };
-const Ctx = createContext<{ toast: (m: string, t?: "success" | "error") => void } | null>(null);
+type ToastType = "success" | "error" | "info" | "warning";
+
+type ToastItem = { id: number; message: string; type: ToastType };
+
+const Ctx = createContext<{
+  toast: (message: string, type?: ToastType) => void;
+} | null>(null);
+
+const STYLES: Record<ToastType, { border: string; icon: typeof FiCheckCircle; IconColor: string }> = {
+  success: { border: "border-success/30", icon: FiCheckCircle, IconColor: "text-success" },
+  error: { border: "border-destructive/30", icon: FiAlertCircle, IconColor: "text-destructive" },
+  info: { border: "border-primary/20", icon: FiInfo, IconColor: "text-primary" },
+  warning: { border: "border-secondary/40", icon: FiAlertTriangle, IconColor: "text-secondary-foreground" },
+};
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<T[]>([]);
-  const toast = useCallback((message: string, type: "success" | "error" = "success") => {
+  const [items, setItems] = useState<ToastItem[]>([]);
+
+  const toast = useCallback((message: string, type: ToastType = "success") => {
     const id = Date.now() + Math.random();
-    setItems((p) => [...p, { id, message, type }]);
-    setTimeout(() => setItems((p) => p.filter((i) => i.id !== id)), 3000);
+    const safe = toUserMessage(message);
+    setItems((p) => [...p, { id, message: safe, type }]);
+    setTimeout(() => setItems((p) => p.filter((i) => i.id !== id)), 4000);
   }, []);
+
   return (
     <Ctx.Provider value={{ toast }}>
       {children}
-      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
-        {items.map((i) => (
-          <div
-            key={i.id}
-            className={`pointer-events-auto flex items-center gap-3 rounded-lg border bg-card px-4 py-3 shadow-lg min-w-[280px] ${
-              i.type === "success" ? "border-success/30" : "border-destructive/30"
-            }`}
-          >
-            {i.type === "success" ? (
-              <FiCheckCircle className="text-success" size={20} />
-            ) : (
-              <FiAlertCircle className="text-destructive" size={20} />
-            )}
-            <span className="text-sm flex-1">{i.message}</span>
-            <button
-              onClick={() => setItems((p) => p.filter((x) => x.id !== i.id))}
-              aria-label="Dismiss"
+      <div
+        className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2 px-4 sm:bottom-6 sm:right-6 sm:px-0"
+        aria-live="polite"
+        aria-relevant="additions"
+      >
+        {items.map((i) => {
+          const { border, icon: Icon, IconColor } = STYLES[i.type];
+          return (
+            <div
+              key={i.id}
+              role="status"
+              className={`pointer-events-auto flex animate-in slide-in-from-bottom-2 fade-in items-start gap-3 rounded-lg border bg-card px-4 py-3 shadow-lg ${border}`}
             >
-              <FiX size={16} className="text-muted-foreground" />
-            </button>
-          </div>
-        ))}
+              <Icon className={`mt-0.5 shrink-0 ${IconColor}`} size={18} />
+              <span className="flex-1 text-sm leading-5">{i.message}</span>
+              <button
+                type="button"
+                onClick={() => setItems((p) => p.filter((x) => x.id !== i.id))}
+                className="rounded-md p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Dismiss"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </Ctx.Provider>
   );

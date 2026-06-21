@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UserPlus, Mail } from "lucide-react";
-import { PageHeader } from "@/components/medpass/PageHeader";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { STAFF } from "@/lib/mockData";
 import { ROLE_LABEL } from "@/store/auth";
 import { initials, fmtDateTime } from "@/lib/format";

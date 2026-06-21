@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { FormAlert } from "@/components/shared/FormAlert";
 import { useAuth } from "@/store/auth";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { MESSAGES } from "@/lib/user-messages";
 
 export default function Login() {
   const session = useAuth(s => s.session);
@@ -14,7 +15,7 @@ export default function Login() {
   const nav = useNavigate();
   const [code, setCode] = useState("MP-LAGOS-001");
   const [email, setEmail] = useState("amara@stcatherine.med");
-  const [password, setPassword] = useState("medpass");
+  const [password, setPassword] = useState("MiqorAI");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +24,7 @@ export default function Login() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const res = login(code.trim(), email.trim(), password);
-    if (!res.ok) setError(res.error || "Login failed");
+    if (!res.ok) setError(res.error || MESSAGES.auth.invalidCredentials);
     else nav("/dashboard");
   };
 
@@ -34,7 +35,7 @@ export default function Login() {
           <Stethoscope className="h-5 w-5 text-primary-foreground" />
         </div>
         <div>
-          <div className="text-sm font-semibold">Med-Pass</div>
+          <div className="text-sm font-semibold">MiqorAI</div>
           <div className="text-[11px] text-text-secondary">Hospital Portal</div>
         </div>
       </div>
@@ -73,11 +74,11 @@ export default function Login() {
       </form>
 
       <div className="mt-lg text-center text-sm text-text-secondary">
-        New to Med-Pass? <Link to="/signup" className="text-primary font-medium hover:underline">Create an account</Link>
+        New to MiqorAI? <Link to="/signup" className="text-primary font-medium hover:underline">Create an account</Link>
       </div>
 
       <div className="mt-lg p-sm rounded-md bg-primary-light/40 border border-primary/10 text-[11px] text-primary leading-relaxed">
-        <strong>Demo:</strong> any active staff email + password <code className="font-mono">medpass</code>. Try <code>adaeze@stcatherine.med</code> (receptionist), <code>joseph@stcatherine.med</code> (nurse), <code>amara@stcatherine.med</code> (doctor), <code>tunde@stcatherine.med</code> (admin).
+        <strong>Demo:</strong> any active staff email + password <code className="font-mono">MiqorAI</code>. Try <code>adaeze@stcatherine.med</code> (receptionist), <code>joseph@stcatherine.med</code> (nurse), <code>amara@stcatherine.med</code> (doctor), <code>tunde@stcatherine.med</code> (admin).
       </div>
     </AuthShell>
   );

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/store/auth";
 import { HOSPITAL } from "@/lib/mockData";
 import { Shield, Bell, Building2, KeyRound, LogOut } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { useNavigate } from "react-router-dom";
 
 export default function Settings() {

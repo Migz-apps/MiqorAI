@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QRScanner } from "@/components/medpass/QRScanner";
+import { QRScanner } from "@/components/miqorai/QRScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ import { PATIENTS, DEPARTMENTS } from "@/lib/mockData";
 import { useWaitlist } from "@/store/waitlist";
 import { useSync } from "@/store/sync";
 import type { Department, Priority } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 export default function Checkin() {
   const nav = useNavigate();
@@ -48,7 +48,7 @@ export default function Checkin() {
     <div className="space-y-lg max-w-[1200px] mx-auto">
       <div>
         <h1 className="h1">Check-in desk</h1>
-        <p className="body text-text-secondary">Scan a Med-Pass QR or look up a patient by phone — under 10 seconds.</p>
+        <p className="body text-text-secondary">Scan a MiqorAI QR or look up a patient by phone — under 10 seconds.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-lg">

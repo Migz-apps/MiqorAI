@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Printer, Share2, LogOut, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import type { Patient } from "@/lib/types";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -17,7 +17,7 @@ export const PatientHeader = ({ patient }: { patient: Patient }) => {
     const url = `${window.location.origin}/patients/${patient.id}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: `Med-Pass · ${patient.name}`, url });
+        await navigator.share({ title: `MiqorAI · ${patient.name}`, url });
       } else {
         await navigator.clipboard.writeText(url);
         toast.success("Patient link copied to clipboard");

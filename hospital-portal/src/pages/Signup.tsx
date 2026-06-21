@@ -8,7 +8,7 @@ import { FormAlert } from "@/components/shared/FormAlert";
 import { useAuth, ROLE_LABEL } from "@/store/auth";
 import { AuthShell } from "@/components/auth/AuthShell";
 import type { Role } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 const ROLE_OPTIONS: { value: Role; icon: any; tagline: string }[] = [
   { value: "receptionist", icon: ScanLine,    tagline: "Front desk · check-in & QR" },
@@ -54,7 +54,7 @@ export default function Signup() {
           <Stethoscope className="h-5 w-5 text-primary-foreground" />
         </div>
         <div>
-          <div className="text-sm font-semibold">Med-Pass</div>
+          <div className="text-sm font-semibold">MiqorAI</div>
           <div className="text-[11px] text-text-secondary">Hospital Portal</div>
         </div>
       </div>

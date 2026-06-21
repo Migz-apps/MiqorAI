@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Download } from "lucide-react";
 import { HOSPITAL } from "@/lib/mockData";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 const usage = [
   { metric: "Patient check-ins", value: "3,247", limit: "Unlimited" },
@@ -22,7 +22,7 @@ export default function Billing() {
     <div className="space-y-lg max-w-[1200px] mx-auto">
       <div>
         <h1 className="h1 flex items-center gap-sm"><CreditCard className="h-6 w-6 text-primary" /> Billing & subscription</h1>
-        <p className="body text-text-secondary">Manage your Med-Pass plan, payment methods and invoices.</p>
+        <p className="body text-text-secondary">Manage your MiqorAI plan, payment methods and invoices.</p>
       </div>
 
       <Card>

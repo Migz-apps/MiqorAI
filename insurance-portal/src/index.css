@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MediPass Insurer Portal — Design System
+/* MiqorAI Insurer Portal — Design System
    Shares brand teal (#0A5C6E) + dark navy sidebar (#1A2B3C) with the
    hospital and pharmacy portals. Insurer blue (#1E88E5) is the data accent. */
 @layer base {
@@ -19,7 +19,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 213 38% 17%;
 
-    /* Brand teal (shared across all MediPass portals) */
+    /* Brand teal (shared across all MiqorAI portals) */
     --primary: 190 83% 24%;                /* #0A5C6E */
     --primary-foreground: 0 0% 100%;
     --primary-light: 171 41% 93%;          /* #E6F4F1 */

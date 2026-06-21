@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { PATIENTS } from "@/lib/mockData";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 type Props = { onScanned?: (patientId: string) => void };
 
@@ -101,7 +101,7 @@ export const QRScanner = ({ onScanned }: Props) => {
       )}
       {manual && (
         <div className="text-xs text-text-secondary">
-          New patient? <a href="#" className="text-primary hover:underline">Register with Med-Pass</a>
+          New patient? <a href="#" className="text-primary hover:underline">Register with MiqorAI</a>
         </div>
       )}
     </div>

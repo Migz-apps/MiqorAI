@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Building2, Plus } from "lucide-react";
 import { DEPARTMENTS, STAFF } from "@/lib/mockData";
 import { useWaitlist, waitMinutes } from "@/store/waitlist";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 export default function Departments() {
   const [depts, setDepts] = useState(DEPARTMENTS);

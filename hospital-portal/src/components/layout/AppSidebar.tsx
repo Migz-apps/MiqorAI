@@ -76,7 +76,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-sidebar-foreground truncate">Med-Pass</div>
+              <div className="text-sm font-semibold text-sidebar-foreground truncate">MiqorAI</div>
               <div className="text-[11px] text-sidebar-foreground/60 truncate">Hospital Portal</div>
             </div>
           )}

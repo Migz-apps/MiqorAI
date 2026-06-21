@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { PATIENTS } from "@/lib/mockData";
-import { PatientHeader } from "@/components/medpass/PatientHeader";
-import { AllergyBanner } from "@/components/medpass/AllergyBanner";
-import { AddVisitForm } from "@/components/medpass/AddVisitForm";
+import { PatientHeader } from "@/components/miqorai/PatientHeader";
+import { AllergyBanner } from "@/components/miqorai/AllergyBanner";
+import { AddVisitForm } from "@/components/miqorai/AddVisitForm";
 import { useAuth, can } from "@/store/auth";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -229,4 +229,4 @@ export default function PatientProfile() {
 }
 
 // inline import to avoid circular issues
-import { PrescriptionBuilder as PrescriptionBuilderInline } from "@/components/medpass/PrescriptionBuilder";
+import { PrescriptionBuilder as PrescriptionBuilderInline } from "@/components/miqorai/PrescriptionBuilder";

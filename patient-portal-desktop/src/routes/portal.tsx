@@ -17,19 +17,26 @@ import {
 } from "@/lib/mockData";
 import { Modal } from "@/components/Modal";
 import { useToast } from "@/components/Toast";
+import { MESSAGES } from "@/lib/user-messages";
 
 export default function PortalPage() {
-  const { isLoggedIn, user, logout } = useAuth();
+  const { isLoggedIn, user, logout, authReady } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeProfile, setActiveProfile] = useState<{ id: string; name: string; relationship?: string } | null>(null);
 
   useEffect(() => {
-    if (!isLoggedIn) navigate("/login");
-  }, [isLoggedIn, navigate]);
+    if (authReady && !isLoggedIn) navigate("/login");
+  }, [authReady, isLoggedIn, navigate]);
 
-  if (!isLoggedIn || !user) return null;
+  if (!authReady || !isLoggedIn || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
 
   const viewing = activeProfile ?? { id: user.id, name: user.name };
 
@@ -48,7 +55,7 @@ export default function PortalPage() {
         <div className="flex items-center justify-between px-5 py-5 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground font-bold">M+</div>
-            <span className="font-bold">MediPass</span>
+            <span className="font-bold">MiqorAI</span>
           </Link>
           <button className="lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><FiX /></button>
         </div>
@@ -127,7 +134,7 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
     return () => clearInterval(t);
   }, []);
 
-  const qrValue = useMemo(() => `MediPass:${user.id}:${Math.floor(Date.now() / 60000)}:${tick}`, [user.id, tick]);
+  const qrValue = useMemo(() => `MiqorAI:${user.id}:${Math.floor(Date.now() / 60000)}:${tick}`, [user.id, tick]);
 
   return (
     <div className="space-y-6">
@@ -381,7 +388,7 @@ function ShareTab() {
                   <div className="text-xs text-muted-foreground">{g.org} · {g.scope} · expires {g.expires}</div>
                 </div>
                 <button
-                  onClick={() => { setGrants((p) => p.filter((x) => x.id !== g.id)); toast("Access revoked"); }}
+                  onClick={() => { setGrants((p) => p.filter((x) => x.id !== g.id)); toast(MESSAGES.generic.revoked); }}
                   className="rounded-lg border border-destructive/30 text-destructive px-3 py-1.5 text-sm hover:bg-destructive/10"
                 >
                   Revoke
@@ -422,10 +429,10 @@ function ShareTab() {
           <TextField label="Expires" type="date" value={form.expires} onChange={(v) => setForm({ ...form, expires: v })} />
           <button
             onClick={() => {
-              if (!form.name || !form.org) return toast("Name and organization required", "error");
+              if (!form.name || !form.org) return toast(MESSAGES.form.nameAndOrg, "error");
               setGrants((p) => [...p, { id: Date.now(), ...form }]);
               setGrantOpen(false);
-              toast("Access granted successfully");
+              toast(MESSAGES.generic.granted);
               setForm({ name: "", org: "", scope: "Full Access", expires: "2026-07-01" });
             }}
             className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-dark"
@@ -468,7 +475,7 @@ function FamilyTab({ onSwitch }: { onSwitch: (p: { id: string; name: string; rel
                 <div className="font-semibold">{f.name}</div>
                 <div className="text-xs text-muted-foreground">{f.relationship} · DOB {f.dob}</div>
               </div>
-              <button onClick={() => { setFamily((p) => p.filter((x) => x.id !== f.id)); toast("Family member removed"); }} aria-label="Remove"><FiTrash2 className="text-muted-foreground hover:text-destructive" /></button>
+              <button onClick={() => { setFamily((p) => p.filter((x) => x.id !== f.id)); toast(MESSAGES.generic.removed); }} aria-label="Remove"><FiTrash2 className="text-muted-foreground hover:text-destructive" /></button>
             </div>
             <div className="mt-3 flex items-center justify-between">
               <span className="rounded-full bg-accent px-2 py-1 text-xs text-accent-foreground">{f.access}</span>
@@ -501,10 +508,10 @@ function FamilyTab({ onSwitch }: { onSwitch: (p: { id: string; name: string; rel
           </label>
           <button
             onClick={() => {
-              if (!form.name) return toast("Name required", "error");
+              if (!form.name) return toast(MESSAGES.form.nameRequired, "error");
               setFamily((p) => [...p, { id: `MP-${Math.floor(Math.random() * 9000 + 1000)}`, ...form }]);
               setOpen(false);
-              toast("Family member added");
+              toast(MESSAGES.generic.added);
               setForm({ name: "", relationship: "Child", dob: "", access: "Full" });
             }}
             className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-dark"
@@ -541,9 +548,9 @@ function ProfileTab() {
     const blob = new Blob([JSON.stringify({ user, conditions: mockConditions, medications: mockMedications }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "MediPass-data.json"; a.click();
+    a.href = url; a.download = "MiqorAI-data.json"; a.click();
     URL.revokeObjectURL(url);
-    toast("Data exported");
+    toast(MESSAGES.generic.exported);
   };
 
   return (
@@ -563,7 +570,7 @@ function ProfileTab() {
           <TextField label="Insurance ID" value={form.insuranceId} onChange={(v) => setForm({ ...form, insuranceId: v })} />
         </div>
         <button
-          onClick={() => { updateUser(form); toast("Profile saved"); }}
+          onClick={() => { updateUser(form); toast(MESSAGES.generic.saved); }}
           className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark"
         >
           Save changes
@@ -596,7 +603,7 @@ function ProfileTab() {
                 <div className="font-medium text-sm">{c.name} <span className="text-muted-foreground font-normal">· {c.relationship}</span></div>
                 <div className="text-xs text-muted-foreground">{c.phone}</div>
               </div>
-              <button onClick={() => { setContacts((p) => p.filter((x) => x.id !== c.id)); toast("Contact removed"); }} aria-label="Remove"><FiTrash2 className="text-muted-foreground hover:text-destructive" /></button>
+              <button onClick={() => { setContacts((p) => p.filter((x) => x.id !== c.id)); toast(MESSAGES.generic.removed); }} aria-label="Remove"><FiTrash2 className="text-muted-foreground hover:text-destructive" /></button>
             </li>
           ))}
         </ul>
@@ -607,10 +614,10 @@ function ProfileTab() {
         </div>
         <button
           onClick={() => {
-            if (!contactForm.name || !contactForm.phone) return toast("Name and phone required", "error");
+            if (!contactForm.name || !contactForm.phone) return toast(MESSAGES.form.nameAndPhone, "error");
             setContacts((p) => [...p, { id: Date.now(), ...contactForm }]);
             setContactForm({ name: "", phone: "", relationship: "" });
-            toast("Contact added");
+            toast(MESSAGES.generic.added);
           }}
           className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
         >
@@ -623,7 +630,7 @@ function ProfileTab() {
           <button onClick={exportData} className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
             <FiDownload size={14} /> Export My Data
           </button>
-          <button onClick={() => toast("Data deletion request submitted")} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
+          <button onClick={() => toast(MESSAGES.generic.submitted)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
             Request Data Deletion
           </button>
           <button onClick={() => setDelOpen(true)} className="rounded-lg bg-destructive text-destructive-foreground px-4 py-2 text-sm hover:opacity-90">
@@ -657,7 +664,7 @@ function ProfileTab() {
           <TextField label="Current password" type="password" value="" onChange={() => { }} />
           <TextField label="New password" type="password" value="" onChange={() => { }} />
           <TextField label="Confirm new password" type="password" value="" onChange={() => { }} />
-          <button onClick={() => { setPwOpen(false); toast("Password changed"); }} className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-dark">
+          <button onClick={() => { setPwOpen(false); toast(MESSAGES.generic.saved); }} className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-dark">
             Update password
           </button>
         </div>
@@ -668,7 +675,7 @@ function ProfileTab() {
         <div className="mt-5 flex gap-2 justify-end">
           <button onClick={() => setDelOpen(false)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
           <button
-            onClick={() => { logout(); navigate("/"); toast("Account deleted"); }}
+            onClick={() => { logout(); navigate("/"); toast(MESSAGES.auth.accountClosed, "info"); }}
             className="rounded-lg bg-destructive text-destructive-foreground px-4 py-2 text-sm hover:opacity-90"
           >
             Yes, delete

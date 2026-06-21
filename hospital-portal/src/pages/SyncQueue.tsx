@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { useSync } from "@/store/sync";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import type { SyncItem } from "@/lib/types";
 
 const typeIcon = { visit: FileText, prescription: Pill, vitals: Activity } as const;

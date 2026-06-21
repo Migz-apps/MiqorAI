@@ -8,8 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileBarChart2, Download, FileText, FileSpreadsheet, Calendar, CheckCircle2 } from "lucide-react";
-import { PageHeader } from "@/components/medpass/PageHeader";
-import { toast } from "sonner";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { toast } from "@/lib/notify";
 
 const PAST_REPORTS = [
   { name: "Monthly board report — Mar 2026", type: "PDF", size: "2.4 MB", date: "2026-04-02", by: "Wanjiku Mwangi" },

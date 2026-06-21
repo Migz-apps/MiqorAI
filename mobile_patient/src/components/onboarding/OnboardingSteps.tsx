@@ -31,7 +31,7 @@ export function WelcomeStep({ onNext, onLogin, onRestore, isCompact }: any) {
             <View className={cn("w-24 h-24 rounded-[30px] bg-primary items-center justify-center", isCompact ? "w-[78px] h-[78px] rounded-3xl" : "")}>
                 <Text className="text-white text-[32px] font-[900]">M+</Text>
             </View>
-            <Text className={cn("mt-xxxl text-text-primary text-[34px] font-[900]", isCompact ? "text-[30px]" : "")}>MediPass</Text>
+            <Text className={cn("mt-xxxl text-text-primary text-[34px] font-[900]", isCompact ? "text-[30px]" : "")}>MiqorAI</Text>
             <Text className={cn("mt-sm text-text-secondary text-[18px]", isCompact ? "text-[16px]" : "")}>Patient Portal</Text>
             <Text className={cn("mt-10 text-text-primary text-[26px] font-medium text-center leading-9", isCompact ? "text-[22px] leading-[30px]" : "")}>
                 Your health records.{"\n"}In your pocket.{"\n"}Always.
@@ -244,10 +244,10 @@ export function CompleteStep({ onComplete, isLoading, isCompact }: any) {
             </View>
             <Text className="mt-xxxl text-text-primary text-[34px] font-[900]">You&apos;re All Set!</Text>
             <Text className="mt-md text-text-secondary text-[16px] leading-[24px] text-center">
-                Your MediPass account is ready. Your health records are now secure and always with you.
+                Your MiqorAI account is ready. Your health records are now secure and always with you.
             </Text>
             <View className="mt-xxxl w-full">
-                <PrimaryButton fullWidth size="lg" onPress={onComplete} isLoading={isLoading}>Start Using MediPass</PrimaryButton>
+                <PrimaryButton fullWidth size="lg" onPress={onComplete} isLoading={isLoading}>Start Using MiqorAI</PrimaryButton>
             </View>
         </View>
     )

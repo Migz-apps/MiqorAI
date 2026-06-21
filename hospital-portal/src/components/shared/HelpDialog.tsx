@@ -10,7 +10,7 @@ const ROLE_TIPS: Record<string, { title: string; tips: string[] }> = {
   receptionist: { title: "Reception quick guide", tips: [
     "Use Check-in (or ⌘K) to scan a patient QR or enter their phone.",
     "Long waits are flagged in the waitlist; you can call patients in bulk.",
-    "Use Manual register for patients without a Med-Pass card.",
+    "Use Manual register for patients without a MiqorAI card.",
     "Print stickers re-prints any visit's QR sticker.",
   ]},
   nurse: { title: "Nurse quick guide", tips: [

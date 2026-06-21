@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Download, MessageSquare, CheckCircle2, AlertCircle } from "lucide-react";
-import { PageHeader } from "@/components/medpass/PageHeader";
-import { ProgressBar } from "@/components/medpass/ProgressBar";
-import { StatusPill } from "@/components/medpass/StatusPill";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
+import { StatusPill } from "@/components/MiqorAI/StatusPill";
 import { INVOICES } from "@/lib/mockData";
 import { fmtKsh } from "@/lib/format";
 
@@ -18,7 +18,7 @@ const USAGE = [
 export default function Contract() {
   return (
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
-      <PageHeader title="Contract management" subtitle="Your active MediPass partnership, billing history, and usage." />
+      <PageHeader title="Contract management" subtitle="Your active MiqorAI partnership, billing history, and usage." />
 
       <Card>
         <CardHeader className="pb-sm flex flex-row items-start justify-between gap-sm">
@@ -36,7 +36,7 @@ export default function Contract() {
           {[
             { k: "Start date", v: "2024-01-01" },
             { k: "End date", v: "2026-12-31" },
-            { k: "MediPass fee", v: "20% of verified savings" },
+            { k: "MiqorAI fee", v: "20% of verified savings" },
             { k: "Annual savings guarantee", v: "KSh 5,000,000" },
             { k: "Data access", v: "Anonymized population health" },
             { k: "Support", v: "24/7 email + phone" },
@@ -50,7 +50,7 @@ export default function Contract() {
         <div className="px-md pb-md flex flex-wrap gap-sm">
           <Button size="sm" variant="outline" className="gap-sm"><Download className="h-3.5 w-3.5" /> Download PDF</Button>
           <Button size="sm" variant="outline">Request amendment</Button>
-          <Button size="sm" variant="outline" className="gap-sm"><MessageSquare className="h-3.5 w-3.5" /> Contact MediPass</Button>
+          <Button size="sm" variant="outline" className="gap-sm"><MessageSquare className="h-3.5 w-3.5" /> Contact MiqorAI</Button>
         </div>
       </Card>
 
@@ -66,7 +66,7 @@ export default function Contract() {
                   <TableHead>Invoice</TableHead>
                   <TableHead>Period</TableHead>
                   <TableHead className="text-right">Gross savings</TableHead>
-                  <TableHead className="text-right">MediPass fee</TableHead>
+                  <TableHead className="text-right">MiqorAI fee</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Due / Paid</TableHead>
                   <TableHead className="text-right">PDF</TableHead>

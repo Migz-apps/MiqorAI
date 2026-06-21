@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View } from 'react-native'
 
-import { LoadingOverlay, OfflineBanner, SplashScreen, TabBar, type TabId } from './src/components/ui'
+import { LoadingOverlay, OfflineBanner, SplashScreen, TabBar, ToastProvider, type TabId } from './src/components/ui'
 import { usePatientStore } from './src/store'
 import { colors } from './src/theme'
 import { FamilyScreen } from './src/screens/FamilyScreen'
@@ -13,7 +13,7 @@ import { ProfileScreen } from './src/screens/ProfileScreen'
 import { RecordsScreen } from './src/screens/RecordsScreen'
 import { ShareScreen } from './src/screens/ShareScreen'
 
-function MedPassApp() {
+function MiqorAIApp() {
   const {
     isAuthenticated,
     hasCompletedOnboarding,
@@ -55,7 +55,7 @@ function MedPassApp() {
   }, [activePatient, isAuthenticated, isHydrated, loadMockData])
 
   if (!isHydrated) {
-    return <LoadingOverlay fullScreen message="Loading MediPass..." />
+    return <LoadingOverlay fullScreen message="Loading MiqorAI..." />
   }
 
   if (showSplash) {
@@ -89,8 +89,10 @@ function MedPassApp() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" translucent />
-      <MedPassApp />
+      <ToastProvider>
+        <StatusBar style="dark" translucent />
+        <MiqorAIApp />
+      </ToastProvider>
     </SafeAreaProvider>
   )
 }

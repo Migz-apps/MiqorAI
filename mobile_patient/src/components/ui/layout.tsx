@@ -59,7 +59,7 @@ export function Header({ title, subtitle, avatar, actions, showLogo = false }: H
               <Text style={styles.logoText}>M+</Text>
             </View>
             <View>
-              <Text style={styles.logoTitle}>MediPass</Text>
+              <Text style={styles.logoTitle}>MiqorAI</Text>
               <Text style={styles.logoSubtitle}>Patient Portal</Text>
             </View>
           </>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Download } from "lucide-react";
 import { AUDIT_LOG } from "@/lib/mockData";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 export default function AuditLog() {
   const [q, setQ] = useState("");

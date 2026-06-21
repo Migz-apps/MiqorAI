@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, Search, Download } from "lucide-react";
-import { PageHeader } from "@/components/medpass/PageHeader";
-import { KpiCard } from "@/components/medpass/KpiCard";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { KpiCard } from "@/components/MiqorAI/KpiCard";
 import { initials, fmtNum } from "@/lib/format";
 import { KPI } from "@/lib/mockData";
 

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DRUG_DATABASE, PHARMACIES, DRUG_INTERACTIONS } from "@/lib/mockData";
 import type { Patient } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 type Props = { patient: Patient; onSubmit?: (rx: any) => void };
 

@@ -29,7 +29,7 @@ export function SplashScreen() {
       <View style={styles.splashMark}>
         <Text style={styles.splashMarkText}>M+</Text>
       </View>
-      <Text style={styles.splashTitle}>MediPass</Text>
+      <Text style={styles.splashTitle}>MiqorAI</Text>
       <Text style={styles.splashSubtitle}>Patient Portal</Text>
       <View style={styles.splashLoaderTrack}>
         <View style={styles.splashLoaderFill} />

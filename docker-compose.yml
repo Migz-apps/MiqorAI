@@ -1,0 +1,42 @@
+services:
+  patient-portal:
+    build:
+      context: ./patient-portal-desktop
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+
+  hospital-portal:
+    build:
+      context: ./hospital-portal
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  insurance-portal:
+    build:
+      context: ./insurance-portal
+      dockerfile: Dockerfile
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+  pharmacy-portal:
+    build:
+      context: ./pharmacy-portal
+      dockerfile: Dockerfile
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+
+  admin-portal:
+    build:
+      context: ./admin-portal
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: "8083"
+    restart: unless-stopped

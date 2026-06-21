@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { DEPARTMENTS, ICD11_CODES, PATIENTS, REFERRALS } from "@/lib/mockData";
 import type { Referral } from "@/lib/types";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 export default function Referrals() {
   const [referrals, setReferrals] = useState<Referral[]>(REFERRALS);

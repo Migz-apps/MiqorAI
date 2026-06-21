@@ -8,7 +8,7 @@ export default function SystemHealth() {
     <div className="space-y-lg max-w-[1200px] mx-auto">
       <div>
         <h1 className="h1 flex items-center gap-sm"><Activity className="h-6 w-6 text-primary" /> System health</h1>
-        <p className="body text-text-secondary">Real-time status of every Med-Pass service.</p>
+        <p className="body text-text-secondary">Real-time status of every MiqorAI service.</p>
       </div>
 
       <Card>

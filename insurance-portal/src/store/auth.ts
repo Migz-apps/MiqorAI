@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { MESSAGES } from "@/lib/user-messages";
 import { persist } from "zustand/middleware";
 import type { Role } from "@/lib/types";
 import { INSURER, STAFF, VALID_INSURER_CODES } from "@/lib/mockData";
@@ -32,18 +33,18 @@ export const useAuth = create<AuthState>()(
         const now = Date.now();
         if (get().lockoutUntil && get().lockoutUntil! > now) {
           const mins = Math.ceil((get().lockoutUntil! - now) / 60000);
-          return { ok: false, error: `Locked. Try again in ${mins} min.` };
+          return { ok: false, error: MESSAGES.auth.locked(mins) };
         }
         const staff = STAFF.find(s => s.email.toLowerCase() === email.toLowerCase() && s.active);
         const codeOk = VALID_INSURER_CODES.includes(insurerCode);
-        if (!codeOk || !staff || password !== "medpass") {
+        if (!codeOk || !staff || password !== "MiqorAI") {
           const attempts = get().failedAttempts + 1;
           set({
             failedAttempts: attempts,
             lockoutUntil: attempts >= 5 ? now + 15 * 60 * 1000 : null,
           });
-          if (attempts >= 5) return { ok: false, error: "Too many attempts. Locked for 15 minutes." };
-          return { ok: false, error: `Invalid credentials. ${5 - attempts} attempt(s) left.` };
+          if (attempts >= 5) return { ok: false, error: MESSAGES.auth.tooManyAttempts };
+          return { ok: false, error: MESSAGES.auth.attemptsRemaining(5 - attempts) };
         }
         set({
           failedAttempts: 0, lockoutUntil: null,
@@ -60,7 +61,7 @@ export const useAuth = create<AuthState>()(
         set({ session: { ...s, role } });
       },
     }),
-    { name: "medpass-insurer-auth" }
+    { name: "MiqorAI-insurer-auth" }
   )
 );
 

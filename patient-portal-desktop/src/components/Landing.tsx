@@ -20,7 +20,7 @@ export function Landing() {
             <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground font-bold">
               M+
             </div>
-            <span className="text-lg font-bold">MediPass</span>
+            <span className="text-lg font-bold">MiqorAI</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#features" className="hover:text-primary">Features</a>
@@ -218,7 +218,7 @@ export function Landing() {
         <div className="mx-auto max-w-7xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="grid h-7 w-7 place-items-center rounded bg-primary text-primary-foreground text-xs font-bold">M+</div>
-            <span>© 2026 MediPass. All rights reserved.</span>
+            <span>© 2026 MiqorAI. All rights reserved.</span>
           </div>
           <div className="flex gap-6">
             <a href="#" className="hover:text-foreground">Privacy</a>

@@ -684,8 +684,8 @@ export const usePatientStore = create<PatientStore>()(
           {
             id: 'insight-003',
             type: 'milestone',
-            title: '1 Year on MediPass',
-            description: 'You have been using MediPass for 1 year!',
+            title: '1 Year on MiqorAI',
+            description: 'You have been using MiqorAI for 1 year!',
             date: '2025-01-15',
           },
         ]
@@ -712,7 +712,7 @@ export const usePatientStore = create<PatientStore>()(
       },
     }),
     {
-      name: 'medpass-mobile-storage',
+      name: 'MiqorAI-mobile-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,

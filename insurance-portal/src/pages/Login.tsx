@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { FormAlert } from "@/components/shared/FormAlert";
 import { useAuth } from "@/store/auth";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { MESSAGES } from "@/lib/user-messages";
 
 export default function Login() {
   const session = useAuth(s => s.session);
@@ -14,7 +15,7 @@ export default function Login() {
   const nav = useNavigate();
   const [code, setCode] = useState("JUBILEE_001");
   const [email, setEmail] = useState("wanjiku@jubilee.co.ke");
-  const [password, setPassword] = useState("medpass");
+  const [password, setPassword] = useState("MiqorAI");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +24,7 @@ export default function Login() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const res = login(code.trim(), email.trim(), password);
-    if (!res.ok) setError(res.error || "Login failed");
+    if (!res.ok) setError(res.error || MESSAGES.auth.invalidCredentials);
     else nav("/dashboard");
   };
 
@@ -34,7 +35,7 @@ export default function Login() {
           <Building2 className="h-5 w-5 text-insurer-foreground" />
         </div>
         <div>
-          <div className="text-sm font-semibold">MediPass</div>
+          <div className="text-sm font-semibold">MiqorAI</div>
           <div className="text-[11px] text-text-secondary">Insurer Portal</div>
         </div>
       </div>
@@ -62,7 +63,7 @@ export default function Login() {
         <div className="space-y-xs">
           <div className="flex items-center justify-between">
             <Label htmlFor="pw">Password</Label>
-            <span className="text-[11px] text-text-secondary">Forgot? Contact your MediPass admin.</span>
+            <span className="text-[11px] text-text-secondary">Forgot? Contact your MiqorAI admin.</span>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
@@ -83,14 +84,14 @@ export default function Login() {
       </form>
 
       <div className="mt-lg p-sm rounded-md bg-insurer-light border border-insurer/15 text-[11px] text-insurer leading-relaxed">
-        <strong>Demo access:</strong> any insurer code + staff email + password <code className="font-mono">medpass</code>.<br />
+        <strong>Demo access:</strong> any insurer code + staff email + password <code className="font-mono">MiqorAI</code>.<br />
         Try <code>wanjiku@jubilee.co.ke</code> (analyst), <code>brian@jubilee.co.ke</code> (fraud),
         <code> grace@jubilee.co.ke</code> (contracts), <code>daniel@jubilee.co.ke</code> (executive),
         <code> fatima@jubilee.co.ke</code> (admin).
       </div>
 
       <div className="mt-md text-center text-xs text-text-secondary">
-        Not yet onboarded? <Link to="/login" className="text-insurer font-medium hover:underline">Talk to MediPass</Link>
+        Not yet onboarded? <Link to="/login" className="text-insurer font-medium hover:underline">Talk to MiqorAI</Link>
       </div>
     </AuthShell>
   );

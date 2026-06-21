@@ -3,16 +3,22 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "url";
 
-export default defineConfig({
-  // Force relative asset links to resolve 404 folder nesting crashes
-  base: "./",
+// GitHub Pages project site: https://<user>.github.io/<repo>/
+const repoBase = process.env.VITE_BASE ?? "/MiqorAI/";
+
+export default defineConfig(({ mode }) => ({
+  base: mode === "production" ? repoBase : "/",
+  server: {
+    host: "::",
+    port: 5173,
+  },
   plugins: [
     react(),
-    tailwindcss()
+    tailwindcss(),
   ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-});
+}));

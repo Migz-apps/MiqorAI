@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Key, Globe, Bell, Lock, Copy } from "lucide-react";
-import { PageHeader } from "@/components/medpass/PageHeader";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { useAuth } from "@/store/auth";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 export default function Settings() {
   const session = useAuth(s => s.session)!;

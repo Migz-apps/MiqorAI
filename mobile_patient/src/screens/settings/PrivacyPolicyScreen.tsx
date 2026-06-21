@@ -22,7 +22,7 @@ export function PrivacyPolicyScreen({ onBack }: { onBack: () => void }) {
         >
             <View className="py-2.5 gap-4">
                 <Text className="text-[15px] leading-6 text-text-primary">
-                    Your privacy is our priority. MediPass is built on the principle of local-first data storage.{"\n\n"}
+                    Your privacy is our priority. MiqorAI is built on the principle of local-first data storage.{"\n\n"}
                     - Data Minimization: We only collect the necessary metadata to facilitate peer-to-peer data sharing.{"\n\n"}
                     - Encryption: All medical records are encrypted using AES-256 before being stored or transmitted. Only you hold the decryption keys.{"\n\n"}
                     - Consent Tracking: Every access to your records by a healthcare provider is logged and requires your explicit QR code scan or authorization.{"\n\n"}

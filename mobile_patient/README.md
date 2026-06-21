@@ -1,4 +1,4 @@
-# MediPass - Mobile Patient App
+# MiqorAI - Mobile Patient App
 
 A comprehensive React Native mobile application for patients to manage, organize, and share their medical records securely. Built with Expo, TypeScript, and NativeWind styling.
 
@@ -44,8 +44,8 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/medipass.git
-   cd MediPass/mobile_patient
+   git clone https://github.com/yourusername/MiqorAI.git
+   cd MiqorAI/mobile_patient
    ```
 
 2. **Install dependencies**
@@ -316,4 +316,4 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
 
 **Version**: 1.0.0  
 **Last Updated**: 2026  
-**Maintainers**: MediPass Team
+**Maintainers**: MiqorAI Team

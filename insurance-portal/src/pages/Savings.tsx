@@ -12,8 +12,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend, LineChart, Line,
 } from "recharts";
-import { PageHeader } from "@/components/medpass/PageHeader";
-import { KpiCard } from "@/components/medpass/KpiCard";
+import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { KpiCard } from "@/components/MiqorAI/KpiCard";
 import {
   HOSPITALS, SAVINGS_TREND, KPI, SAVINGS_RECORDS,
 } from "@/lib/mockData";
@@ -141,7 +141,7 @@ export default function Savings() {
         <CardHeader className="pb-sm flex flex-row items-center justify-between gap-sm">
           <div>
             <CardTitle className="h3">Audit trail — verified savings</CardTitle>
-            <p className="text-xs text-text-secondary">Each row is a duplicate test prevented by MediPass.</p>
+            <p className="text-xs text-text-secondary">Each row is a duplicate test prevented by MiqorAI.</p>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-secondary" />

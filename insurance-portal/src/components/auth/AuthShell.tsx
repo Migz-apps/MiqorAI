@@ -13,7 +13,7 @@ export const AuthShell = ({ children }: { children: React.ReactNode }) => (
           <Building2 className="h-5 w-5 text-insurer-foreground" />
         </div>
         <div>
-          <div className="text-base font-semibold">MediPass</div>
+          <div className="text-base font-semibold">MiqorAI</div>
           <div className="text-xs opacity-80">Insurer Portal</div>
         </div>
       </div>
@@ -24,7 +24,7 @@ export const AuthShell = ({ children }: { children: React.ReactNode }) => (
           Trusted by 14 insurers across East Africa
         </div>
         <h2 className="text-3xl font-bold leading-tight">
-          See every Franc<br />MediPass saves you.
+          See every Franc<br />MiqorAI saves you.
         </h2>
         <p className="text-sm opacity-85">
           Audit duplicate-test savings, monitor adherence outcomes, detect fraud, and
@@ -45,7 +45,7 @@ export const AuthShell = ({ children }: { children: React.ReactNode }) => (
         </div>
       </div>
 
-      <div className="relative text-[11px] opacity-70">© MediPass Health · Connected payer network</div>
+      <div className="relative text-[11px] opacity-70">© MiqorAI Health · Connected payer network</div>
     </div>
 
     {/* Form panel */}

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ICD11_CODES } from "@/lib/mockData";
 import type { Patient } from "@/lib/types";
 import { useSync } from "@/store/sync";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { PrescriptionBuilder } from "./PrescriptionBuilder";
 import { useAuth, can } from "@/store/auth";
 
