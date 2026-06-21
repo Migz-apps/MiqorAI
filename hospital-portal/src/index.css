@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Med-Pass Design System */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --background-grey: 210 17% 98%;
+    --foreground: 213 38% 17%;             /* #1A2B3C */
+    --text-secondary: 211 14% 48%;         /* #6B7A8A */
+
+    --card: 0 0% 100%;
+    --card-foreground: 213 38% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 213 38% 17%;
+
+    /* Brand teal */
+    --primary: 190 83% 24%;                /* #0A5C6E */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 171 41% 93%;          /* #E6F4F1 */
+
+    --secondary: 35 91% 55%;               /* #F5A623 warning */
+    --secondary-foreground: 0 0% 100%;
+
+    --success: 145 63% 42%;                /* #27AE60 */
+    --success-foreground: 0 0% 100%;
+    --error: 6 78% 57%;                    /* #E74C3C */
+    --error-foreground: 0 0% 100%;
+
+    --muted: 210 17% 98%;
+    --muted-foreground: 211 14% 48%;
+    --accent: 171 41% 93%;
+    --accent-foreground: 190 83% 24%;
+    --destructive: 6 78% 57%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 190 83% 24%;
+
+    --radius: 0.625rem;
+
+    /* Role accents — soft, professional */
+    --reception-accent: 122 43% 33%;       /* #2E7D32 */
+    --reception-light: 125 39% 94%;        /* #E8F5E9 */
+    --clinical-accent: 210 79% 46%;        /* #1976D2 */
+    --clinical-light: 207 89% 94%;         /* #E3F2FD */
+    --admin-accent: 215 19% 41%;           /* #64748B */
+    --admin-light: 210 40% 96%;            /* #F1F5F9 */
+
+    /* Sidebar */
+    --sidebar-background: 213 38% 17%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 190 83% 24%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 213 30% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 213 30% 22%;
+    --sidebar-ring: 190 83% 40%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02','cv03','cv04','cv11';
+  }
+}
+
+@layer components {
+  .h1 { @apply text-[28px] leading-[34px] font-bold tracking-tight; }
+  .h2 { @apply text-[22px] leading-[28px] font-semibold; }
+  .h3 { @apply text-[18px] leading-[24px] font-semibold; }
+  .body-lg { @apply text-base leading-6; }
+  .body { @apply text-sm leading-5; }
+  .caption { @apply text-xs leading-4; }
+}
+
+@layer utilities {
+  .role-reception { color: hsl(var(--reception-accent)); }
+  .bg-role-reception { background-color: hsl(var(--reception-accent)); }
+  .bg-role-reception-light { background-color: hsl(var(--reception-light)); }
+  .role-clinical { color: hsl(var(--clinical-accent)); }
+  .bg-role-clinical { background-color: hsl(var(--clinical-accent)); }
+  .bg-role-clinical-light { background-color: hsl(var(--clinical-light)); }
+  .role-admin { color: hsl(var(--admin-accent)); }
+  .bg-role-admin { background-color: hsl(var(--admin-accent)); }
+  .bg-role-admin-light { background-color: hsl(var(--admin-light)); }
+
+  /* Print styles for stickers */
+  @media print {
+    body * { visibility: hidden; }
+    .print-area, .print-area * { visibility: visible; }
+    .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+    .no-print { display: none !important; }
+  }
+}
