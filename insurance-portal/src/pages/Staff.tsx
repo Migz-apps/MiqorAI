@@ -1,10 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { UserPlus, Mail } from "lucide-react";
 import { PageHeader } from "@/components/MiqorAI/PageHeader";
-import { STAFF } from "@/lib/mockData";
+import { insurerApi, insurerKeys, mapStaffRow } from "@/lib/api/insurer";
 import { ROLE_LABEL } from "@/store/auth";
 import { initials, fmtDateTime } from "@/lib/format";
 
@@ -17,6 +19,22 @@ const trackPill: Record<string, string> = {
 };
 
 export default function Staff() {
+  const { data: staffRaw, isLoading } = useQuery({
+    queryKey: insurerKeys.staff,
+    queryFn: insurerApi.staff,
+  });
+
+  const staff = (staffRaw ?? []).map(mapStaffRow);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-lg max-w-[1500px] mx-auto">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
       <PageHeader
@@ -41,7 +59,11 @@ export default function Staff() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {STAFF.map(s => (
+              {staff.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-sm text-text-secondary py-8">No staff members found.</TableCell>
+                </TableRow>
+              ) : staff.map(s => (
                 <TableRow key={s.id}>
                   <TableCell>
                     <div className="flex items-center gap-sm">
@@ -81,11 +103,11 @@ export default function Staff() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-sm">
           {[
-            { r: "Analyst",            d: "Dashboards, run reports, export data" },
+            { r: "Analyst", d: "Dashboards, run reports, export data" },
             { r: "Fraud Investigator", d: "Claims audit, flag suspicious activity" },
-            { r: "Contracts Manager",  d: "Savings reports, manage contract & billing" },
-            { r: "Executive",          d: "High-level KPIs, board reports, ROI" },
-            { r: "Administrator",      d: "User management, API keys, billing" },
+            { r: "Contracts Manager", d: "Savings reports, manage contract & billing" },
+            { r: "Executive", d: "High-level KPIs, board reports, ROI" },
+            { r: "Administrator", d: "User management, API keys, billing" },
           ].map(p => (
             <div key={p.r} className="p-sm rounded-md border">
               <div className="text-sm font-semibold">{p.r}</div>

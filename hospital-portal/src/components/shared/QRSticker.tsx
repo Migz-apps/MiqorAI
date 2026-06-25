@@ -1,18 +1,19 @@
 import { QRCodeSVG } from "qrcode.react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HOSPITAL } from "@/lib/mockData";
 
 type Props = {
   patientName: string;
   patientId: string;
   visitId: string;
   department: string;
+  hospitalCode?: string;
+  qrValue?: string;
   showActions?: boolean;
 };
 
-export const QRSticker = ({ patientName, patientId, visitId, department, showActions = true }: Props) => {
-  const payload = JSON.stringify({ p: patientId, v: visitId, h: HOSPITAL.code });
+export const QRSticker = ({ patientName, patientId, visitId, department, hospitalCode, qrValue, showActions = true }: Props) => {
+  const payload = qrValue ?? JSON.stringify({ p: patientId, v: visitId, h: hospitalCode ?? "" });
   return (
     <div className="space-y-sm">
       <div className="print-area inline-block border-2 border-foreground rounded-md p-md bg-background w-[280px]">

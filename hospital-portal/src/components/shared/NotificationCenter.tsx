@@ -22,9 +22,11 @@ export const NotificationCenter = () => {
   const unread = useNotifications(s => session ? s.unreadFor(session.role) : 0);
   const markRead = useNotifications(s => s.markRead);
   const markAllRead = useNotifications(s => s.markAllRead);
+  const load = useNotifications(s => s.load);
 
-  // expose for global push (sync flow can call)
-  useEffect(() => {}, []);
+  useEffect(() => {
+    if (session) load();
+  }, [session, load]);
 
   if (!session) return null;
   return (
@@ -42,7 +44,7 @@ export const NotificationCenter = () => {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="px-md py-sm border-b flex items-center justify-between">
           <div className="text-sm font-semibold">Notifications</div>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => markAllRead(session.role)}>
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => markAllRead()}>
             <CheckCheck className="h-3 w-3 mr-1" /> Mark all read
           </Button>
         </div>

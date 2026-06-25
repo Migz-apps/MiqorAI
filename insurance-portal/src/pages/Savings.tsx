@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -10,28 +12,74 @@ import { Badge } from "@/components/ui/badge";
 import { Download, Search, ArrowUpDown, FlaskConical, Microscope, Boxes } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
-  PieChart, Pie, Legend, LineChart, Line,
+  PieChart, Pie, Legend,
 } from "recharts";
 import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { KpiCard } from "@/components/MiqorAI/KpiCard";
-import {
-  HOSPITALS, SAVINGS_TREND, KPI, SAVINGS_RECORDS,
-} from "@/lib/mockData";
+import { insurerApi, insurerKeys, mapSavingsRecord } from "@/lib/api/insurer";
 import { fmtKsh, fmtKshShort, fmtNum } from "@/lib/format";
+import { toast } from "@/lib/notify";
 
-const breakdown = [
-  { name: "Lab tests", value: 798_000, color: "hsl(var(--insurer))" },
-  { name: "Imaging", value: 374_000, color: "hsl(var(--success))" },
-  { name: "Other", value: 75_000, color: "hsl(var(--secondary))" },
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  lab: "hsl(var(--insurer))",
+  imaging: "hsl(var(--success))",
+  other: "hsl(var(--secondary))",
+};
 
 export default function Savings() {
   const [q, setQ] = useState("");
-  const filtered = SAVINGS_RECORDS.filter(r =>
+
+  const { data: savings, isLoading } = useQuery({
+    queryKey: insurerKeys.savings(),
+    queryFn: () => insurerApi.savings(),
+  });
+
+  const { data: recordsRaw } = useQuery({
+    queryKey: insurerKeys.savingsRecords,
+    queryFn: insurerApi.savingsRecords,
+  });
+
+  const records = (recordsRaw ?? []).map(mapSavingsRecord);
+  const filtered = records.filter(r =>
     !q || r.testType.toLowerCase().includes(q.toLowerCase()) ||
     r.patientId.toLowerCase().includes(q.toLowerCase()) ||
     r.firstProvider.toLowerCase().includes(q.toLowerCase())
   );
+
+  const hospitals = savings?.breakdown_by_hospital ?? [];
+  const breakdown = Object.entries(savings?.breakdown_by_test_type ?? {}).map(([name, value], i) => ({
+    name,
+    value,
+    color: Object.values(CATEGORY_COLORS)[i % 3],
+  }));
+  const topTests = Object.entries(savings?.breakdown_by_test_type ?? {})
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  const exportFile = async (format: "csv" | "pdf") => {
+    try {
+      const { download_url } = await insurerApi.exportSavings(format);
+      window.open(download_url, "_blank");
+      toast.success("Export ready", { description: "Your download should start shortly." });
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-lg max-w-[1500px] mx-auto">
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}
+        </div>
+      </div>
+    );
+  }
+
+  const avgPerClaim = savings?.duplicate_tests_prevented
+    ? Math.round((savings.gross_savings ?? 0) / savings.duplicate_tests_prevented)
+    : 0;
 
   return (
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
@@ -40,17 +88,16 @@ export default function Savings() {
         subtitle="Verified duplicate-test savings. Every Franc here is auditable to a claim."
         right={
           <>
-            <Tabs defaultValue="apr">
+            <Tabs defaultValue="month">
               <TabsList className="h-9">
-                <TabsTrigger value="jan">Jan</TabsTrigger>
-                <TabsTrigger value="feb">Feb</TabsTrigger>
-                <TabsTrigger value="mar">Mar</TabsTrigger>
-                <TabsTrigger value="apr">Apr</TabsTrigger>
+                <TabsTrigger value="month">This month</TabsTrigger>
                 <TabsTrigger value="ytd">YTD</TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button size="sm" variant="outline" className="gap-sm"><Download className="h-4 w-4" /> CSV</Button>
-            <Button size="sm" className="gap-sm bg-insurer hover:bg-insurer/90 text-insurer-foreground">
+            <Button size="sm" variant="outline" className="gap-sm" onClick={() => void exportFile("csv")}>
+              <Download className="h-4 w-4" /> CSV
+            </Button>
+            <Button size="sm" className="gap-sm bg-insurer hover:bg-insurer/90 text-insurer-foreground" onClick={() => void exportFile("pdf")}>
               <Download className="h-4 w-4" /> PDF
             </Button>
           </>
@@ -58,10 +105,10 @@ export default function Savings() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
-        <KpiCard icon={FlaskConical} label="Verified savings" value={fmtKshShort(KPI.totalSavings)} delta={KPI.totalSavingsDelta} deltaLabel="vs Mar" accent="success" />
-        <KpiCard icon={Boxes} label="Duplicates blocked" value={fmtNum(KPI.duplicateTests)} delta={18} deltaLabel="vs Mar" accent="insurer" />
-        <KpiCard icon={Microscope} label="Avg savings / claim" value={fmtKsh(97)} delta={4} deltaLabel="vs Mar" accent="primary" />
-        <KpiCard icon={FlaskConical} label="Hospitalizations prevented" value={fmtNum(KPI.hospitalizationsPrevented)} delta={9} deltaLabel="modeled" accent="secondary" />
+        <KpiCard icon={FlaskConical} label="Verified savings" value={fmtKshShort(savings?.gross_savings ?? 0)} accent="success" />
+        <KpiCard icon={Boxes} label="Duplicates blocked" value={fmtNum(savings?.duplicate_tests_prevented ?? 0)} accent="insurer" />
+        <KpiCard icon={Microscope} label="Avg savings / claim" value={fmtKsh(avgPerClaim)} accent="primary" />
+        <KpiCard icon={FlaskConical} label="Net savings" value={fmtKshShort(savings?.net_savings ?? 0)} hint="After MiqorAI fee" accent="secondary" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
@@ -72,17 +119,17 @@ export default function Savings() {
           <CardContent>
             <div className="h-72">
               <ResponsiveContainer>
-                <BarChart data={HOSPITALS} layout="vertical" margin={{ left: 24, right: 24, top: 4, bottom: 0 }}>
+                <BarChart data={hospitals} layout="vertical" margin={{ left: 24, right: 24, top: 4, bottom: 0 }}>
                   <CartesianGrid stroke="hsl(var(--border))" horizontal={false} />
                   <XAxis type="number" stroke="hsl(var(--text-secondary))" fontSize={11} tickFormatter={(v) => `${v / 1000}k`} tickLine={false} axisLine={false} />
                   <YAxis type="category" dataKey="name" stroke="hsl(var(--text-secondary))" fontSize={11} width={140} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12 }}
-                    formatter={(v: any) => [fmtKsh(v as number), "Savings"]}
+                    formatter={(v: number) => [fmtKsh(v), "Savings"]}
                   />
                   <Bar dataKey="savings" radius={[0, 6, 6, 0]}>
-                    {HOSPITALS.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? "hsl(var(--insurer))" : "hsl(var(--insurer))"} fillOpacity={1 - i * 0.1} />
+                    {hospitals.map((_, i) => (
+                      <Cell key={i} fill="hsl(var(--insurer))" fillOpacity={1 - i * 0.1} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -93,7 +140,7 @@ export default function Savings() {
 
         <Card>
           <CardHeader className="pb-sm">
-            <CardTitle className="h3">Breakdown by category</CardTitle>
+            <CardTitle className="h3">Breakdown by test type</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-56">
@@ -102,40 +149,23 @@ export default function Savings() {
                   <Pie data={breakdown} dataKey="value" nameKey="name" innerRadius={48} outerRadius={80} paddingAngle={3}>
                     {breakdown.map((b, i) => <Cell key={i} fill={b.color} />)}
                   </Pie>
-                  <Tooltip formatter={(v: any) => fmtKsh(v as number)} contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))" }} />
+                  <Tooltip formatter={(v: number) => fmtKsh(v)} contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))" }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-md space-y-1 text-xs">
               <div className="text-text-secondary uppercase tracking-wide text-[10px] mb-1">Top tests by savings</div>
-              <div className="flex justify-between"><span>Complete Blood Count</span><span className="num font-medium">{fmtKsh(312_000)}</span></div>
-              <div className="flex justify-between"><span>Chest X-ray</span><span className="num font-medium">{fmtKsh(156_000)}</span></div>
-              <div className="flex justify-between"><span>Lipid Panel</span><span className="num font-medium">{fmtKsh(89_000)}</span></div>
+              {topTests.map(([name, amount]) => (
+                <div key={name} className="flex justify-between">
+                  <span>{name}</span>
+                  <span className="num font-medium">{fmtKsh(amount)}</span>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader className="pb-sm">
-          <CardTitle className="h3">Historical trend</CardTitle>
-          <p className="text-xs text-text-secondary">Quarterly verified savings · Projected 2026: KSh 15.2M (↑ 18% vs 2025)</p>
-        </CardHeader>
-        <CardContent>
-          <div className="h-60">
-            <ResponsiveContainer>
-              <LineChart data={SAVINGS_TREND.map(t => ({ ...t, total: t.duplicates + t.adherence + t.fraud }))} margin={{ left: -8, right: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="month" stroke="hsl(var(--text-secondary))" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="hsl(var(--text-secondary))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}k`} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12 }} formatter={(v: any) => [`KSh ${v}k`, "Savings"]} />
-                <Line type="monotone" dataKey="total" stroke="hsl(var(--insurer))" strokeWidth={2.5} dot={{ r: 3, fill: "hsl(var(--insurer))" }} activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader className="pb-sm flex flex-row items-center justify-between gap-sm">

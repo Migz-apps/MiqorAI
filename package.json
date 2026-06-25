@@ -4,8 +4,12 @@
   "description": "MiqorAI monorepo — run all web frontends together",
   "scripts": {
     "dev": "concurrently -k -n patient,hospital,insurance,pharmacy,admin -c blue,green,yellow,magenta,cyan \"npm run dev --prefix patient-portal-desktop\" \"npm run dev --prefix hospital-portal\" \"npm run dev --prefix insurance-portal\" \"npm run dev --prefix pharmacy-portal\" \"npm run dev --prefix admin-portal\"",
-    "install:all": "npm install --prefix patient-portal-desktop && npm install --prefix hospital-portal && npm install --prefix insurance-portal && npm install --prefix pharmacy-portal && npm install --prefix admin-portal",
-    "build:all": "npm run build --prefix patient-portal-desktop && npm run build --prefix hospital-portal && npm run build --prefix insurance-portal && npm run build --prefix pharmacy-portal && npm run build --prefix admin-portal"
+    "dev:api": "npm run dev --prefix server",
+    "dev:full": "concurrently -k -n api,patient,hospital,insurance,pharmacy,admin -c red,blue,green,yellow,magenta,cyan \"npm run dev --prefix server\" \"npm run dev --prefix patient-portal-desktop\" \"npm run dev --prefix hospital-portal\" \"npm run dev --prefix insurance-portal\" \"npm run dev --prefix pharmacy-portal\" \"npm run dev --prefix admin-portal\"",
+    "install:all": "npm install --prefix server && npm install --prefix patient-portal-desktop && npm install --prefix hospital-portal && npm install --prefix insurance-portal && npm install --prefix pharmacy-portal && npm install --prefix admin-portal",
+    "build:all": "npm run build --prefix server && npm run build --prefix patient-portal-desktop && npm run build --prefix hospital-portal && npm run build --prefix insurance-portal && npm run build --prefix pharmacy-portal && npm run build --prefix admin-portal",
+    "test:api": "npm run db:seed --prefix server && npm test --prefix server",
+    "verify": "npm run test:api && npm run build:all"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

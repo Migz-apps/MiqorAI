@@ -75,6 +75,7 @@ export type Patient = {
 
 export type StaffMember = {
   id: string;
+  userId?: string;
   name: string;
   role: Role;
   email: string;
@@ -94,6 +95,7 @@ export type SyncItem = {
 export type WaitlistEntry = {
   id: string;
   patientId: string;
+  patientName?: string;
   checkInTime: string; // HH:MM
   checkInTimestamp: number;
   department: Department;

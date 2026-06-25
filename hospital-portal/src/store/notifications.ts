@@ -1,25 +1,44 @@
 import { create } from "zustand";
 import type { Notification, Role } from "@/lib/types";
-import { NOTIFICATIONS } from "@/lib/mockData";
+import { hospitalApi } from "@/lib/api/hospital";
+import { mapNotification } from "@/lib/mappers";
 
 type NotifState = {
   items: Notification[];
+  loading: boolean;
+  load: () => Promise<void>;
   unreadFor: (role: Role) => number;
   forRole: (role: Role) => Notification[];
-  markRead: (id: string) => void;
-  markAllRead: (role: Role) => void;
+  markRead: (id: string) => Promise<void>;
+  markAllRead: (role: Role) => Promise<void>;
   push: (n: Omit<Notification, "id" | "createdAt" | "read">) => void;
 };
 
 export const useNotifications = create<NotifState>((set, get) => ({
-  items: NOTIFICATIONS,
+  items: [],
+  loading: false,
+  load: async () => {
+    set({ loading: true });
+    try {
+      const rows = await hospitalApi.notifications();
+      set({ items: (rows as Record<string, unknown>[]).map(mapNotification) });
+    } catch {
+      set({ items: [] });
+    } finally {
+      set({ loading: false });
+    }
+  },
   forRole: (role) => get().items.filter(n => n.audience.includes(role)),
   unreadFor: (role) => get().items.filter(n => n.audience.includes(role) && !n.read).length,
-  markRead: (id) => set({ items: get().items.map(n => n.id === id ? { ...n, read: true } : n) }),
-  markAllRead: (role) => set({
-    items: get().items.map(n => n.audience.includes(role) ? { ...n, read: true } : n),
-  }),
+  markRead: async (id) => {
+    await hospitalApi.markNotificationRead(id).catch(() => undefined);
+    set({ items: get().items.map(n => n.id === id ? { ...n, read: true } : n) });
+  },
+  markAllRead: async (_role) => {
+    await hospitalApi.markAllNotificationsRead().catch(() => undefined);
+    set({ items: get().items.map(n => ({ ...n, read: true })) });
+  },
   push: (n) => set({
-    items: [{ ...n, id: `N${Date.now()}`, createdAt: new Date().toISOString().slice(0,16).replace("T"," "), read: false }, ...get().items],
+    items: [{ ...n, id: `N${Date.now()}`, createdAt: new Date().toISOString().slice(0, 16).replace("T", " "), read: false }, ...get().items],
   }),
 }));

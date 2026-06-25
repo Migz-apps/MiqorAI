@@ -1,23 +1,43 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Download } from "lucide-react";
-import { AUDIT_LOG } from "@/lib/mockData";
+import { hospitalApi } from "@/lib/api/hospital";
+import { mapAuditEntry } from "@/lib/mappers";
 import { toast } from "@/lib/notify";
 
 export default function AuditLog() {
   const [q, setQ] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["audit-logs"],
+    queryFn: async () => {
+      const res = await hospitalApi.auditLogs({ limit: "100" }) as { items?: Record<string, unknown>[] };
+      return (res.items ?? []).map(row => mapAuditEntry(row));
+    },
+  });
+
   const filtered = useMemo(() => {
     const term = q.toLowerCase();
-    return AUDIT_LOG.filter(e =>
+    return (data ?? []).filter(e =>
       !term ||
       e.staffName.toLowerCase().includes(term) ||
       (e.patientId || "").toLowerCase().includes(term) ||
       e.action.toLowerCase().includes(term)
     );
-  }, [q]);
+  }, [data, q]);
+
+  const exportCsv = async () => {
+    try {
+      const res = await hospitalApi.exportAudit();
+      toast.success(`Export ready: ${(res as { download_url?: string }).download_url ?? "audit-log.csv"}`);
+    } catch {
+      toast.error("Export failed");
+    }
+  };
 
   return (
     <div className="space-y-lg max-w-[1200px] mx-auto">
@@ -26,10 +46,12 @@ export default function AuditLog() {
           <h1 className="h1 flex items-center gap-sm"><ShieldCheck className="h-6 w-6 text-primary" /> Audit log</h1>
           <p className="body text-text-secondary">Compliance trail for POPIA / GDPR — every patient access is recorded.</p>
         </div>
-        <Button variant="outline" onClick={() => toast.success("audit-log.csv exported")}>
+        <Button variant="outline" onClick={exportCsv}>
           <Download className="h-4 w-4 mr-1" /> Export CSV
         </Button>
       </div>
+
+      {isLoading && <div className="text-sm text-text-secondary">Loading audit log…</div>}
 
       <Card>
         <CardHeader className="pb-sm">
@@ -51,13 +73,13 @@ export default function AuditLog() {
                 <div className="md:col-span-2 font-medium">{e.staffName}</div>
                 <div className="md:col-span-3">{e.action}</div>
                 <div className="md:col-span-2">
-                  {e.patientId ? <Badge variant="outline" className="font-mono">{e.patientId}</Badge> : <span className="text-text-secondary">—</span>}
+                  {e.patientId ? <Badge variant="outline" className="font-mono">{e.patientId.slice(0, 8)}…</Badge> : <span className="text-text-secondary">—</span>}
                 </div>
                 <div className="md:col-span-1 text-text-secondary font-mono">{e.ipAddress}</div>
                 <div className="md:col-span-1 text-text-secondary truncate">{e.reason}</div>
               </div>
             ))}
-            {filtered.length === 0 && <div className="p-lg text-center text-sm text-text-secondary">No records match.</div>}
+            {!isLoading && filtered.length === 0 && <div className="p-lg text-center text-sm text-text-secondary">No records match.</div>}
           </div>
         </CardContent>
       </Card>

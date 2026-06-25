@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -11,19 +13,34 @@ import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { KpiCard } from "@/components/MiqorAI/KpiCard";
 import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
 import { StatusPill } from "@/components/MiqorAI/StatusPill";
-import { FLAGGED_CLAIMS, PROVIDERS } from "@/lib/mockData";
+import { insurerApi, insurerKeys, mapFlaggedClaim, mapProvider } from "@/lib/api/insurer";
 import { fmtKsh, fmtNum } from "@/lib/format";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/lib/notify";
 
 export default function Fraud() {
   const [selected, setSelected] = useState<string[]>([]);
   const [q, setQ] = useState("");
-  const totalFlagged = FLAGGED_CLAIMS.length;
-  const high = FLAGGED_CLAIMS.filter(c => c.score >= 90).length;
-  const med  = FLAGGED_CLAIMS.filter(c => c.score >= 70 && c.score < 90).length;
-  const low  = 2_834;
 
-  const filtered = FLAGGED_CLAIMS.filter(c =>
+  const { data: fraud, isLoading: fraudLoading } = useQuery({
+    queryKey: insurerKeys.fraud(7),
+    queryFn: () => insurerApi.fraud(7),
+  });
+
+  const { data: providersRaw, isLoading: provLoading } = useQuery({
+    queryKey: insurerKeys.providers,
+    queryFn: insurerApi.providers,
+  });
+
+  const flaggedClaims = (fraud?.flagged_claims ?? []).map(mapFlaggedClaim);
+  const providers = (providersRaw ?? []).map(mapProvider);
+  const high = fraud?.high_risk ?? 0;
+  const med = fraud?.medium_risk ?? 0;
+  const low = fraud?.low_risk ?? 0;
+  const totalFlagged = flaggedClaims.length;
+  const totalClaims = high + med + low;
+
+  const filtered = flaggedClaims.filter(c =>
     !q ||
     c.id.toLowerCase().includes(q.toLowerCase()) ||
     c.patientName.toLowerCase().includes(q.toLowerCase()) ||
@@ -36,19 +53,44 @@ export default function Fraud() {
                                   : s >= 70 ? { label: "Medium", cls: "bg-secondary/15 text-secondary border-secondary/30" }
                                   :           { label: "Low",    cls: "bg-info/10 text-info border-info/30" };
 
+  const exportData = async () => {
+    try {
+      const { download_url } = await insurerApi.exportFraud();
+      window.open(download_url, "_blank");
+      toast.success("Export ready");
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
+  if (fraudLoading || provLoading) {
+    return (
+      <div className="space-y-lg max-w-[1500px] mx-auto">
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
       <PageHeader
         title="Fraud detection"
         subtitle="Anomaly-scored claims requiring investigation. Last 7 days."
-        right={<Button size="sm" variant="outline" className="gap-sm"><Download className="h-4 w-4" /> Export</Button>}
+        right={
+          <Button size="sm" variant="outline" className="gap-sm" onClick={() => void exportData()}>
+            <Download className="h-4 w-4" /> Export
+          </Button>
+        }
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
-        <KpiCard icon={ShieldAlert} label="High risk (>90)"   value={fmtNum(high)}     accent="error"     hint="Action required" />
-        <KpiCard icon={FileSearch}  label="Medium risk (70-90)" value={fmtNum(med)}    accent="secondary" hint="Review" />
-        <KpiCard icon={FlaskConical} label="Low risk (<70)"   value={fmtNum(low)}      accent="primary"   hint="Monitored" />
-        <KpiCard icon={Building}    label="Total flagged"     value={`${totalFlagged} / ${fmtNum(2_940)}`} accent="insurer"  hint={`${((totalFlagged/2940)*100).toFixed(1)}% of claims`} />
+        <KpiCard icon={ShieldAlert} label="High risk (>90)" value={fmtNum(high)} accent="error" hint="Action required" />
+        <KpiCard icon={FileSearch} label="Medium risk (70-90)" value={fmtNum(med)} accent="secondary" hint="Review" />
+        <KpiCard icon={FlaskConical} label="Low risk (<70)" value={fmtNum(low)} accent="primary" hint="Monitored" />
+        <KpiCard icon={Building} label="Total flagged" value={`${totalFlagged} / ${fmtNum(totalClaims)}`} accent="insurer" hint={totalClaims ? `${((totalFlagged / totalClaims) * 100).toFixed(1)}% of claims` : undefined} />
       </div>
 
       <Card>
@@ -57,9 +99,9 @@ export default function Fraud() {
         </CardHeader>
         <CardContent className="space-y-md">
           {[
-            { band: "High Risk (Score > 90)",       count: high, color: "bg-error",     pct: 12 / 2940 * 100 },
-            { band: "Medium Risk (70-90)",          count: med,  color: "bg-secondary", pct: 47 / 2940 * 100 },
-            { band: "Low Risk (< 70)",              count: low,  color: "bg-info",      pct: 100 },
+            { band: "High Risk (Score > 90)", count: high, color: "bg-error", pct: totalClaims ? (high / totalClaims) * 100 : 0 },
+            { band: "Medium Risk (70-90)", count: med, color: "bg-secondary", pct: totalClaims ? (med / totalClaims) * 100 : 0 },
+            { band: "Low Risk (< 70)", count: low, color: "bg-info", pct: totalClaims ? (low / totalClaims) * 100 : 0 },
           ].map(b => (
             <div key={b.band}>
               <div className="flex items-center justify-between text-xs mb-1.5">
@@ -108,7 +150,11 @@ export default function Fraud() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(c => {
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-sm text-text-secondary py-8">No flagged claims in the last 7 days.</TableCell>
+                </TableRow>
+              ) : filtered.map(c => {
                 const sb = scoreBand(c.score);
                 return (
                   <TableRow key={c.id} className="cursor-pointer">
@@ -152,7 +198,7 @@ export default function Fraud() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {PROVIDERS.map(p => {
+              {providers.map(p => {
                 const sb = scoreBand(p.anomalyScore);
                 return (
                   <TableRow key={p.name}>

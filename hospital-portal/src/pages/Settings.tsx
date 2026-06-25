@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/store/auth";
-import { HOSPITAL } from "@/lib/mockData";
+import { hospitalApi } from "@/lib/api/hospital";
 import { Shield, Bell, Building2, KeyRound, LogOut } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +23,14 @@ export default function Settings() {
   const [notifSync, setNotifSync] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [twoFA, setTwoFA] = useState(false);
+
+  const { data: hospitalSettings } = useQuery({
+    queryKey: ["hospital", "settings"],
+    queryFn: () => hospitalApi.settings(),
+  });
+
+  const hospitalName = String(hospitalSettings?.name ?? session.hospitalName);
+  const hospitalCity = String(hospitalSettings?.city ?? hospitalSettings?.location ?? "—");
 
   return (
     <div className="space-y-lg max-w-[900px] mx-auto">
@@ -65,7 +74,7 @@ export default function Settings() {
           </Row>
           <Separator />
           <Row label="Active session" desc={`Signed in ${new Date(session.loggedInAt).toLocaleString()} · auto sign-out after 8h`}>
-            <Button variant="outline" size="sm" onClick={() => { logout(); nav("/login"); }}><LogOut className="h-4 w-4 mr-1" /> Sign out</Button>
+            <Button variant="outline" size="sm" onClick={async () => { await logout(); nav("/login"); }}><LogOut className="h-4 w-4 mr-1" /> Sign out</Button>
           </Row>
           <Separator />
           <Row label="Change password" desc="You'll be sent a confirmation email.">
@@ -98,9 +107,9 @@ export default function Settings() {
           <CardTitle className="h3 flex items-center gap-sm"><Building2 className="h-4 w-4 text-primary" /> Hospital</CardTitle>
         </CardHeader>
         <CardContent className="space-y-sm text-sm">
-          <Row label="Hospital" desc={HOSPITAL.name}><Badge variant="outline" className="font-mono">{session.hospitalCode}</Badge></Row>
+          <Row label="Hospital" desc={hospitalName}><Badge variant="outline" className="font-mono">{session.hospitalCode}</Badge></Row>
           <Separator />
-          <Row label="Location" desc={HOSPITAL.city}><span className="text-xs text-text-secondary">Read-only</span></Row>
+          <Row label="Location" desc={hospitalCity}><span className="text-xs text-text-secondary">Read-only</span></Row>
         </CardContent>
       </Card>
     </div>

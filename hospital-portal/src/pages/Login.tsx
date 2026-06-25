@@ -15,15 +15,15 @@ export default function Login() {
   const nav = useNavigate();
   const [code, setCode] = useState("MP-LAGOS-001");
   const [email, setEmail] = useState("amara@stcatherine.med");
-  const [password, setPassword] = useState("MiqorAI");
+  const [password, setPassword] = useState("MiqorAI123!");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (session) return <Navigate to="/dashboard" replace />;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = login(code.trim(), email.trim(), password);
+    const res = await login(code.trim(), email.trim(), password);
     if (!res.ok) setError(res.error || MESSAGES.auth.invalidCredentials);
     else nav("/dashboard");
   };
@@ -78,7 +78,7 @@ export default function Login() {
       </div>
 
       <div className="mt-lg p-sm rounded-md bg-primary-light/40 border border-primary/10 text-[11px] text-primary leading-relaxed">
-        <strong>Demo:</strong> any active staff email + password <code className="font-mono">MiqorAI</code>. Try <code>adaeze@stcatherine.med</code> (receptionist), <code>joseph@stcatherine.med</code> (nurse), <code>amara@stcatherine.med</code> (doctor), <code>tunde@stcatherine.med</code> (admin).
+        <strong>Demo:</strong> password <code className="font-mono">MiqorAI123!</code>. Try <code>adaeze@stcatherine.med</code> (receptionist), <code>joseph@stcatherine.med</code> (nurse), <code>amara@stcatherine.med</code> (doctor), <code>tunde@stcatherine.med</code> (admin).
       </div>
     </AuthShell>
   );

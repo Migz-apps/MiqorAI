@@ -37,19 +37,19 @@ export default function LoginPage() {
     return <Navigate to="/portal" replace />;
   }
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     if (mode === "login") {
       if (!email.includes("@")) return setFormError(MESSAGES.form.invalidEmail);
       if (!password) return setFormError(MESSAGES.form.passwordRequired);
-      if (login(email, password)) {
+      if (await login(email, password)) {
         toast(MESSAGES.auth.welcomeBack);
         navigate("/portal");
       } else setFormError(MESSAGES.auth.invalidCredentials);
     } else {
       if (!name || !email || !password) return setFormError(MESSAGES.form.required);
-      if (signup({ name, email, phone, password })) {
+      if (await signup({ name, email, phone, password })) {
         toast(MESSAGES.auth.accountCreated);
         navigate("/portal");
       } else setFormError(MESSAGES.auth.signUpFailed);
@@ -91,8 +91,8 @@ export default function LoginPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    logout();
+                  onClick={async () => {
+                    await logout();
                     toast(MESSAGES.auth.signedOut, "success");
                   }}
                   className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted"

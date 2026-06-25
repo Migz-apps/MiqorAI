@@ -24,7 +24,6 @@ function getTrack(r: Role) { return ROLE_TRACK[r]; }
 export const TopBar = () => {
   const session = useAuth(s => s.session);
   const logout = useAuth(s => s.logout);
-  const switchRole = useAuth(s => s.switchRole);
   const { online, queue } = useSync();
   const nav = useNavigate();
   if (!session) return null;
@@ -76,15 +75,11 @@ export const TopBar = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Switch role (demo)</DropdownMenuLabel>
-            {(["receptionist","nurse","doctor","dept_head","admin"] as Role[]).map(r => (
-              <DropdownMenuItem key={r} onClick={() => switchRole(r)}>
-                {ROLE_LABEL[r]} {session.role === r && "✓"}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuLabel>{session.name}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-text-secondary font-normal">{ROLE_LABEL[session.role]}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => nav("/settings")}>Settings</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { logout(); nav("/login"); }} className="text-error focus:text-error">
+            <DropdownMenuItem onClick={async () => { await logout(); nav("/login"); }} className="text-error focus:text-error">
               <LogOut className="h-4 w-4 mr-2" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

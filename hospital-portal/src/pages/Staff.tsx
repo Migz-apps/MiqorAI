@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,11 +11,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { STAFF, DEPARTMENTS } from "@/lib/mockData";
+import { hospitalApi } from "@/lib/api/hospital";
+import { mapDepartment, mapStaffMember } from "@/lib/mappers";
 import { Plus, Mail, KeyRound, Power } from "lucide-react";
 import type { Role } from "@/lib/types";
 import { ROLE_LABEL } from "@/store/auth";
-import { useState } from "react";
 import { toast } from "@/lib/notify";
 
 const roleColor: Record<Role, string> = {
@@ -25,24 +27,42 @@ const roleColor: Record<Role, string> = {
 };
 
 export default function Staff() {
-  const [staff, setStaff] = useState(STAFF);
+  const qc = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inv, setInv] = useState({ email: "", role: "nurse" as Role, department: "General" });
 
-  const sendInvite = () => {
-    if (!inv.email.trim()) { toast.error("Email required"); return; }
-    toast.success(`Invite sent to ${inv.email}`);
-    setStaff([...staff, {
-      id: `S${Date.now()}`, name: inv.email.split("@")[0], role: inv.role,
-      email: inv.email, department: inv.department as any, active: false,
-      lastLogin: "—",
-    }]);
-    setInviteOpen(false);
-    setInv({ email: "", role: "nurse", department: "General" });
-  };
+  const { data: staff = [], isLoading } = useQuery({
+    queryKey: ["staff"],
+    queryFn: async () => {
+      const rows = await hospitalApi.staff() as Record<string, unknown>[];
+      return rows.map(mapStaffMember);
+    },
+  });
 
-  const toggleActive = (id: string) =>
-    setStaff(staff.map(s => s.id === id ? { ...s, active: !s.active } : s));
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const rows = await hospitalApi.departments() as Record<string, unknown>[];
+      return rows.map(mapDepartment);
+    },
+  });
+
+  const sendInvite = async () => {
+    if (!inv.email.trim()) { toast.error("Email required"); return; }
+    try {
+      await hospitalApi.staffInvite({
+        email: inv.email.trim(),
+        role: inv.role,
+        department: inv.department,
+      });
+      toast.success(`Invite sent to ${inv.email}`);
+      qc.invalidateQueries({ queryKey: ["staff"] });
+      setInviteOpen(false);
+      setInv({ email: "", role: "nurse", department: "General" });
+    } catch {
+      toast.error("Failed to send invite");
+    }
+  };
 
   return (
     <div className="space-y-lg max-w-[1200px] mx-auto">
@@ -59,6 +79,7 @@ export default function Staff() {
       <Card>
         <CardHeader className="pb-sm"><CardTitle className="h3">{staff.length} accounts</CardTitle></CardHeader>
         <CardContent className="p-0">
+          {isLoading && <div className="p-lg text-center text-sm text-text-secondary">Loading…</div>}
           <div className="hidden md:grid grid-cols-12 px-md py-sm bg-background-grey text-xs font-medium text-text-secondary border-b">
             <div className="col-span-3">Name</div>
             <div className="col-span-3">Email</div>
@@ -96,7 +117,7 @@ export default function Staff() {
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Reset password" onClick={() => toast.success("Reset link sent")}>
                     <KeyRound className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Toggle active" onClick={() => toggleActive(s.id)}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Toggle active" onClick={() => toast.info("Contact admin to change status")}>
                     <Power className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -133,7 +154,7 @@ export default function Staff() {
                 <Select value={inv.department} onValueChange={v => setInv({ ...inv, department: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {DEPARTMENTS.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                    {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

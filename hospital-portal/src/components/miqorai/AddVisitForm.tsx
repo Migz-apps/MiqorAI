@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Save, CheckCircle2, Plus, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ICD11_CODES } from "@/lib/mockData";
+import { referenceApi } from "@/lib/api/hospital";
+import { mapIcd } from "@/lib/mappers";
 import type { Patient } from "@/lib/types";
 import { useSync } from "@/store/sync";
 import { toast } from "@/lib/notify";
@@ -26,7 +28,16 @@ export const AddVisitForm = ({ patient }: { patient: Patient }) => {
   const [labInput, setLabInput] = useState("");
   const [notes, setNotes] = useState("");
 
-  const diagMatches = ICD11_CODES.filter(c => `${c.code} ${c.label}`.toLowerCase().includes(diagSearch.toLowerCase())).slice(0,5);
+  const { data: icdMatches = [] } = useQuery({
+    queryKey: ["icd", diagSearch],
+    queryFn: async () => {
+      const rows = await referenceApi.icd(diagSearch || undefined) as Record<string, unknown>[];
+      return rows.map(mapIcd);
+    },
+    enabled: diagSearch.length > 0,
+  });
+
+  const diagMatches = icdMatches.slice(0, 5);
 
   const saveDraft = () => {
     localStorage.setItem(`draft-visit-${patient.id}`, JSON.stringify({ chief, duration, severity, bp, hr, temp, spo2, diagnoses, labs, notes }));
@@ -41,7 +52,6 @@ export const AddVisitForm = ({ patient }: { patient: Patient }) => {
 
   return (
     <div className="space-y-lg">
-      {/* Section 1: Chief Complaint */}
       <section className="space-y-sm p-md rounded-md border bg-card">
         <h3 className="h3">1. Chief complaint</h3>
         <Textarea placeholder="What is the patient here for?" value={chief} onChange={e => setChief(e.target.value)} rows={3} />
@@ -67,7 +77,6 @@ export const AddVisitForm = ({ patient }: { patient: Patient }) => {
         </div>
       </section>
 
-      {/* Section 2: Vitals */}
       {can(session.role, "recordVitals") && (
         <section className="space-y-sm p-md rounded-md border bg-card">
           <h3 className="h3">2. Vitals</h3>
@@ -80,7 +89,6 @@ export const AddVisitForm = ({ patient }: { patient: Patient }) => {
         </section>
       )}
 
-      {/* Section 3: Diagnosis */}
       {can(session.role, "addDiagnosis") && (
         <section className="space-y-sm p-md rounded-md border bg-card">
           <h3 className="h3">3. Diagnosis (ICD-11)</h3>
@@ -108,7 +116,6 @@ export const AddVisitForm = ({ patient }: { patient: Patient }) => {
         </section>
       )}
 
-      {/* Section 4: Prescriptions */}
       {can(session.role, "prescribe") && (
         <section className="space-y-sm">
           <h3 className="h3">4. Prescriptions</h3>
@@ -116,7 +123,6 @@ export const AddVisitForm = ({ patient }: { patient: Patient }) => {
         </section>
       )}
 
-      {/* Section 5: Lab orders */}
       {can(session.role, "orderLabs") && (
         <section className="space-y-sm p-md rounded-md border bg-card">
           <h3 className="h3">5. Lab orders</h3>
@@ -134,7 +140,6 @@ export const AddVisitForm = ({ patient }: { patient: Patient }) => {
         </section>
       )}
 
-      {/* Section 6: Notes */}
       <section className="space-y-sm p-md rounded-md border bg-card">
         <h3 className="h3">6. Notes</h3>
         <Textarea placeholder="Clinical notes, observations, follow-up plan…" value={notes} onChange={e => setNotes(e.target.value)} rows={4} />

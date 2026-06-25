@@ -1,21 +1,66 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Download, MessageSquare, CheckCircle2, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
 import { StatusPill } from "@/components/MiqorAI/StatusPill";
-import { INVOICES } from "@/lib/mockData";
+import { insurerApi, insurerKeys, mapInvoice } from "@/lib/api/insurer";
 import { fmtKsh } from "@/lib/format";
+import { toast } from "@/lib/notify";
 
-const USAGE = [
-  { label: "API calls", used: 187_843, allow: 1_000_000, unit: "calls", color: "bg-insurer" },
-  { label: "Members covered", used: 247_000, allow: 250_000, unit: "members", color: "bg-secondary" },
-  { label: "Storage", used: 2.4, allow: 50, unit: "GB", color: "bg-success" },
-];
+function dateStr(d: string | Date): string {
+  return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
+}
 
 export default function Contract() {
+  const { data: contract, isLoading: contractLoading } = useQuery({
+    queryKey: insurerKeys.contract,
+    queryFn: insurerApi.contract,
+  });
+
+  const { data: invoicesRaw, isLoading: invLoading } = useQuery({
+    queryKey: insurerKeys.invoices,
+    queryFn: insurerApi.invoices,
+  });
+
+  const { data: usage, isLoading: usageLoading } = useQuery({
+    queryKey: insurerKeys.contractUsage,
+    queryFn: insurerApi.contractUsage,
+  });
+
+  const invoices = (invoicesRaw ?? []).map(mapInvoice);
+  const isLoading = contractLoading || invLoading || usageLoading;
+
+  const downloadPdf = async () => {
+    try {
+      const { download_url } = await insurerApi.contractPdf();
+      window.open(download_url, "_blank");
+    } catch {
+      toast.error("Could not download contract PDF");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-lg max-w-[1500px] mx-auto">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  const usageItems = [
+    { label: "API calls", used: usage?.api_calls_30d ?? 0, allow: usage?.api_call_limit ?? 1, unit: "calls", color: "bg-insurer" },
+    { label: "Members covered", used: usage?.members_enrolled ?? 0, allow: usage?.member_allowance ?? 1, unit: "members", color: "bg-secondary" },
+    { label: "Storage", used: usage?.storage_used_mb ?? 0, allow: usage?.storage_limit_mb ?? 1, unit: "MB", color: "bg-success" },
+  ];
+
+  const statusActive = contract?.status === "active";
+
   return (
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
       <PageHeader title="Contract management" subtitle="Your active MiqorAI partnership, billing history, and usage." />
@@ -26,18 +71,20 @@ export default function Contract() {
             <CardTitle className="h3 flex items-center gap-sm">
               <FileText className="h-4 w-4 text-insurer" /> Active contract
             </CardTitle>
-            <p className="text-xs text-text-secondary">Contract # MPC-JUB-2024-001 · Renews automatically</p>
+            <p className="text-xs text-text-secondary">
+              {contract?.contract_id ? `Contract # ${contract.contract_id.slice(0, 12).toUpperCase()}` : "Default partnership"} · Renews automatically
+            </p>
           </div>
-          <Badge variant="outline" className="bg-success/10 text-success border-success/30 gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Active
+          <Badge variant="outline" className={statusActive ? "bg-success/10 text-success border-success/30 gap-1" : "bg-secondary/15 text-secondary border-secondary/30 gap-1"}>
+            <CheckCircle2 className="h-3 w-3" /> {contract?.status ?? "active"}
           </Badge>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-md">
           {[
-            { k: "Start date", v: "2024-01-01" },
-            { k: "End date", v: "2026-12-31" },
-            { k: "MiqorAI fee", v: "20% of verified savings" },
-            { k: "Annual savings guarantee", v: "KSh 5,000,000" },
+            { k: "Start date", v: contract?.start_date ? dateStr(contract.start_date) : "—" },
+            { k: "End date", v: contract?.end_date ? dateStr(contract.end_date) : "—" },
+            { k: "MiqorAI fee", v: `${contract?.fee_percentage ?? usage?.fee_percentage ?? 20}% of verified savings` },
+            { k: "Status", v: contract?.status ?? "active" },
             { k: "Data access", v: "Anonymized population health" },
             { k: "Support", v: "24/7 email + phone" },
           ].map(t => (
@@ -48,7 +95,9 @@ export default function Contract() {
           ))}
         </CardContent>
         <div className="px-md pb-md flex flex-wrap gap-sm">
-          <Button size="sm" variant="outline" className="gap-sm"><Download className="h-3.5 w-3.5" /> Download PDF</Button>
+          <Button size="sm" variant="outline" className="gap-sm" onClick={() => void downloadPdf()}>
+            <Download className="h-3.5 w-3.5" /> Download PDF
+          </Button>
           <Button size="sm" variant="outline">Request amendment</Button>
           <Button size="sm" variant="outline" className="gap-sm"><MessageSquare className="h-3.5 w-3.5" /> Contact MiqorAI</Button>
         </div>
@@ -73,7 +122,11 @@ export default function Contract() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {INVOICES.map(inv => (
+                {invoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-sm text-text-secondary py-8">No invoices yet.</TableCell>
+                  </TableRow>
+                ) : invoices.map(inv => (
                   <TableRow key={inv.id}>
                     <TableCell className="font-mono text-xs font-medium">{inv.id}</TableCell>
                     <TableCell className="text-sm">{inv.period}</TableCell>
@@ -99,7 +152,7 @@ export default function Contract() {
             <CardTitle className="h3">Usage vs allowance</CardTitle>
           </CardHeader>
           <CardContent className="space-y-md">
-            {USAGE.map(u => {
+            {usageItems.map(u => {
               const pct = (u.used / u.allow) * 100;
               const warn = pct > 90;
               return (

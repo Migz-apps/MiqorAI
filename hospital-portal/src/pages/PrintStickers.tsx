@@ -1,17 +1,23 @@
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { QRSticker } from "@/components/shared/QRSticker";
 import { useWaitlist } from "@/store/waitlist";
-import { PATIENTS } from "@/lib/mockData";
 
 export default function PrintStickers() {
-  const entries = useWaitlist(s => s.entries);
+  const entries = useWaitlist((s) => s.entries);
+  const refresh = useWaitlist((s) => s.refresh);
   const [params] = useSearchParams();
   const focus = params.get("visit");
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
   const ordered = focus
-    ? [...entries.filter(e => e.id === focus), ...entries.filter(e => e.id !== focus)]
+    ? [...entries.filter((e) => e.id === focus), ...entries.filter((e) => e.id !== focus)]
     : entries;
 
   return (
@@ -31,19 +37,18 @@ export default function PrintStickers() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-lg">
-        {ordered.map(e => {
-          const p = PATIENTS.find(x => x.id === e.patientId);
-          if (!p) return null;
+        {ordered.map((e) => {
+          const name = e.patientName ?? e.patientId;
           return (
             <Card key={e.id} className={`${focus === e.id ? "ring-2 ring-primary" : ""}`}>
               <CardHeader className="pb-sm no-print">
-                <CardTitle className="h3 text-base">{p.name}</CardTitle>
+                <CardTitle className="h3 text-base">{name}</CardTitle>
                 <div className="text-xs text-text-secondary">{e.checkInTime} · {e.department}</div>
               </CardHeader>
               <CardContent>
                 <QRSticker
-                  patientName={p.name}
-                  patientId={p.id}
+                  patientName={name}
+                  patientId={e.patientId}
                   visitId={`MP-${new Date().getFullYear()}-${e.id}`}
                   department={e.department}
                 />

@@ -1,23 +1,25 @@
 import { useNavigate, Link } from "react-router-dom";
-
-type Tab = "home" | "records" | "share" | "family" | "profile";
-
-import { useEffect, useMemo, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { useEffect, useState } from "react";
 import {
   FiHome, FiFileText, FiShare2, FiUsers, FiUser, FiLogOut, FiMenu,
-  FiMaximize2, FiPlus, FiTrash2, FiEdit2, FiAlertTriangle, FiCalendar,
-  FiActivity, FiDownload, FiEye, FiX, FiChevronRight, FiCheck, FiClock, FiShield,
+  FiMaximize2, FiPlus, FiTrash2, FiAlertTriangle, FiCalendar,
+  FiActivity, FiDownload, FiEye, FiX, FiChevronRight, FiClock, FiShield,
 } from "react-icons/fi";
 import { useAuth } from "@/lib/auth";
-import {
-  mockUser, mockConditions, mockMedications, mockAllergies, mockLabResults,
-  mockImmunizations, mockProcedures, mockAppointments, mockActivity, mockGrants,
-  mockAccessLog, mockFamily, mockEmergencyContacts, mockRecovery,
-} from "@/lib/mockData";
+import { patientApi, type AccessGrant, type AccessLogItem, type FamilyMember, type MedicalRecord, type PatientDashboard, type PatientSettings, type EmergencyContact } from "@/lib/api/patient";
 import { Modal } from "@/components/Modal";
 import { useToast } from "@/components/Toast";
 import { MESSAGES } from "@/lib/user-messages";
+
+type Tab = "home" | "records" | "share" | "family" | "profile";
+
+function formatRelative(iso: string) {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 export default function PortalPage() {
   const { isLoggedIn, user, logout, authReady } = useAuth();
@@ -48,9 +50,13 @@ export default function PortalPage() {
     { id: "profile" as const, label: "Profile", icon: FiUser },
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
   return (
     <div className="min-h-screen flex bg-muted/30">
-      {/* Sidebar */}
       <aside className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform`}>
         <div className="flex items-center justify-between px-5 py-5 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
@@ -64,24 +70,19 @@ export default function PortalPage() {
             <button
               key={n.id}
               onClick={() => { setTab(n.id); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${tab === n.id ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"
-                }`}
+              className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${tab === n.id ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"}`}
             >
               <n.icon size={18} /> {n.label}
             </button>
           ))}
         </nav>
         <div className="p-3 border-t border-border">
-          <button
-            onClick={() => { logout(); navigate("/"); }}
-            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-destructive/10 text-destructive"
-          >
+          <button onClick={() => void handleLogout()} className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-destructive/10 text-destructive">
             <FiLogOut size={18} /> Log out
           </button>
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 min-w-0">
         <header className="sticky top-0 z-30 flex items-center justify-between bg-card border-b border-border px-4 lg:px-8 py-4">
           <div className="flex items-center gap-3">
@@ -93,10 +94,7 @@ export default function PortalPage() {
               </div>
             </div>
             {activeProfile && (
-              <button
-                onClick={() => setActiveProfile(null)}
-                className="ml-3 rounded-full bg-accent px-3 py-1 text-xs text-accent-foreground hover:bg-accent/80"
-              >
+              <button onClick={() => setActiveProfile(null)} className="ml-3 rounded-full bg-accent px-3 py-1 text-xs text-accent-foreground hover:bg-accent/80">
                 Switch back to my profile
               </button>
             )}
@@ -124,17 +122,19 @@ export default function PortalPage() {
   );
 }
 
-/* ============= HOME ============= */
 function HomeTab({ user }: { user: { id: string; name: string } }) {
-  const [tick, setTick] = useState(0);
+  const [dash, setDash] = useState<PatientDashboard | null>(null);
+  const [qr, setQr] = useState<string | null>(null);
   const [enlarge, setEnlarge] = useState(false);
 
   useEffect(() => {
-    const t = setInterval(() => setTick((x) => x + 1), 60_000);
-    return () => clearInterval(t);
+    Promise.all([patientApi.dashboard(), patientApi.qrCode()])
+      .then(([d, q]) => { setDash(d); setQr(q.qr_code); })
+      .catch(() => undefined);
   }, []);
 
-  const qrValue = useMemo(() => `MiqorAI:${user.id}:${Math.floor(Date.now() / 60000)}:${tick}`, [user.id, tick]);
+  const stats = dash?.quick_stats;
+  const insight = dash?.health_insights?.summary ?? "Your health data is loading from the network.";
 
   return (
     <div className="space-y-6">
@@ -144,26 +144,23 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* QR card */}
         <div className="lg:col-span-1 rounded-xl bg-card border border-border p-6 flex flex-col items-center">
           <div className="text-sm font-medium text-muted-foreground">Your medical QR</div>
-          <div className="mt-4 rounded-xl bg-white p-4 border border-border">
-            <QRCodeSVG value={qrValue} size={180} level="M" />
+          <div className="mt-4 rounded-xl bg-white p-4 border border-border min-h-[180px] grid place-items-center">
+            {qr ? <img src={qr} alt="Medical QR code" className="w-[180px] h-[180px]" /> : <span className="text-xs text-muted-foreground">Loading…</span>}
           </div>
           <div className="mt-3 font-mono text-xs text-muted-foreground">{user.id}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Refreshes every 60s</div>
           <button onClick={() => setEnlarge(true)} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
             <FiMaximize2 size={14} /> Enlarge QR
           </button>
         </div>
 
-        {/* Stats */}
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           {[
-            { label: "Conditions", value: mockConditions.length, icon: FiActivity, tone: "bg-primary-light text-primary-dark" },
-            { label: "Medications", value: mockMedications.length, icon: FiFileText, tone: "bg-accent text-accent-foreground" },
-            { label: "Allergies", value: mockAllergies.length, icon: FiAlertTriangle, tone: "bg-destructive/10 text-destructive" },
-            { label: "Upcoming visits", value: mockAppointments.length, icon: FiCalendar, tone: "bg-success/15 text-success" },
+            { label: "Conditions", value: stats?.conditions_count ?? 0, icon: FiActivity, tone: "bg-primary-light text-primary-dark" },
+            { label: "Medications", value: stats?.active_prescriptions ?? 0, icon: FiFileText, tone: "bg-accent text-accent-foreground" },
+            { label: "Allergies", value: stats?.allergies_count ?? 0, icon: FiAlertTriangle, tone: "bg-destructive/10 text-destructive" },
+            { label: "Total visits", value: stats?.total_visits ?? 0, icon: FiCalendar, tone: "bg-success/15 text-success" },
           ].map((s) => (
             <div key={s.label} className="rounded-xl bg-card border border-border p-5">
               <div className={`h-10 w-10 rounded-lg grid place-items-center ${s.tone}`}><s.icon size={18} /></div>
@@ -177,11 +174,13 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
       <div className="grid lg:grid-cols-2 gap-6">
         <Card title="Upcoming Appointments">
           <ul className="divide-y divide-border">
-            {mockAppointments.map((a) => (
+            {(dash?.upcoming_appointments ?? []).length === 0 ? (
+              <li className="py-3 text-sm text-muted-foreground">No upcoming appointments.</li>
+            ) : dash?.upcoming_appointments.map((a) => (
               <li key={a.id} className="py-3 flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-sm">{a.doctor} <span className="text-muted-foreground font-normal">· {a.specialty}</span></div>
-                  <div className="text-xs text-muted-foreground mt-0.5"><FiClock className="inline mr-1" size={12} />{a.date} at {a.time}</div>
+                  <div className="font-medium text-sm">{a.provider ?? a.department ?? "Appointment"} <span className="text-muted-foreground font-normal">· {a.hospital}</span></div>
+                  <div className="text-xs text-muted-foreground mt-0.5"><FiClock className="inline mr-1" size={12} />{new Date(a.scheduled_at).toLocaleString()}</div>
                 </div>
                 <FiChevronRight className="text-muted-foreground" />
               </li>
@@ -191,12 +190,12 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
 
         <Card title="Recent Activity">
           <ul className="space-y-3">
-            {mockActivity.map((a) => (
+            {(dash?.recent_activity ?? []).map((a) => (
               <li key={a.id} className="flex gap-3 items-start">
                 <div className="h-2 w-2 rounded-full bg-primary mt-2" />
                 <div className="flex-1">
-                  <div className="text-sm">{a.text}</div>
-                  <div className="text-xs text-muted-foreground">{a.time}</div>
+                  <div className="text-sm">{a.accessor} — {a.action}</div>
+                  <div className="text-xs text-muted-foreground">{formatRelative(a.at)}</div>
                 </div>
               </li>
             ))}
@@ -207,29 +206,46 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
       <Card title="Health Insights">
         <div className="rounded-lg bg-primary-light/50 border border-primary/20 p-4">
           <div className="text-xs font-medium text-primary-dark mb-2">AI SUMMARY</div>
-          <p className="text-sm">
-            Your last HbA1c (6.8%) is slightly above target. Consider scheduling a follow-up with Dr. Wanjiku.
-            Blood pressure trend is stable. Don't forget your annual flu shot — due next month.
-          </p>
+          <p className="text-sm">{insight}</p>
         </div>
       </Card>
 
       <Modal open={enlarge} onClose={() => setEnlarge(false)} title="Your Medical QR" size="md">
         <div className="grid place-items-center">
-          <div className="rounded-xl bg-white p-6 border border-border">
-            <QRCodeSVG value={qrValue} size={320} level="M" />
-          </div>
+          {qr && <img src={qr} alt="Medical QR code enlarged" className="rounded-xl border border-border max-w-[320px]" />}
           <div className="mt-4 font-mono text-sm">{user.id}</div>
-          <div className="text-xs text-muted-foreground mt-1">Show this to a provider to grant temporary access.</div>
         </div>
       </Modal>
     </div>
   );
 }
 
-/* ============= RECORDS ============= */
 function RecordsTab() {
   const [sub, setSub] = useState<"conditions" | "meds" | "allergies" | "labs" | "imm" | "proc">("conditions");
+  const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [labs, setLabs] = useState<unknown[]>([]);
+
+  const typeMap = {
+    conditions: "diagnosis",
+    meds: "medication",
+    allergies: "allergy",
+    labs: "lab_result",
+    imm: "immunization",
+    proc: "procedure",
+  } as const;
+
+  useEffect(() => {
+    if (sub === "labs") {
+      patientApi.labs().then(setLabs).catch(() => setLabs([]));
+      return;
+    }
+    if (sub === "allergies") {
+      patientApi.allergies().then(setRecords).catch(() => setRecords([]));
+      return;
+    }
+    patientApi.records(typeMap[sub]).then((r) => setRecords(r.items)).catch(() => setRecords([]));
+  }, [sub]);
+
   const tabs = [
     { id: "conditions" as const, label: "Conditions" },
     { id: "meds" as const, label: "Medications" },
@@ -238,6 +254,9 @@ function RecordsTab() {
     { id: "imm" as const, label: "Immunizations" },
     { id: "proc" as const, label: "Procedures" },
   ];
+
+  const data = (r: MedicalRecord) => r.data as Record<string, string>;
+
   return (
     <div className="space-y-6">
       <div>
@@ -246,110 +265,57 @@ function RecordsTab() {
       </div>
       <div className="flex gap-2 flex-wrap border-b border-border">
         {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${sub === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-          >
+          <button key={t.id} onClick={() => setSub(t.id)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${sub === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {sub === "conditions" && (
-        <Card title="Conditions">
-          <ul className="divide-y divide-border">
-            {mockConditions.map((c) => (
-              <li key={c.id} className="py-3 flex justify-between items-start">
-                <div>
-                  <div className="font-medium">{c.name}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Since {c.since} · {c.notes}</div>
-                </div>
-                <span className="rounded-full bg-accent text-accent-foreground text-xs px-2 py-1">{c.status}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      {sub === "meds" && (
-        <Card title="Medications">
-          <div className="grid sm:grid-cols-2 gap-3">
-            {mockMedications.map((m) => (
-              <div key={m.id} className="rounded-lg border border-border p-4">
-                <div className="font-medium">{m.name}</div>
-                <div className="text-xs text-muted-foreground mt-1">{m.dose} · {m.freq}</div>
-                <div className="text-xs text-muted-foreground mt-1">Since {m.since}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {sub === "allergies" && (
+      {sub === "allergies" ? (
         <div className="rounded-xl border-2 border-destructive bg-destructive/5 p-5">
-          <div className="flex items-center gap-2 text-destructive font-semibold mb-3">
-            <FiAlertTriangle /> ALLERGIES — CRITICAL
-          </div>
+          <div className="flex items-center gap-2 text-destructive font-semibold mb-3"><FiAlertTriangle /> ALLERGIES</div>
           <ul className="space-y-3">
-            {mockAllergies.map((a) => (
+            {records.map((a) => (
               <li key={a.id} className="rounded-lg bg-card border border-destructive/30 p-4">
-                <div className="flex justify-between items-center">
-                  <div className="font-semibold">{a.name}</div>
-                  <span className="rounded-full bg-destructive text-destructive-foreground text-xs px-2 py-1">{a.severity}</span>
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Reaction: {a.reaction}</div>
+                <div className="font-semibold">{data(a).name ?? data(a).substance ?? "Allergy"}</div>
+                <div className="text-sm text-muted-foreground mt-1">{data(a).reaction ?? data(a).severity ?? ""}</div>
               </li>
             ))}
           </ul>
         </div>
-      )}
-
-      {sub === "labs" && (
+      ) : sub === "labs" ? (
         <Card title="Lab Results">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-xs text-muted-foreground border-b border-border">
-                <tr><th className="py-2">Test</th><th>Date</th><th>Result</th></tr>
+                <tr><th className="py-2">Test</th><th>Date</th><th>Status</th></tr>
               </thead>
               <tbody>
-                {mockLabResults.map((l) => (
-                  <tr key={l.id} className="border-b border-border last:border-0">
-                    <td className="py-3 font-medium">{l.test}</td>
-                    <td className="text-muted-foreground">{l.date}</td>
-                    <td>
-                      <span className={`rounded-full text-xs px-2 py-1 ${l.flag === "warn" ? "bg-warning/20 text-warning" : "bg-success/15 text-success"}`}>
-                        {l.result}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {labs.map((l, i) => {
+                  const row = l as { id?: string; testName?: string; orderedAt?: string; status?: string };
+                  return (
+                    <tr key={row.id ?? i} className="border-b border-border last:border-0">
+                      <td className="py-3 font-medium">{row.testName ?? "Lab test"}</td>
+                      <td className="text-muted-foreground">{row.orderedAt ? new Date(row.orderedAt).toLocaleDateString() : "—"}</td>
+                      <td>{row.status ?? "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </Card>
-      )}
-
-      {sub === "imm" && (
-        <Card title="Immunizations">
+      ) : (
+        <Card title={tabs.find((t) => t.id === sub)?.label ?? "Records"}>
           <ul className="divide-y divide-border">
-            {mockImmunizations.map((i) => (
-              <li key={i.id} className="py-3 flex justify-between"><span className="font-medium">{i.name}</span><span className="text-muted-foreground text-sm">{i.date}</span></li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      {sub === "proc" && (
-        <Card title="Procedures">
-          <ul className="divide-y divide-border">
-            {mockProcedures.map((p) => (
-              <li key={p.id} className="py-3">
-                <div className="font-medium">{p.name}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{p.date} · {p.provider}</div>
+            {records.map((r) => (
+              <li key={r.id} className="py-3">
+                <div className="font-medium">{data(r).name ?? data(r).test ?? data(r).diagnosis ?? r.recordType}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{new Date(r.recordedAt).toLocaleDateString()}</div>
               </li>
             ))}
+            {records.length === 0 && <li className="py-3 text-sm text-muted-foreground">No records in this category.</li>}
           </ul>
         </Card>
       )}
@@ -357,23 +323,28 @@ function RecordsTab() {
   );
 }
 
-/* ============= SHARE ============= */
 function ShareTab() {
   const { toast } = useToast();
-  const [grants, setGrants] = useState(mockGrants);
-  const [grantOpen, setGrantOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", org: "", scope: "Full Access", expires: "2026-07-01" });
+  const [grants, setGrants] = useState<AccessGrant[]>([]);
+  const [logs, setLogs] = useState<AccessLogItem[]>([]);
+
+  useEffect(() => {
+    Promise.all([patientApi.accessGrants(), patientApi.accessLogs()])
+      .then(([g, l]) => { setGrants(g); setLogs(l.items); })
+      .catch(() => undefined);
+  }, []);
+
+  const revoke = async (id: string) => {
+    await patientApi.revokeAccessGrant(id).catch(() => undefined);
+    setGrants((p) => p.filter((x) => x.id !== id));
+    toast(MESSAGES.generic.revoked);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Share Access</h1>
-          <p className="text-sm text-muted-foreground mt-1">Control who can see your records — and for how long.</p>
-        </div>
-        <button onClick={() => setGrantOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark">
-          <FiPlus /> Grant new access
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold">Share Access</h1>
+        <p className="text-sm text-muted-foreground mt-1">Control who can see your records — and for how long.</p>
       </div>
 
       <Card title="Active Grants">
@@ -385,12 +356,9 @@ function ShareTab() {
               <li key={g.id} className="py-3 flex items-center justify-between">
                 <div>
                   <div className="font-medium">{g.name}</div>
-                  <div className="text-xs text-muted-foreground">{g.org} · {g.scope} · expires {g.expires}</div>
+                  <div className="text-xs text-muted-foreground">{g.org} · {g.scope} · expires {new Date(g.expires_at).toLocaleDateString()}</div>
                 </div>
-                <button
-                  onClick={() => { setGrants((p) => p.filter((x) => x.id !== g.id)); toast(MESSAGES.generic.revoked); }}
-                  className="rounded-lg border border-destructive/30 text-destructive px-3 py-1.5 text-sm hover:bg-destructive/10"
-                >
+                <button onClick={() => void revoke(g.id)} className="rounded-lg border border-destructive/30 text-destructive px-3 py-1.5 text-sm hover:bg-destructive/10">
                   Revoke
                 </button>
               </li>
@@ -401,156 +369,113 @@ function ShareTab() {
 
       <Card title="Access Log">
         <ul className="space-y-3">
-          {mockAccessLog.map((l) => (
+          {logs.map((l) => (
             <li key={l.id} className="flex items-start gap-3">
               <div className="h-8 w-8 rounded-full bg-muted grid place-items-center text-xs"><FiEye /></div>
               <div className="flex-1">
-                <div className="text-sm"><span className="font-medium">{l.who}</span> — {l.action}</div>
-                <div className="text-xs text-muted-foreground">{l.time}</div>
+                <div className="text-sm"><span className="font-medium">{l.accessor.email}</span> — {l.action}</div>
+                <div className="text-xs text-muted-foreground">{formatRelative(l.createdAt)}</div>
               </div>
             </li>
           ))}
         </ul>
       </Card>
-
-      <Modal open={grantOpen} onClose={() => setGrantOpen(false)} title="Grant new access">
-        <div className="space-y-3">
-          <TextField label="Provider name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-          <TextField label="Organization" value={form.org} onChange={(v) => setForm({ ...form, org: v })} />
-          <label className="block">
-            <span className="text-sm font-medium">Access scope</span>
-            <select value={form.scope} onChange={(e) => setForm({ ...form, scope: e.target.value })} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option>Full Access</option>
-              <option>Lab Results</option>
-              <option>Medications</option>
-              <option>Emergency only</option>
-            </select>
-          </label>
-          <TextField label="Expires" type="date" value={form.expires} onChange={(v) => setForm({ ...form, expires: v })} />
-          <button
-            onClick={() => {
-              if (!form.name || !form.org) return toast(MESSAGES.form.nameAndOrg, "error");
-              setGrants((p) => [...p, { id: Date.now(), ...form }]);
-              setGrantOpen(false);
-              toast(MESSAGES.generic.granted);
-              setForm({ name: "", org: "", scope: "Full Access", expires: "2026-07-01" });
-            }}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-dark"
-          >
-            Grant access
-          </button>
-        </div>
-      </Modal>
     </div>
   );
 }
 
-/* ============= FAMILY ============= */
 function FamilyTab({ onSwitch }: { onSwitch: (p: { id: string; name: string; relationship: string }) => void }) {
-  const { toast } = useToast();
-  const [family, setFamily] = useState(mockFamily);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", relationship: "Child", dob: "", access: "Full" });
+  const [family, setFamily] = useState<FamilyMember[]>([]);
+
+  useEffect(() => {
+    patientApi.family().then(setFamily).catch(() => setFamily([]));
+  }, []);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Family</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage records for children, parents and dependents.</p>
-        </div>
-        <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark">
-          <FiPlus /> Add Family Member
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold">Family</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage records for children, parents and dependents.</p>
       </div>
-
       <div className="grid sm:grid-cols-2 gap-4">
-        {family.map((f) => (
-          <div key={f.id} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-primary-light grid place-items-center font-semibold text-primary-dark">
-                {f.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+        {family.map((f) => {
+          const name = `${f.dependentPatient.firstName} ${f.dependentPatient.lastName}`;
+          return (
+            <div key={f.id} className="rounded-xl border border-border bg-card p-5">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-primary-light grid place-items-center font-semibold text-primary-dark">
+                  {name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold">{name}</div>
+                  <div className="text-xs text-muted-foreground">{f.relationship} · DOB {f.dependentPatient.dateOfBirth.slice(0, 10)}</div>
+                </div>
               </div>
-              <div className="flex-1">
-                <div className="font-semibold">{f.name}</div>
-                <div className="text-xs text-muted-foreground">{f.relationship} · DOB {f.dob}</div>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="rounded-full bg-accent px-2 py-1 text-xs text-accent-foreground">{f.accessLevel}</span>
+                <button onClick={() => onSwitch({ id: f.dependentPatient.id, name, relationship: f.relationship })}
+                  className="text-sm font-medium text-primary hover:text-primary-dark inline-flex items-center gap-1">
+                  Switch to Profile <FiChevronRight size={14} />
+                </button>
               </div>
-              <button onClick={() => { setFamily((p) => p.filter((x) => x.id !== f.id)); toast(MESSAGES.generic.removed); }} aria-label="Remove"><FiTrash2 className="text-muted-foreground hover:text-destructive" /></button>
             </div>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="rounded-full bg-accent px-2 py-1 text-xs text-accent-foreground">{f.access}</span>
-              <button
-                onClick={() => onSwitch({ id: f.id, name: f.name, relationship: f.relationship })}
-                className="text-sm font-medium text-primary hover:text-primary-dark inline-flex items-center gap-1"
-              >
-                Switch to Profile <FiChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
+        {family.length === 0 && <p className="text-sm text-muted-foreground">No family members linked yet.</p>}
       </div>
-
-      <Modal open={open} onClose={() => setOpen(false)} title="Add Family Member">
-        <div className="space-y-3">
-          <TextField label="Full name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-          <label className="block">
-            <span className="text-sm font-medium">Relationship</span>
-            <select value={form.relationship} onChange={(e) => setForm({ ...form, relationship: e.target.value })} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option>Child</option><option>Parent</option><option>Spouse</option>
-            </select>
-          </label>
-          <TextField label="Date of birth" type="date" value={form.dob} onChange={(v) => setForm({ ...form, dob: v })} />
-          <label className="block">
-            <span className="text-sm font-medium">Access level</span>
-            <select value={form.access} onChange={(e) => setForm({ ...form, access: e.target.value })} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option>Full</option><option>Caregiver</option>
-            </select>
-          </label>
-          <button
-            onClick={() => {
-              if (!form.name) return toast(MESSAGES.form.nameRequired, "error");
-              setFamily((p) => [...p, { id: `MP-${Math.floor(Math.random() * 9000 + 1000)}`, ...form }]);
-              setOpen(false);
-              toast(MESSAGES.generic.added);
-              setForm({ name: "", relationship: "Child", dob: "", access: "Full" });
-            }}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-dark"
-          >
-            Add member
-          </button>
-        </div>
-      </Modal>
     </div>
   );
 }
 
-/* ============= PROFILE ============= */
 function ProfileTab() {
   const { user, updateUser, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState(user!);
-  const [contacts, setContacts] = useState(mockEmergencyContacts);
-  const [contactForm, setContactForm] = useState({ name: "", phone: "", relationship: "" });
+  const [settings, setSettings] = useState<PatientSettings | null>(null);
+  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
+  const [recovery, setRecovery] = useState<string | null>(null);
   const [showRecovery, setShowRecovery] = useState(false);
-  const [pwOpen, setPwOpen] = useState(false);
   const [delOpen, setDelOpen] = useState(false);
-  const [bio, setBio] = useState(false);
-  const [twoFa, setTwoFa] = useState(false);
-  const [dark, setDark] = useState(false);
-  const [lang, setLang] = useState("English");
 
   useEffect(() => {
-    if (typeof document !== "undefined") document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
+    if (!user) return;
+    setForm(user);
+    Promise.all([patientApi.settings(), patientApi.emergencyContacts()])
+      .then(([s, c]) => { setSettings(s); setContacts(c); })
+      .catch(() => undefined);
+  }, [user]);
 
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify({ user, conditions: mockConditions, medications: mockMedications }, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "MiqorAI-data.json"; a.click();
-    URL.revokeObjectURL(url);
+  useEffect(() => {
+    if (settings?.theme === "dark") document.documentElement.classList.add("dark");
+    else if (settings?.theme === "light") document.documentElement.classList.remove("dark");
+  }, [settings?.theme]);
+
+  const saveProfile = async () => {
+    const parts = form.name.trim().split(/\s+/);
+    await patientApi.updateProfile({
+      first_name: parts[0],
+      last_name: parts.slice(1).join(" ") || parts[0],
+      email: form.email,
+      phone: form.phone,
+      national_id: form.nationalId,
+      insurance_id: form.insuranceId,
+      date_of_birth: form.dob,
+    }).catch(() => undefined);
+    await updateUser(form);
+    toast(MESSAGES.generic.saved);
+  };
+
+  const exportData = async () => {
+    const res = await patientApi.exportData().catch(() => null);
+    if (res?.download_url) window.open(res.download_url, "_blank");
     toast(MESSAGES.generic.exported);
+  };
+
+  const loadRecovery = async () => {
+    const res = await patientApi.recoveryPhrase().catch(() => null);
+    setRecovery((res as { recovery_phrase?: string })?.recovery_phrase ?? res?.phrase ?? null);
+    setShowRecovery(true);
   };
 
   return (
@@ -569,33 +494,29 @@ function ProfileTab() {
           <TextField label="National ID" value={form.nationalId} onChange={(v) => setForm({ ...form, nationalId: v })} />
           <TextField label="Insurance ID" value={form.insuranceId} onChange={(v) => setForm({ ...form, insuranceId: v })} />
         </div>
-        <button
-          onClick={() => { updateUser(form); toast(MESSAGES.generic.saved); }}
-          className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark"
-        >
+        <button onClick={() => void saveProfile()} className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark">
           Save changes
         </button>
       </Card>
 
       <Card title="Security">
         <div className="space-y-4">
-          <Toggle label="Biometric Login" desc="Use fingerprint or face ID" checked={bio} onChange={setBio} />
-          <Toggle label="Two-Factor Authentication" desc="Extra layer of security at login" checked={twoFa} onChange={setTwoFa} />
-          <button onClick={() => setPwOpen(true)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Change password</button>
+          <Toggle label="Biometric Login" desc="Use fingerprint or face ID" checked={settings?.biometric_enabled ?? false}
+            onChange={(v) => void patientApi.updateSettings({ biometric_enabled: v }).then(setSettings)} />
+          <Toggle label="Two-Factor Authentication" checked={settings?.two_factor_enabled ?? false}
+            onChange={(v) => void patientApi.updateSettings({ two_factor_enabled: v }).then(setSettings)} />
           <div className="rounded-lg border border-warning/40 bg-warning/10 p-4">
             <div className="flex items-center gap-2 font-medium text-sm"><FiShield className="text-warning" /> Recovery Phrase</div>
-            <p className="text-xs text-muted-foreground mt-2">Store this recovery phrase safely. Without it, you cannot recover your records.</p>
-            {showRecovery ? (
-              <div className="mt-3 rounded bg-card border border-border p-3 font-mono text-xs">{mockRecovery}</div>
+            {showRecovery && recovery ? (
+              <div className="mt-3 rounded bg-card border border-border p-3 font-mono text-xs">{recovery}</div>
             ) : (
-              <button onClick={() => setShowRecovery(true)} className="mt-3 rounded-lg bg-warning/20 text-warning px-3 py-1.5 text-xs font-medium">Show recovery phrase</button>
+              <button onClick={() => void loadRecovery()} className="mt-3 rounded-lg bg-warning/20 text-warning px-3 py-1.5 text-xs font-medium">Show recovery phrase</button>
             )}
           </div>
         </div>
       </Card>
 
       <Card title="Emergency Contacts">
-        <p className="text-xs text-muted-foreground mb-3">These contacts can access your emergency info even if your phone is locked.</p>
         <ul className="divide-y divide-border mb-4">
           {contacts.map((c) => (
             <li key={c.id} className="py-3 flex items-center justify-between">
@@ -603,35 +524,18 @@ function ProfileTab() {
                 <div className="font-medium text-sm">{c.name} <span className="text-muted-foreground font-normal">· {c.relationship}</span></div>
                 <div className="text-xs text-muted-foreground">{c.phone}</div>
               </div>
-              <button onClick={() => { setContacts((p) => p.filter((x) => x.id !== c.id)); toast(MESSAGES.generic.removed); }} aria-label="Remove"><FiTrash2 className="text-muted-foreground hover:text-destructive" /></button>
+              <button onClick={() => void patientApi.deleteEmergencyContact(c.id).then(() => setContacts((p) => p.filter((x) => x.id !== c.id)))} aria-label="Remove">
+                <FiTrash2 className="text-muted-foreground hover:text-destructive" />
+              </button>
             </li>
           ))}
         </ul>
-        <div className="grid sm:grid-cols-3 gap-2">
-          <input placeholder="Name" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-          <input placeholder="Phone" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-          <input placeholder="Relationship" value={contactForm.relationship} onChange={(e) => setContactForm({ ...contactForm, relationship: e.target.value })} className="rounded-lg border border-input bg-background px-3 py-2 text-sm" />
-        </div>
-        <button
-          onClick={() => {
-            if (!contactForm.name || !contactForm.phone) return toast(MESSAGES.form.nameAndPhone, "error");
-            setContacts((p) => [...p, { id: Date.now(), ...contactForm }]);
-            setContactForm({ name: "", phone: "", relationship: "" });
-            toast(MESSAGES.generic.added);
-          }}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
-        >
-          <FiPlus size={14} /> Add contact
-        </button>
       </Card>
 
       <Card title="Data Management">
         <div className="flex flex-wrap gap-3">
-          <button onClick={exportData} className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
+          <button onClick={() => void exportData()} className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
             <FiDownload size={14} /> Export My Data
-          </button>
-          <button onClick={() => toast(MESSAGES.generic.submitted)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
-            Request Data Deletion
           </button>
           <button onClick={() => setDelOpen(true)} className="rounded-lg bg-destructive text-destructive-foreground px-4 py-2 text-sm hover:opacity-90">
             Delete My Account
@@ -639,45 +543,11 @@ function ProfileTab() {
         </div>
       </Card>
 
-      <Card title="App Settings">
-        <div className="space-y-4">
-          <Toggle label="Dark mode" desc="Use dark theme" checked={dark} onChange={setDark} />
-          <label className="block">
-            <span className="text-sm font-medium">Language</span>
-            <select value={lang} onChange={(e) => setLang(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm max-w-xs">
-              <option>English</option><option>French</option><option>Swahili</option>
-            </select>
-          </label>
-          <div>
-            <div className="text-sm font-medium mb-2">Notifications</div>
-            <div className="space-y-2">
-              <Toggle label="Email" checked={true} onChange={() => { }} />
-              <Toggle label="SMS" checked={false} onChange={() => { }} />
-              <Toggle label="Push" checked={true} onChange={() => { }} />
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <Modal open={pwOpen} onClose={() => setPwOpen(false)} title="Change password">
-        <div className="space-y-3">
-          <TextField label="Current password" type="password" value="" onChange={() => { }} />
-          <TextField label="New password" type="password" value="" onChange={() => { }} />
-          <TextField label="Confirm new password" type="password" value="" onChange={() => { }} />
-          <button onClick={() => { setPwOpen(false); toast(MESSAGES.generic.saved); }} className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-dark">
-            Update password
-          </button>
-        </div>
-      </Modal>
-
       <Modal open={delOpen} onClose={() => setDelOpen(false)} title="Delete account?" size="sm">
-        <p className="text-sm text-muted-foreground">This will permanently delete your account and all medical records. This action cannot be undone.</p>
+        <p className="text-sm text-muted-foreground">This will permanently delete your account and all medical records.</p>
         <div className="mt-5 flex gap-2 justify-end">
           <button onClick={() => setDelOpen(false)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
-          <button
-            onClick={() => { logout(); navigate("/"); toast(MESSAGES.auth.accountClosed, "info"); }}
-            className="rounded-lg bg-destructive text-destructive-foreground px-4 py-2 text-sm hover:opacity-90"
-          >
+          <button onClick={() => void patientApi.deleteAccount().then(async () => { await logout(); navigate("/"); })} className="rounded-lg bg-destructive text-destructive-foreground px-4 py-2 text-sm">
             Yes, delete
           </button>
         </div>
@@ -686,7 +556,6 @@ function ProfileTab() {
   );
 }
 
-/* ============= Shared bits ============= */
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl bg-card border border-border p-5">
@@ -700,12 +569,8 @@ function TextField({ label, value, onChange, type = "text" }: { label: string; v
   return (
     <label className="block">
       <span className="text-sm font-medium">{label}</span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-      />
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
     </label>
   );
 }
@@ -717,12 +582,8 @@ function Toggle({ label, desc, checked, onChange }: { label: string; desc?: stri
         <div className="text-sm font-medium">{label}</div>
         {desc && <div className="text-xs text-muted-foreground">{desc}</div>}
       </div>
-      <button
-        onClick={() => onChange(!checked)}
-        role="switch"
-        aria-checked={checked}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${checked ? "bg-primary" : "bg-muted"}`}
-      >
+      <button onClick={() => onChange(!checked)} role="switch" aria-checked={checked}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${checked ? "bg-primary" : "bg-muted"}`}>
         <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
       </button>
     </div>

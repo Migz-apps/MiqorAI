@@ -1,32 +1,48 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Sparkles, Calendar, Pill, FileText, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { PATIENTS } from "@/lib/mockData";
+import { hospitalApi } from "@/lib/api/hospital";
+import { mapPatientFromApi } from "@/lib/mappers";
 import { PatientHeader } from "@/components/miqorai/PatientHeader";
 import { AllergyBanner } from "@/components/miqorai/AllergyBanner";
 import { AddVisitForm } from "@/components/miqorai/AddVisitForm";
 import { useAuth, can } from "@/store/auth";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { PrescriptionBuilder as PrescriptionBuilderInline } from "@/components/miqorai/PrescriptionBuilder";
 
 export default function PatientProfile() {
   const { id } = useParams();
   const nav = useNavigate();
   const session = useAuth(s => s.session)!;
-  const patient = PATIENTS.find(p => p.id === id);
   const [recordFilter, setRecordFilter] = useState("");
 
-  if (!patient) return (
+  const { data: patient, isLoading, isError } = useQuery({
+    queryKey: ["hospital", "patient", id],
+    queryFn: async () => mapPatientFromApi(await hospitalApi.patient(id!)),
+    enabled: !!id,
+  });
+
+  const { data: summary } = useQuery({
+    queryKey: ["hospital", "patient", id, "summary"],
+    queryFn: () => hospitalApi.patientSummary(id!) as Promise<{ summary?: string }>,
+    enabled: !!id,
+  });
+
+  if (isLoading) return <div className="p-xl text-center text-sm text-text-secondary">Loading patient…</div>;
+
+  if (isError || !patient) return (
     <div className="p-xl text-center">
       <p className="text-text-secondary">Patient not found.</p>
       <Button variant="link" onClick={() => nav("/patients")}>Back to patients</Button>
     </div>
   );
 
-  const aiSummary = `${patient.name.split(" ")[0]} ${patient.conditions.length ? `has ${patient.conditions.join(", ").toLowerCase()}` : "has no chronic conditions on file"}${patient.prescriptions.filter(p => p.status === "active").length ? `, currently on ${patient.prescriptions.filter(p => p.status === "active").map(p => `${p.medication} ${p.dosage}`).join(", ")}` : ""}. Last visit: ${patient.lastVisit || "—"}. ${patient.allergies.length ? `Allergy to ${patient.allergies.map(a => a.name).join(", ")} confirmed.` : "No known allergies."}`;
+  const aiSummary = summary?.summary ?? `${patient.name.split(" ")[0]} — clinical summary unavailable.`;
 
   const filteredVisits = patient.visits.filter(v =>
     !recordFilter || `${v.type} ${v.diagnosis || ""} ${v.provider}`.toLowerCase().includes(recordFilter.toLowerCase())
@@ -51,7 +67,6 @@ export default function PatientProfile() {
           <TabsTrigger value="prescriptions"><Pill className="h-4 w-4 mr-1" /> Prescriptions</TabsTrigger>
         </TabsList>
 
-        {/* SUMMARY */}
         <TabsContent value="summary" className="space-y-md">
           <Card>
             <CardHeader className="pb-sm">
@@ -77,6 +92,7 @@ export default function PatientProfile() {
                     <div className="text-xs text-text-secondary whitespace-nowrap">{v.date}</div>
                   </div>
                 ))}
+                {patient.visits.length === 0 && <div className="text-sm text-text-secondary">No visits on file.</div>}
               </CardContent>
             </Card>
 
@@ -89,7 +105,7 @@ export default function PatientProfile() {
                       <div className="text-sm font-medium">{p.medication} {p.dosage}</div>
                       <div className="text-xs text-text-secondary">{p.frequency} · {p.pharmacy}</div>
                     </div>
-                    <Badge className="bg-success/15 text-success border-success/30">filled</Badge>
+                    <Badge className="bg-success/15 text-success border-success/30">active</Badge>
                   </div>
                 ))}
                 {patient.prescriptions.filter(p => p.status === "active").length === 0 && (
@@ -131,7 +147,6 @@ export default function PatientProfile() {
           </div>
         </TabsContent>
 
-        {/* RECORDS */}
         <TabsContent value="records" className="space-y-md">
           <Card>
             <CardHeader className="pb-sm">
@@ -168,14 +183,12 @@ export default function PatientProfile() {
           </Card>
         </TabsContent>
 
-        {/* ADD VISIT */}
         {(can(session.role, "addDiagnosis") || can(session.role, "recordVitals")) && (
           <TabsContent value="add-visit">
             <AddVisitForm patient={patient} />
           </TabsContent>
         )}
 
-        {/* PRESCRIPTIONS */}
         <TabsContent value="prescriptions" className="space-y-md">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-md">
             <Card>
@@ -185,7 +198,7 @@ export default function PatientProfile() {
                   <div key={p.id} className="p-sm rounded-md border bg-background-grey">
                     <div className="flex items-center justify-between">
                       <div className="font-medium">{p.medication} {p.dosage}</div>
-                      <Badge className="bg-success/15 text-success border-success/30">filled</Badge>
+                      <Badge className="bg-success/15 text-success border-success/30">active</Badge>
                     </div>
                     <div className="text-xs text-text-secondary">{p.frequency} · {p.duration} · {p.pharmacy}</div>
                     <div className="text-xs text-text-secondary">By {p.prescribedBy} on {p.date}</div>
@@ -216,9 +229,6 @@ export default function PatientProfile() {
           {can(session.role, "prescribe") && (
             <div>
               <h3 className="h3 mb-sm">New prescription</h3>
-              <CardContent className="p-0">
-                {/* re-use builder */}
-              </CardContent>
               <PrescriptionBuilderInline patient={patient} />
             </div>
           )}
@@ -227,6 +237,3 @@ export default function PatientProfile() {
     </div>
   );
 }
-
-// inline import to avoid circular issues
-import { PrescriptionBuilder as PrescriptionBuilderInline } from "@/components/miqorai/PrescriptionBuilder";

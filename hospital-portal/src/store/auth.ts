@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { MESSAGES } from "@/lib/user-messages";
 import { persist } from "zustand/middleware";
 import type { Role } from "@/lib/types";
-import { HOSPITAL, STAFF, VALID_HOSPITAL_CODES } from "@/lib/mockData";
+import { ApiError, getMe, loadTokens, loginApi, logoutApi, saveTokens, type MeResponse } from "@/lib/api/client";
 
 type Session = {
   staffId: string;
@@ -17,10 +17,29 @@ type AuthState = {
   session: Session | null;
   failedAttempts: number;
   lockoutUntil: number | null;
-  login: (hospitalCode: string, email: string, password: string) => { ok: boolean; error?: string };
-  logout: () => void;
+  login: (hospitalCode: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  restoreSession: () => Promise<void>;
   switchRole: (role: Role) => void;
 };
+
+function mapRole(me: MeResponse): Role {
+  if (me.role === "hospital_admin" || me.staff_role === "admin") return "admin";
+  const r = me.staff_role as Role | undefined;
+  if (r && ["receptionist", "nurse", "doctor", "dept_head", "admin"].includes(r)) return r;
+  return "doctor";
+}
+
+function sessionFromMe(me: MeResponse, hospitalCode: string): Session {
+  return {
+    staffId: me.id,
+    name: me.display_name ?? me.email.split("@")[0],
+    role: mapRole(me),
+    hospitalCode: me.hospital_code ?? hospitalCode,
+    hospitalName: me.hospital_name ?? hospitalCode,
+    loggedInAt: Date.now(),
+  };
+}
 
 export const useAuth = create<AuthState>()(
   persist(
@@ -28,15 +47,24 @@ export const useAuth = create<AuthState>()(
       session: null,
       failedAttempts: 0,
       lockoutUntil: null,
-      login: (hospitalCode, email, password) => {
+      login: async (hospitalCode, email, password) => {
         const now = Date.now();
         if (get().lockoutUntil && get().lockoutUntil! > now) {
           const mins = Math.ceil((get().lockoutUntil! - now) / 60000);
           return { ok: false, error: MESSAGES.auth.locked(mins) };
         }
-        const staff = STAFF.find(s => s.email.toLowerCase() === email.toLowerCase() && s.active);
-        const codeOk = VALID_HOSPITAL_CODES.includes(hospitalCode);
-        if (!codeOk || !staff || password !== "MiqorAI") {
+        try {
+          const me = await loginApi(email.trim(), password, hospitalCode.trim());
+          const session = sessionFromMe(me, hospitalCode.trim());
+          set({ failedAttempts: 0, lockoutUntil: null, session });
+          return { ok: true };
+        } catch (err) {
+          const body = err instanceof ApiError ? (err.body as { error?: { details?: { retry_after?: number } } }) : null;
+          if (err instanceof ApiError && err.status === 401 && body?.error?.details?.retry_after) {
+            const retry = body.error.details.retry_after;
+            set({ lockoutUntil: now + retry * 1000, failedAttempts: 5 });
+            return { ok: false, error: MESSAGES.auth.tooManyAttempts };
+          }
           const attempts = get().failedAttempts + 1;
           set({
             failedAttempts: attempts,
@@ -45,23 +73,32 @@ export const useAuth = create<AuthState>()(
           if (attempts >= 5) return { ok: false, error: MESSAGES.auth.tooManyAttempts };
           return { ok: false, error: MESSAGES.auth.attemptsRemaining(5 - attempts) };
         }
-        set({
-          failedAttempts: 0, lockoutUntil: null,
-          session: {
-            staffId: staff.id, name: staff.name, role: staff.role,
-            hospitalCode, hospitalName: HOSPITAL.name, loggedInAt: now,
-          },
-        });
-        return { ok: true };
       },
-      logout: () => set({ session: null }),
+      logout: async () => {
+        await logoutApi();
+        set({ session: null });
+      },
+      restoreSession: async () => {
+        if (!loadTokens()) return;
+        try {
+          const me = await getMe();
+          const prev = get().session;
+          set({
+            session: sessionFromMe(me, prev?.hospitalCode ?? me.hospital_code ?? ""),
+          });
+        } catch {
+          saveTokens(null);
+          set({ session: null });
+        }
+      },
       switchRole: (role) => {
-        const s = get().session; if (!s) return;
+        const s = get().session;
+        if (!s) return;
         set({ session: { ...s, role } });
       },
     }),
-    { name: "MiqorAI-auth" }
-  )
+    { name: "MiqorAI-auth", partialize: (s) => ({ session: s.session, failedAttempts: s.failedAttempts, lockoutUntil: s.lockoutUntil }) },
+  ),
 );
 
 export const PERMISSIONS = {
@@ -83,7 +120,6 @@ export const ROLE_LABEL: Record<Role, string> = {
   admin: "Hospital Admin",
 };
 
-// Each role has a visual "track" (color accent + persona)
 export type RoleTrack = "reception" | "clinical" | "admin";
 export const ROLE_TRACK: Record<Role, RoleTrack> = {
   receptionist: "reception",

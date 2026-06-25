@@ -2,7 +2,16 @@ import { create } from "zustand";
 import { MESSAGES } from "@/lib/user-messages";
 import { persist } from "zustand/middleware";
 import type { Role } from "@/lib/types";
-import { INSURER, STAFF, VALID_INSURER_CODES } from "@/lib/mockData";
+import {
+  ApiError,
+  getMe,
+  loadTokens,
+  loginApi,
+  logoutApi,
+  saveTokens,
+  type MeResponse,
+} from "@/lib/api/client";
+import { mapStaffRole } from "@/lib/api/insurer";
 
 type Session = {
   staffId: string;
@@ -18,10 +27,29 @@ type AuthState = {
   session: Session | null;
   failedAttempts: number;
   lockoutUntil: number | null;
-  login: (insurerCode: string, email: string, password: string) => { ok: boolean; error?: string };
-  logout: () => void;
+  login: (insurerCode: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  restoreSession: () => Promise<void>;
   switchRole: (role: Role) => void;
 };
+
+function mapRole(me: MeResponse): Role {
+  if (me.role === "insurer_admin" || me.staff_role === "admin") return "admin";
+  if (me.staff_role) return mapStaffRole(me.staff_role);
+  return "analyst";
+}
+
+function sessionFromMe(me: MeResponse, insurerCode: string): Session {
+  return {
+    staffId: me.id,
+    name: me.display_name ?? me.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    email: me.email,
+    role: mapRole(me),
+    insurerCode: me.insurer_code ?? insurerCode,
+    insurerName: me.insurer_name ?? insurerCode,
+    loggedInAt: Date.now(),
+  };
+}
 
 export const useAuth = create<AuthState>()(
   persist(
@@ -29,15 +57,27 @@ export const useAuth = create<AuthState>()(
       session: null,
       failedAttempts: 0,
       lockoutUntil: null,
-      login: (insurerCode, email, password) => {
+      login: async (insurerCode, email, password) => {
         const now = Date.now();
         if (get().lockoutUntil && get().lockoutUntil! > now) {
           const mins = Math.ceil((get().lockoutUntil! - now) / 60000);
           return { ok: false, error: MESSAGES.auth.locked(mins) };
         }
-        const staff = STAFF.find(s => s.email.toLowerCase() === email.toLowerCase() && s.active);
-        const codeOk = VALID_INSURER_CODES.includes(insurerCode);
-        if (!codeOk || !staff || password !== "MiqorAI") {
+        try {
+          const me = await loginApi(email.trim(), password, insurerCode.trim());
+          set({
+            failedAttempts: 0,
+            lockoutUntil: null,
+            session: sessionFromMe(me, insurerCode.trim()),
+          });
+          return { ok: true };
+        } catch (err) {
+          const body = err instanceof ApiError ? (err.body as { error?: { details?: { retry_after?: number } } }) : null;
+          if (err instanceof ApiError && err.status === 401 && body?.error?.details?.retry_after) {
+            const retry = body.error.details.retry_after;
+            set({ lockoutUntil: now + retry * 1000, failedAttempts: 5 });
+            return { ok: false, error: MESSAGES.auth.tooManyAttempts };
+          }
           const attempts = get().failedAttempts + 1;
           set({
             failedAttempts: attempts,
@@ -46,26 +86,37 @@ export const useAuth = create<AuthState>()(
           if (attempts >= 5) return { ok: false, error: MESSAGES.auth.tooManyAttempts };
           return { ok: false, error: MESSAGES.auth.attemptsRemaining(5 - attempts) };
         }
-        set({
-          failedAttempts: 0, lockoutUntil: null,
-          session: {
-            staffId: staff.id, name: staff.name, email: staff.email, role: staff.role,
-            insurerCode, insurerName: INSURER.name, loggedInAt: now,
-          },
-        });
-        return { ok: true };
       },
-      logout: () => set({ session: null }),
+      logout: async () => {
+        await logoutApi();
+        set({ session: null });
+      },
+      restoreSession: async () => {
+        if (!loadTokens()) return;
+        try {
+          const me = await getMe();
+          const prev = get().session;
+          set({
+            session: sessionFromMe(me, prev?.insurerCode ?? me.insurer_code ?? ""),
+          });
+        } catch {
+          saveTokens(null);
+          set({ session: null });
+        }
+      },
       switchRole: (role) => {
-        const s = get().session; if (!s) return;
+        const s = get().session;
+        if (!s) return;
         set({ session: { ...s, role } });
       },
     }),
-    { name: "MiqorAI-insurer-auth" }
-  )
+    {
+      name: "MiqorAI-insurer-auth",
+      partialize: (s) => ({ session: s.session, failedAttempts: s.failedAttempts, lockoutUntil: s.lockoutUntil }),
+    },
+  ),
 );
 
-// Permissions per Section 1.3
 export const PERMISSIONS = {
   analyst:   { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: false, runReports: true,  exportData: true,  viewContract: false, viewBilling: false, manageStaff: false, viewAudit: false, manageSettings: false },
   fraud:     { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: true,  runReports: true,  exportData: true,  viewContract: false, viewBilling: false, manageStaff: false, viewAudit: true,  manageSettings: false },

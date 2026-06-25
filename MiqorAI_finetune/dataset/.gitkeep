@@ -1,0 +1,2 @@
+# Place your 10 JSONL batch files here (10 patients per file = 100 total).
+# Each line is one JSON object with: patient_record, visit_history, ai_training_action_cases

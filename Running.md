@@ -74,3 +74,47 @@ Stop Docker containers:
 ```bash
 docker compose down
 ```
+
+## Run the microservices backend
+
+From the repository root:
+
+```powershell
+# Windows — starts Postgres, Redis, RabbitMQ, Mailhog, then all 6 services
+.\backend\scripts\start-backend.ps1
+```
+
+```bash
+# macOS / Linux
+./backend/scripts/start-backend.sh
+```
+
+| Service | URL |
+|---------|-----|
+| API Gateway (use this from frontends) | http://localhost:8080 |
+| Auth service | http://localhost:8081 |
+| Patient service | http://localhost:8082 |
+| Medical service | http://localhost:8083 |
+| Audit service | http://localhost:8084 |
+| Notification service | http://localhost:8085 |
+| MailHog (dev email) | http://localhost:8025 |
+| RabbitMQ management | http://localhost:15672 |
+
+Stop backend services:
+
+```powershell
+.\backend\scripts\stop-backend.ps1
+```
+
+```bash
+./backend/scripts/stop-backend.sh
+```
+
+Run backend tests:
+
+```bash
+cd backend
+mvn test
+```
+
+Note: the API gateway uses port **8080**. If you also run the hospital portal locally, change one of them to avoid a port conflict.

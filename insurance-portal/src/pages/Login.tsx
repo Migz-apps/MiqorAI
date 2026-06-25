@@ -15,15 +15,19 @@ export default function Login() {
   const nav = useNavigate();
   const [code, setCode] = useState("JUBILEE_001");
   const [email, setEmail] = useState("wanjiku@jubilee.co.ke");
-  const [password, setPassword] = useState("MiqorAI");
+  const [password, setPassword] = useState("MiqorAI123!");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   if (session) return <Navigate to="/dashboard" replace />;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = login(code.trim(), email.trim(), password);
+    setLoading(true);
+    setError(null);
+    const res = await login(code.trim(), email.trim(), password);
+    setLoading(false);
     if (!res.ok) setError(res.error || MESSAGES.auth.invalidCredentials);
     else nav("/dashboard");
   };
@@ -74,8 +78,8 @@ export default function Login() {
           </div>
         </div>
         {error && <FormAlert>{error}</FormAlert>}
-        <Button type="submit" className="w-full h-11 bg-insurer hover:bg-insurer/90 text-insurer-foreground">
-          Sign in securely
+        <Button type="submit" disabled={loading} className="w-full h-11 bg-insurer hover:bg-insurer/90 text-insurer-foreground">
+          {loading ? "Signing in…" : "Sign in securely"}
         </Button>
         <div className="flex items-center gap-2 text-[11px] text-text-secondary">
           <ShieldCheck className="h-3.5 w-3.5 text-success" />
@@ -84,10 +88,9 @@ export default function Login() {
       </form>
 
       <div className="mt-lg p-sm rounded-md bg-insurer-light border border-insurer/15 text-[11px] text-insurer leading-relaxed">
-        <strong>Demo access:</strong> any insurer code + staff email + password <code className="font-mono">MiqorAI</code>.<br />
+        <strong>Demo access:</strong> insurer code <code className="font-mono">JUBILEE_001</code> + staff email + password <code className="font-mono">MiqorAI123!</code>.<br />
         Try <code>wanjiku@jubilee.co.ke</code> (analyst), <code>brian@jubilee.co.ke</code> (fraud),
-        <code> grace@jubilee.co.ke</code> (contracts), <code>daniel@jubilee.co.ke</code> (executive),
-        <code> fatima@jubilee.co.ke</code> (admin).
+        <code> grace@jubilee.co.ke</code> (contracts), <code>daniel@jubilee.co.ke</code> (executive).
       </div>
 
       <div className="mt-md text-center text-xs text-text-secondary">

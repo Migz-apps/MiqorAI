@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QRScanner } from "@/components/miqorai/QRScanner";
@@ -10,7 +11,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScanLine, UserPlus, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { PATIENTS, DEPARTMENTS } from "@/lib/mockData";
+import { hospitalApi } from "@/lib/api/hospital";
+import { mapDepartment, mapPatientFromApi } from "@/lib/mappers";
 import { useWaitlist } from "@/store/waitlist";
 import { useSync } from "@/store/sync";
 import type { Department, Priority } from "@/lib/types";
@@ -26,22 +28,40 @@ export default function Checkin() {
   const [department, setDepartment] = useState<Department>("General");
   const [priority, setPriority] = useState<Priority>("normal");
   const [reason, setReason] = useState("");
+  const [checkingIn, setCheckingIn] = useState(false);
 
-  const patient = patientId ? PATIENTS.find(p => p.id === patientId) : null;
+  const { data: patient } = useQuery({
+    queryKey: ["hospital", "patient", patientId],
+    queryFn: async () => mapPatientFromApi(await hospitalApi.patient(patientId!)),
+    enabled: !!patientId,
+  });
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ["hospital", "departments"],
+    queryFn: async () => (await hospitalApi.departments()).map(d => mapDepartment(d as Record<string, unknown>)),
+  });
+
   const alreadyHere = patient ? entries.find(e => e.patientId === patient.id && e.status !== "completed" && e.status !== "no-show") : null;
 
-  const checkIn = () => {
+  const checkIn = async () => {
     if (!patient) return;
     if (alreadyHere) {
       toast.error(`Already checked in at ${alreadyHere.checkInTime}`);
       return;
     }
-    const entry = add({
-      patientId: patient.id, department, priority, status: "waiting", reason: reason || undefined,
-    });
-    enqueue({ type: "check-in", patientName: patient.name });
-    toast.success(`${patient.name} checked in to ${department}`);
-    nav(`/stickers?visit=${entry.id}`);
+    setCheckingIn(true);
+    try {
+      const entry = await add({
+        patientId: patient.id, department, priority, status: "waiting", reason: reason || undefined,
+      });
+      enqueue({ type: "check-in", patientName: patient.name });
+      toast.success(`${patient.name} checked in to ${department}`);
+      nav(`/stickers?visit=${entry.id}`);
+    } catch {
+      toast.error("Check-in failed.");
+    } finally {
+      setCheckingIn(false);
+    }
   };
 
   return (
@@ -77,7 +97,7 @@ export default function Checkin() {
                 <div className="text-xs role-reception font-medium">PATIENT</div>
                 <div className="font-semibold">{patient.name}</div>
                 <div className="text-xs text-text-secondary">
-                  {patient.id} · DOB {patient.dob} · {patient.bloodType}
+                  {patient.id.slice(0, 8)}… · DOB {patient.dob} · {patient.bloodType}
                 </div>
                 {patient.allergies.length > 0 && (
                   <div className="text-xs flex items-center gap-1 text-error mt-1">
@@ -95,9 +115,10 @@ export default function Checkin() {
               <Select value={department} onValueChange={v => setDepartment(v as Department)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {DEPARTMENTS.filter(d => d.isActive).map(d => (
+                  {departments.filter(d => d.isActive).map(d => (
                     <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
                   ))}
+                  {departments.length === 0 && <SelectItem value="General">General</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -124,9 +145,9 @@ export default function Checkin() {
               <Input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. BP follow-up" />
             </div>
 
-            <Button onClick={checkIn} disabled={!patient || !!alreadyHere}
+            <Button onClick={checkIn} disabled={!patient || !!alreadyHere || checkingIn}
               className="w-full h-11 bg-[hsl(var(--reception-accent))] hover:bg-[hsl(var(--reception-accent))]/90 text-white">
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Check in & print sticker
+              <CheckCircle2 className="h-4 w-4 mr-2" /> {checkingIn ? "Checking in…" : "Check in & print sticker"}
             </Button>
 
             <div className="text-center">
@@ -144,19 +165,16 @@ export default function Checkin() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
-            {entries.slice(0, 6).map(e => {
-              const p = PATIENTS.find(x => x.id === e.patientId);
-              return (
-                <div key={e.id} className="px-md py-sm flex items-center gap-md">
-                  <div className="text-xs text-text-secondary w-12">{e.checkInTime}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{p?.name || e.patientId}</div>
-                    <div className="text-xs text-text-secondary">{e.department} · {e.reason || "—"}</div>
-                  </div>
-                  <Badge variant="outline" className="capitalize">{e.status.replace("-", " ")}</Badge>
+            {entries.slice(0, 6).map(e => (
+              <div key={e.id} className="px-md py-sm flex items-center gap-md">
+                <div className="text-xs text-text-secondary w-12">{e.checkInTime}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{e.patientName ?? e.patientId}</div>
+                  <div className="text-xs text-text-secondary">{e.department} · {e.reason || "—"}</div>
                 </div>
-              );
-            })}
+                <Badge variant="outline" className="capitalize">{e.status.replace("-", " ")}</Badge>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

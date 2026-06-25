@@ -1,25 +1,59 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Pill, Search, AlertTriangle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DRUG_DATABASE, PHARMACIES, DRUG_INTERACTIONS } from "@/lib/mockData";
+import { referenceApi, hospitalApi } from "@/lib/api/hospital";
+import { mapDrug, mapDrugInteraction } from "@/lib/mappers";
 import type { Patient } from "@/lib/types";
 import { toast } from "@/lib/notify";
 
-type Props = { patient: Patient; onSubmit?: (rx: any) => void };
+type Drug = { name: string; class: string; forms: string[] };
+
+type Props = { patient: Patient; onSubmit?: (rx: Record<string, unknown>) => void };
 
 export const PrescriptionBuilder = ({ patient, onSubmit }: Props) => {
   const [search, setSearch] = useState("");
-  const [drug, setDrug] = useState<typeof DRUG_DATABASE[number] | null>(null);
+  const [drug, setDrug] = useState<Drug | null>(null);
   const [dosage, setDosage] = useState("");
   const [frequency, setFrequency] = useState("1x daily");
   const [duration, setDuration] = useState("30 days");
-  const [pharmacy, setPharmacy] = useState(PHARMACIES[0]);
+  const [pharmacy, setPharmacy] = useState("");
 
-  const matches = DRUG_DATABASE.filter(d => d.name.toLowerCase().includes(search.toLowerCase())).slice(0,6);
+  const { data: drugs = [] } = useQuery({
+    queryKey: ["reference", "drugs", search],
+    queryFn: async () => {
+      const rows = await referenceApi.drugs(search || undefined);
+      return (rows as Record<string, unknown>[]).map(mapDrug);
+    },
+    enabled: search.length > 0,
+  });
+
+  const { data: pharmacies = [] } = useQuery({
+    queryKey: ["reference", "pharmacies"],
+    queryFn: () => referenceApi.pharmacies(),
+  });
+
+  const pharmacyNames = (pharmacies as Array<{ name: string }>).map(p => p.name);
+  const selectedPharmacy = pharmacy || pharmacyNames[0] || "Hospital";
+
+  const { data: interactions = [] } = useQuery({
+    queryKey: ["reference", "interactions", drug?.name, patient.prescriptions],
+    queryFn: async () => {
+      if (!drug) return [];
+      const activeMeds = patient.prescriptions
+        .filter(p => p.status === "active" || p.status === "pending")
+        .map(p => p.medication);
+      const rows = await referenceApi.interactions([drug.name, ...activeMeds]);
+      return Array.isArray(rows) ? (rows as Record<string, unknown>[]).map(mapDrugInteraction) : [];
+    },
+    enabled: !!drug,
+  });
+
+  const matches = drugs.slice(0, 6);
 
   const allergyWarning = drug ? patient.allergies.find(a =>
     a.name.toLowerCase() === drug.class.toLowerCase() ||
@@ -27,22 +61,26 @@ export const PrescriptionBuilder = ({ patient, onSubmit }: Props) => {
     drug.class.toLowerCase().includes(a.name.toLowerCase())
   ) : null;
 
-  // CDS — drug-drug interactions vs active prescriptions
   const activeRx = patient.prescriptions.filter(p => p.status === "active" || p.status === "pending");
-  const interactions = drug
-    ? DRUG_INTERACTIONS.filter(i =>
+  const drugInteractions = drug
+    ? interactions.filter(i =>
         (i.a === drug.name && activeRx.some(p => p.medication.startsWith(i.b))) ||
         (i.b === drug.name && activeRx.some(p => p.medication.startsWith(i.a)))
       )
     : [];
 
-  const hasSevere = interactions.some(i => i.severity === "severe");
+  const hasSevere = drugInteractions.some(i => i.severity === "severe");
 
-  const submit = () => {
+  const submit = async () => {
     if (!drug || !dosage) { toast.error("Pick a medication and dosage"); return; }
     if (hasSevere) { toast.error("Severe interaction blocked. Choose an alternative."); return; }
-    onSubmit?.({ medication: drug.name, dosage, frequency, duration, pharmacy });
-    toast.success(`Prescription sent to ${pharmacy}`);
+    const allergyCheck = await hospitalApi.checkAllergies(patient.id, [drug.name]).catch(() => ({ safe: true }));
+    if ((allergyCheck as { safe?: boolean }).safe === false) {
+      toast.error("Allergy conflict detected.");
+      return;
+    }
+    onSubmit?.({ medication: drug.name, dosage, frequency, duration, pharmacy: selectedPharmacy });
+    toast.success(`Prescription sent to ${selectedPharmacy}`);
     setDrug(null); setDosage(""); setSearch("");
   };
 
@@ -81,9 +119,9 @@ export const PrescriptionBuilder = ({ patient, onSubmit }: Props) => {
         </Alert>
       )}
 
-      {interactions.length > 0 && (
+      {drugInteractions.length > 0 && (
         <div className="space-y-xs">
-          {interactions.map((i, idx) => {
+          {drugInteractions.map((i, idx) => {
             const isSevere = i.severity === "severe";
             return (
               <Alert key={idx} className={isSevere ? "border-error bg-error/10" : "border-warning bg-warning/10"}>
@@ -127,10 +165,10 @@ export const PrescriptionBuilder = ({ patient, onSubmit }: Props) => {
         </div>
         <div className="space-y-xs">
           <Label>Pharmacy</Label>
-          <Select value={pharmacy} onValueChange={setPharmacy}>
+          <Select value={selectedPharmacy} onValueChange={setPharmacy}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {PHARMACIES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+              {pharmacyNames.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

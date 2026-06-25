@@ -1,15 +1,31 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { SYSTEM_SERVICES, RECENT_INCIDENTS } from "@/lib/mockData";
+import { hospitalApi } from "@/lib/api/hospital";
 
 export default function SystemHealth() {
+  const { data: health, isLoading } = useQuery({
+    queryKey: ["system", "health"],
+    queryFn: () => hospitalApi.systemHealth(),
+  });
+
+  const h = health as Record<string, unknown> | undefined;
+  const services = [
+    { service: "API Gateway", status: (h?.api_gateway as { status?: string })?.status === "up" ? "Operational" : "Degraded", lastCheck: "Now", responseTime: `${Math.round(Number((h?.api_gateway as { uptime?: number })?.uptime ?? 0))}s uptime` },
+    { service: "Database", status: (h?.database as { status?: string })?.status === "up" ? "Operational" : "Degraded", lastCheck: "Now", responseTime: `${(h?.database as { connections?: number })?.connections ?? 0} conn` },
+    { service: "Redis", status: (h?.redis as { status?: string })?.status === "up" ? "Operational" : "Degraded", lastCheck: "Now", responseTime: "—" },
+    { service: "Sync Queue", status: Number((h?.sync_queue as { pending?: number })?.pending ?? 0) > 50 ? "Degraded" : "Operational", lastCheck: "Now", responseTime: `${(h?.sync_queue as { pending?: number })?.pending ?? 0} pending` },
+  ];
+
   return (
     <div className="space-y-lg max-w-[1200px] mx-auto">
       <div>
         <h1 className="h1 flex items-center gap-sm"><Activity className="h-6 w-6 text-primary" /> System health</h1>
         <p className="body text-text-secondary">Real-time status of every MiqorAI service.</p>
       </div>
+
+      {isLoading && <div className="text-sm text-text-secondary">Loading health status…</div>}
 
       <Card>
         <CardHeader className="pb-sm"><CardTitle className="h3">Services</CardTitle></CardHeader>
@@ -21,7 +37,7 @@ export default function SystemHealth() {
             <div className="col-span-2 text-right">Response</div>
           </div>
           <div className="divide-y">
-            {SYSTEM_SERVICES.map(s => {
+            {services.map(s => {
               const ok = s.status === "Operational";
               return (
                 <div key={s.service} className="grid md:grid-cols-12 gap-sm px-md py-sm items-center">
@@ -38,20 +54,6 @@ export default function SystemHealth() {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-sm"><CardTitle className="h3">Recent incidents</CardTitle></CardHeader>
-        <CardContent>
-          <ul className="space-y-sm text-sm">
-            {RECENT_INCIDENTS.map(i => (
-              <li key={i} className="flex items-start gap-sm">
-                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
-                <span>{i}</span>
-              </li>
-            ))}
-          </ul>
         </CardContent>
       </Card>
     </div>

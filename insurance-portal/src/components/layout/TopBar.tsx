@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { LogOut, ShieldCheck, ChevronDown, Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { initials } from "@/lib/format";
 import type { Role } from "@/lib/types";
-import { ALERTS } from "@/lib/mockData";
+import { insurerApi, insurerKeys, mapAlert } from "@/lib/api/insurer";
 
 const trackPill: Record<Role, string> = {
   analyst:   "bg-role-analyst-light    role-analyst    border-[hsl(var(--analyst-accent))]/20",
@@ -23,10 +24,22 @@ const trackPill: Record<Role, string> = {
 export const TopBar = () => {
   const session = useAuth(s => s.session);
   const logout = useAuth(s => s.logout);
-  const switchRole = useAuth(s => s.switchRole);
   const nav = useNavigate();
+
+  const { data: alertsRaw } = useQuery({
+    queryKey: insurerKeys.alerts,
+    queryFn: insurerApi.alerts,
+    enabled: !!session,
+  });
+
   if (!session) return null;
-  const unread = ALERTS.filter(a => a.severity === "high").length;
+
+  const alerts = (alertsRaw ?? []).map(mapAlert);
+  const unread = alerts.filter(a => a.severity === "high").length;
+
+  const signOut = () => {
+    void logout().then(() => nav("/login"));
+  };
 
   return (
     <div className="flex-1 flex items-center justify-between gap-md">
@@ -76,15 +89,11 @@ export const TopBar = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
-            <DropdownMenuLabel className="text-[11px] text-text-secondary">Switch role (demo)</DropdownMenuLabel>
-            {(["analyst","fraud","contracts","executive","admin"] as Role[]).map(r => (
-              <DropdownMenuItem key={r} onClick={() => switchRole(r)}>
-                {ROLE_LABEL[r]} {session.role === r && <span className="ml-auto text-insurer">✓</span>}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuLabel>{session.name}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-[11px] text-text-secondary font-normal">{ROLE_LABEL[session.role]}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => nav("/settings")}>Account settings</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { logout(); nav("/login"); }} className="text-error focus:text-error">
+            <DropdownMenuItem onClick={signOut} className="text-error focus:text-error">
               <LogOut className="h-4 w-4 mr-2" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

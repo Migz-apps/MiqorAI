@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PATIENTS, ICD11_CODES, DRUG_DATABASE } from "@/lib/mockData";
+import { hospitalApi, referenceApi } from "@/lib/api/hospital";
+import { mapCensusPatient, mapDrug, mapIcd } from "@/lib/mappers";
 
 export default function Patients() {
   const nav = useNavigate();
@@ -19,21 +21,37 @@ export default function Patients() {
   const [drug, setDrug] = useState<string>("any");
   const [age, setAge] = useState<string>("any");
 
-  const calcAge = (dob: string) => Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 86400 * 1000));
+  const ageParams = useMemo(() => {
+    if (age === "0-17") return { age_min: "0", age_max: "17" };
+    if (age === "18-40") return { age_min: "18", age_max: "40" };
+    if (age === "41-65") return { age_min: "41", age_max: "65" };
+    if (age === "65+") return { age_min: "65" };
+    return {};
+  }, [age]);
 
-  const results = useMemo(() => PATIENTS.filter(p => {
-    if (q && !(`${p.name} ${p.id} ${p.phone}`.toLowerCase().includes(q.toLowerCase()))) return false;
-    if (diag !== "any" && !p.conditions.some(c => c.toLowerCase().includes(diag.toLowerCase()))) return false;
-    if (drug !== "any" && !p.prescriptions.some(rx => rx.medication === drug)) return false;
-    if (age !== "any") {
-      const a = calcAge(p.dob);
-      if (age === "0-17" && a >= 18) return false;
-      if (age === "18-40" && (a < 18 || a > 40)) return false;
-      if (age === "41-65" && (a < 41 || a > 65)) return false;
-      if (age === "65+" && a < 65) return false;
-    }
-    return true;
-  }), [q, diag, drug, age]);
+  const { data: results = [], isLoading, isError } = useQuery({
+    queryKey: ["hospital", "patients", "census", q, diag, drug, age],
+    queryFn: async () => {
+      const params: Record<string, string> = { ...ageParams };
+      if (q.trim()) params.search = q.trim();
+      if (diag !== "any") params.diagnosis = diag;
+      if (drug !== "any") params.medication = drug;
+      const rows = await hospitalApi.patientsCensus(params);
+      return (rows as Record<string, unknown>[]).map(mapCensusPatient);
+    },
+  });
+
+  const { data: icdCodes = [] } = useQuery({
+    queryKey: ["reference", "icd"],
+    queryFn: async () => (await referenceApi.icd()).map(r => mapIcd(r as Record<string, unknown>)),
+  });
+
+  const { data: drugList = [] } = useQuery({
+    queryKey: ["reference", "drugs", "all"],
+    queryFn: async () => (await referenceApi.drugs()).map(r => mapDrug(r as Record<string, unknown>)),
+  });
+
+  const calcAge = (dob: string) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 86400 * 1000)) : null;
 
   return (
     <div className="space-y-lg max-w-[1400px] mx-auto">
@@ -67,7 +85,7 @@ export default function Patients() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="any">Any</SelectItem>
-                        {ICD11_CODES.map(c => <SelectItem key={c.code} value={c.label}>{c.code} — {c.label}</SelectItem>)}
+                        {icdCodes.map(c => <SelectItem key={c.code} value={c.label}>{c.code} — {c.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -77,7 +95,7 @@ export default function Patients() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="any">Any</SelectItem>
-                        {DRUG_DATABASE.map(d => <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>)}
+                        {drugList.map(d => <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -109,10 +127,12 @@ export default function Patients() {
           <div className="hidden md:grid grid-cols-12 px-md py-sm text-xs font-medium text-text-secondary border-b bg-background-grey">
             <div className="col-span-4">Patient</div>
             <div className="col-span-2">ID</div>
-            <div className="col-span-2">Age / Gender</div>
-            <div className="col-span-3">Conditions</div>
+            <div className="col-span-2">Blood type</div>
+            <div className="col-span-3">Status</div>
             <div className="col-span-1 text-right">Last visit</div>
           </div>
+          {isLoading && <div className="p-md text-sm text-text-secondary">Loading patients…</div>}
+          {isError && <div className="p-md text-sm text-error">Failed to load patients.</div>}
           <div className="divide-y">
             {results.map(p => (
               <button key={p.id} onClick={() => nav(`/patients/${p.id}`)} className="w-full text-left flex md:grid md:grid-cols-12 md:items-center gap-sm px-md py-sm hover:bg-primary-light/40 transition-colors">
@@ -121,23 +141,19 @@ export default function Patients() {
                     {p.name.split(" ").map(n => n[0]).slice(0,2).join("")}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium truncate flex items-center gap-xs">
-                      {p.name}
-                      {p.allergies.length > 0 && <Badge className="bg-error/15 text-error border-error/30 text-[10px] hover:bg-error/15">⚠</Badge>}
-                    </div>
-                    <div className="text-xs text-text-secondary truncate">{p.phone}</div>
-                    <div className="text-xs text-text-secondary truncate md:hidden">{p.id} · {calcAge(p.dob)} · {p.gender} · {p.conditions[0] || "—"}</div>
+                    <div className="font-medium truncate">{p.name}</div>
+                    <div className="text-xs text-text-secondary truncate md:hidden">{p.id.slice(0, 8)}… · {p.bloodType}</div>
                   </div>
                 </div>
-                <div className="hidden md:block md:col-span-2 font-mono text-xs">{p.id}</div>
-                <div className="hidden md:block md:col-span-2 text-sm">{calcAge(p.dob)} · {p.gender}</div>
-                <div className="hidden md:block md:col-span-3 text-sm text-text-secondary truncate">{p.conditions.join(", ") || "—"}</div>
+                <div className="hidden md:block md:col-span-2 font-mono text-xs">{p.id.slice(0, 8)}…</div>
+                <div className="hidden md:block md:col-span-2 text-sm">{p.bloodType}</div>
+                <div className="hidden md:block md:col-span-3 text-sm text-text-secondary truncate">—</div>
                 <div className="hidden md:block md:col-span-1 text-right text-xs text-text-secondary">{p.lastVisit || "—"}</div>
               </button>
             ))}
-            {results.length === 0 && (
+            {!isLoading && results.length === 0 && (
               <div className="p-xl text-center text-sm text-text-secondary">
-                No patients match these filters. <a href="#" className="text-primary hover:underline">Register a new patient</a>.
+                No patients match these filters.
               </div>
             )}
           </div>
