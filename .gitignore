@@ -1,75 +1,63 @@
+# =============================================================================
+# MiqorAI monorepo — root .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
 # Dependencies
+# -----------------------------------------------------------------------------
 node_modules/
-
-# Expo / React Native
-.expo/
-.expo-shared/
-web-build/
-android/
-ios/
-
-# TypeScript / caches
-*.tsbuildinfo
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# OS / editor files
-.DS_Store
-Thumbs.db
-
-# Web Apps & Bundlers
-.next/
-out/
-.nuxt/
-.netlify/
-.vercel/
-.output/
-.parcel-cache/
-dist-ssr/
-build/
-coverage/
-
-# General Cache & Testing
-.cache/
-.eslintcache
-.stylelintcache
-cypress/videos/
-cypress/screenshots/
-
-# Extra Web Frameworks & Generators
-.svelte-kit/
-.astro/
-.solid/
-.quasar/
-.docusaurus/
-.vuepress/
-.serverless/
-storybook-static/
-.webpack/
-
-# Package managers & Dependencies
 bower_components/
 web_modules/
 .pnp
 .pnp.*
 .bun/
 
-# Logs & Diagnostics
-logs/
-*.log
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-*.pid
-*.seed
-*.pid.lock
+# -----------------------------------------------------------------------------
+# Environment, secrets, and local credentials
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!**/.env.example
+.dev.vars
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+CREDENTIALS.md
 
-# Coverage & Testing Extra
+# -----------------------------------------------------------------------------
+# Build outputs (frontends, server, Java)
+# -----------------------------------------------------------------------------
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.nuxt/
+.output/
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# -----------------------------------------------------------------------------
+# Vite / TanStack / Lovable / bundler caches
+# -----------------------------------------------------------------------------
+.vite/
+.vite-temp/
+.tanstack/
+.lovable/
+.parcel-cache/
+.webpack/
+*.tsbuildinfo
+
+# -----------------------------------------------------------------------------
+# Testing & coverage
+# -----------------------------------------------------------------------------
+coverage/
 .nyc_output/
 lib-cov
 *.lcov
@@ -77,16 +65,120 @@ lib-cov
 .playwright/
 playwright-report/
 test-results/
+cypress/videos/
+cypress/screenshots/
 
-# IDE & Editor
+# -----------------------------------------------------------------------------
+# Logs & diagnostics
+# -----------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+*.pid
+*.seed
+*.pid.lock
+
+# -----------------------------------------------------------------------------
+# Server / database (Node API)
+# -----------------------------------------------------------------------------
+server/uploads/
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+prisma/*.db
+prisma/*.db-journal
+
+# -----------------------------------------------------------------------------
+# Python / ML fine-tuning (MiqorAI_finetune)
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+wandb/
+checkpoints/
+runs/
+MiqorAI_finetune/*-adapter/
+MiqorAI_finetune/miqorai-qwen15-adapter/
+MiqorAI_finetune/miqorai-qwen15-json-adapter/
+MiqorAI_finetune/dataset/*.jsonl
+!MiqorAI_finetune/dataset/EXAMPLE_one_patient.jsonl
+!MiqorAI_finetune/dataset/.gitkeep
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+
+# -----------------------------------------------------------------------------
+# Expo / React Native (mobile_patient)
+# -----------------------------------------------------------------------------
+.expo/
+.expo-shared/
+web-build/
+android/
+ios/
+
+# -----------------------------------------------------------------------------
+# Hosting / deploy tooling
+# -----------------------------------------------------------------------------
+.netlify/
+.vercel/
+.serverless/
+storybook-static/
+
+# -----------------------------------------------------------------------------
+# Extra web frameworks (scaffold leftovers)
+# -----------------------------------------------------------------------------
+.svelte-kit/
+.astro/
+.solid/
+.quasar/
+.docusaurus/
+.vuepress/
+
+# -----------------------------------------------------------------------------
+# Cache
+# -----------------------------------------------------------------------------
+.cache/
+.eslintcache
+.stylelintcache
+
+# -----------------------------------------------------------------------------
+# IDE & editor
+# -----------------------------------------------------------------------------
 .idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+.cursor/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# -----------------------------------------------------------------------------
+# OS files
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
