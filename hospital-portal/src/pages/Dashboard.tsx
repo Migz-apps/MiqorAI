@@ -9,6 +9,15 @@ import { hospitalApi } from "@/lib/api/hospital";
 import { useAuth } from "@/store/auth";
 import { Link } from "react-router-dom";
 
+function displayName(value: unknown, fallback = "Patient") {
+  const name = typeof value === "string" ? value.trim() : "";
+  return name || fallback;
+}
+
+function initials(name: string) {
+  return name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+}
+
 export default function Dashboard() {
   const session = useAuth(s => s.session)!;
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -18,13 +27,17 @@ export default function Dashboard() {
     queryFn: () => hospitalApi.dashboard(),
   });
 
-  const recent = (dash?.recent_patients as Array<{ patient_id: string; name: string; checked_in_at?: string }>) ?? [];
+  const recent = Array.isArray(dash?.recent_patients)
+    ? (dash.recent_patients as Array<{ patient_id?: string; name?: string; checked_in_at?: string }>)
+    : [];
+  const staffName = displayName(session?.name, "Doctor");
+  const hospitalName = displayName(session?.hospitalName, "your hospital");
 
   return (
     <div className="space-y-lg max-w-[1400px] mx-auto animate-fade-up">
       <PageHeader
-        title={`Good morning, ${session.name.split(" ")[0]}`}
-        subtitle={`${today} · Here's what's happening at ${session.hospitalName} today.`}
+        title={`Good morning, ${staffName.split(" ")[0]}`}
+        subtitle={`${today} · Here's what's happening at ${hospitalName} today.`}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
@@ -55,17 +68,21 @@ export default function Dashboard() {
         <CardContent className="p-0">
           {isLoading && <div className="p-md text-sm text-text-secondary">Loading…</div>}
           <div className="divide-y">
-            {recent.slice(0, 5).map(p => (
-              <Link key={p.patient_id} to={`/patients/${p.patient_id}`} className="flex items-center gap-md px-md py-sm hover:bg-background-grey">
+            {recent.slice(0, 5).map((p, index) => {
+              const patientId = displayName(p.patient_id, "");
+              const name = displayName(p.name);
+              if (!patientId) return null;
+              return (
+              <Link key={`${patientId}-${index}`} to={`/patients/${patientId}`} className="flex items-center gap-md px-md py-sm hover:bg-background-grey">
                 <div className="h-9 w-9 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-semibold">
-                  {p.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
+                  {initials(name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{p.name}</div>
-                  <div className="text-xs text-text-secondary">{p.patient_id.slice(0, 8)}… · Checked in {p.checked_in_at ? new Date(p.checked_in_at).toLocaleTimeString() : "—"}</div>
+                  <div className="font-medium text-sm">{name}</div>
+                  <div className="text-xs text-text-secondary">{patientId.slice(0, 8)}… · Checked in {p.checked_in_at ? new Date(p.checked_in_at).toLocaleTimeString() : "—"}</div>
                 </div>
               </Link>
-            ))}
+            );})}
             {!isLoading && recent.length === 0 && (
               <div className="p-md text-sm text-text-secondary">No check-ins today yet.</div>
             )}

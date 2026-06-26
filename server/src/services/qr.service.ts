@@ -41,6 +41,7 @@ function isQrStale(updatedAt: Date | null): boolean {
 export async function getPatientQrImage(patientId: string): Promise<{
   qr_code: string;
   patient_id: string;
+  hash: string;
   version: number;
   generated_at: string;
 }> {
@@ -59,6 +60,7 @@ export async function getPatientQrImage(patientId: string): Promise<{
   return {
     qr_code,
     patient_id: patientId,
+    hash: refreshed.qrCodeHash,
     version: refreshed.qrVersion,
     generated_at: refreshed.qrUpdatedAt?.toISOString() ?? new Date().toISOString(),
   };
@@ -107,6 +109,31 @@ export async function resolveQrScan(
     prescriptions: patient.prescriptions,
     context,
   };
+}
+
+export async function validateQrScan(
+  patientId: string,
+  hash: string,
+): Promise<{ patientId: string }> {
+  const patient = await prisma.patient.findUnique({
+    where: { id: patientId },
+    select: {
+      id: true,
+      isActive: true,
+      qrCodeHash: true,
+      qrUpdatedAt: true,
+    },
+  });
+
+  if (!patient || !patient.isActive) throw notFound("Patient not found");
+  if (!patient.qrCodeHash || patient.qrCodeHash !== hash) {
+    throw notFound("Invalid or expired QR code");
+  }
+  if (isQrStale(patient.qrUpdatedAt)) {
+    throw notFound("QR code expired — patient should refresh their app");
+  }
+
+  return { patientId: patient.id };
 }
 
 /** Call after any mutation that changes patient medical footprint */

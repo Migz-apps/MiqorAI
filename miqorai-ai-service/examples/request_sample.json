@@ -1,0 +1,45 @@
+{
+  "patient_record": {
+    "patient_id": "pat-001",
+    "name": "Jane Doe",
+    "sex": "F",
+    "date_of_birth": "1981-04-02",
+    "blood_type": "A+",
+    "allergies": [],
+    "chronic_conditions": [
+      {
+        "condition": "Iron deficiency anemia",
+        "diagnosed_date": "2024-11-01",
+        "current_status": "active"
+      }
+    ],
+    "current_medications_as_of_2026_06": [
+      {
+        "name": "Ferrous sulfate",
+        "dose": "325mg",
+        "frequency": "daily",
+        "route": "oral",
+        "started_date": "2025-12-01"
+      }
+    ]
+  },
+  "visit_history": [
+    {
+      "date": "2026-06-01",
+      "facility": "City Clinic",
+      "reason_for_visit": "Fatigue follow-up",
+      "chief_complaint_or_context": "Persistent fatigue",
+      "tests_ordered": ["CBC"],
+      "test_results": ["Mild anemia"],
+      "diagnoses_or_assessments": ["Iron deficiency"],
+      "medications_started_or_given": ["Ferrous sulfate"],
+      "procedures_or_interventions": [],
+      "outcome": "Continue iron"
+    }
+  ],
+  "current_complaint": "Persistent fatigue",
+  "doctor_attempted_action": {
+    "type": "test_order",
+    "item": "CBC"
+  }
+}

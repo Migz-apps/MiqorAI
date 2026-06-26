@@ -1,0 +1,17 @@
+member_id,patient_id,insurer_id,member_number,plan_name,coverage_start,coverage_end,status,policy_holder_name,relationship_to_policy_holder,employer,primary_care_hospital_id,copay_percentage,annual_limit,remaining_limit,verified_at,notes
+IM0001,PAT001,INS001,NHIF-87654321,Standard,2026-01-01,2026-12-31,active,Policy Holder 1,self,MiqorAI Demo Employer,HOSP002,10,1000000,982000,2026-06-19T10:00:00,Verified insurance membership for prototype.
+IM0002,PAT002,INS001,NHIF-87654322,Premium,2026-01-01,2026-12-31,active,Policy Holder 2,self,MiqorAI Demo Employer,HOSP001,20,1000000,964000,2026-06-18T10:00:00,Verified insurance membership for prototype.
+IM0003,PAT003,INS001,NHIF-87654323,Gold,2026-01-01,2026-12-31,active,Policy Holder 3,self,MiqorAI Demo Employer,HOSP002,10,1000000,946000,2026-06-17T10:00:00,Verified insurance membership for prototype.
+IM0004,PAT004,INS001,NHIF-87654324,Family,2026-01-01,2026-12-31,active,Policy Holder 4,self,MiqorAI Demo Employer,HOSP001,20,1000000,928000,2026-06-16T10:00:00,Verified insurance membership for prototype.
+IM0005,PAT005,INS001,NHIF-87654325,Standard,2026-01-01,2026-12-31,active,Policy Holder 5,self,MiqorAI Demo Employer,HOSP002,10,1000000,910000,2026-06-15T10:00:00,Verified insurance membership for prototype.
+IM0006,PAT006,INS001,NHIF-87654326,Premium,2026-01-01,2026-12-31,active,Policy Holder 6,self,MiqorAI Demo Employer,HOSP001,20,1000000,892000,2026-06-14T10:00:00,Verified insurance membership for prototype.
+IM0007,PAT007,INS001,NHIF-87654327,Gold,2026-01-01,2026-12-31,active,Policy Holder 7,self,MiqorAI Demo Employer,HOSP002,10,1000000,874000,2026-06-13T10:00:00,Verified insurance membership for prototype.
+IM0008,PAT008,INS001,NHIF-87654328,Family,2026-01-01,2026-12-31,active,Policy Holder 8,self,MiqorAI Demo Employer,HOSP001,20,1000000,856000,2026-06-12T10:00:00,Verified insurance membership for prototype.
+IM0009,PAT009,INS001,NHIF-87654329,Standard,2026-01-01,2026-12-31,active,Policy Holder 9,self,MiqorAI Demo Employer,HOSP002,10,1000000,838000,2026-06-11T10:00:00,Verified insurance membership for prototype.
+IM0010,PAT010,INS001,NHIF-87654330,Premium,2026-01-01,2026-12-31,active,Policy Holder 10,self,MiqorAI Demo Employer,HOSP001,20,1000000,820000,2026-06-10T10:00:00,Verified insurance membership for prototype.
+IM0011,PAT011,INS001,NHIF-87654331,Gold,2026-01-01,2026-12-31,active,Policy Holder 11,self,MiqorAI Demo Employer,HOSP002,10,1000000,802000,2026-06-09T10:00:00,Verified insurance membership for prototype.
+IM0012,PAT012,INS001,NHIF-87654332,Family,2026-01-01,2026-12-31,active,Policy Holder 12,self,MiqorAI Demo Employer,HOSP001,20,1000000,784000,2026-06-08T10:00:00,Verified insurance membership for prototype.
+IM0013,PAT013,INS001,NHIF-87654333,Standard,2026-01-01,2026-12-31,active,Policy Holder 13,child,MiqorAI Demo Employer,HOSP002,10,1000000,766000,2026-06-07T10:00:00,Verified insurance membership for prototype.
+IM0014,PAT014,INS001,NHIF-87654334,Premium,2026-01-01,2026-12-31,active,Policy Holder 14,child,MiqorAI Demo Employer,HOSP001,20,1000000,748000,2026-06-06T10:00:00,Verified insurance membership for prototype.
+IM0015,PAT015,INS001,NHIF-87654335,Gold,2026-01-01,2026-12-31,active,Policy Holder 15,parent,MiqorAI Demo Employer,HOSP002,10,1000000,730000,2026-06-05T10:00:00,Verified insurance membership for prototype.
+IM0016,PAT016,INS001,NHIF-87654336,Family,2026-01-01,2026-12-31,active,Policy Holder 16,spouse,MiqorAI Demo Employer,HOSP001,20,1000000,712000,2026-06-04T10:00:00,Verified insurance membership for prototype.

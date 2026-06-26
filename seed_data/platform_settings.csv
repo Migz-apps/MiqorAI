@@ -1,0 +1,65 @@
+setting_id,user_id,setting_key,setting_value,created_at,updated_at,is_active
+SET0001A,USR001,patient_prefs:USR001,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0001B,USR001,patient_biometric:USR001,"{""enabled"": true, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0001C,USR001,patient_privacy:USR001,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0001D,USR001,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0002A,USR002,patient_prefs:USR002,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0002B,USR002,patient_biometric:USR002,"{""enabled"": true, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0002C,USR002,patient_privacy:USR002,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0002D,USR002,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0003A,USR003,patient_prefs:USR003,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0003B,USR003,patient_biometric:USR003,"{""enabled"": false, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0003C,USR003,patient_privacy:USR003,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0003D,USR003,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0004A,USR004,patient_prefs:USR004,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0004B,USR004,patient_biometric:USR004,"{""enabled"": true, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0004C,USR004,patient_privacy:USR004,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0004D,USR004,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0005A,USR005,patient_prefs:USR005,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0005B,USR005,patient_biometric:USR005,"{""enabled"": true, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0005C,USR005,patient_privacy:USR005,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0005D,USR005,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0006A,USR006,patient_prefs:USR006,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0006B,USR006,patient_biometric:USR006,"{""enabled"": false, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0006C,USR006,patient_privacy:USR006,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0006D,USR006,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0007A,USR007,patient_prefs:USR007,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0007B,USR007,patient_biometric:USR007,"{""enabled"": true, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0007C,USR007,patient_privacy:USR007,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0007D,USR007,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0008A,USR008,patient_prefs:USR008,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0008B,USR008,patient_biometric:USR008,"{""enabled"": true, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0008C,USR008,patient_privacy:USR008,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0008D,USR008,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0009A,USR009,patient_prefs:USR009,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0009B,USR009,patient_biometric:USR009,"{""enabled"": false, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0009C,USR009,patient_privacy:USR009,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0009D,USR009,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0010A,USR010,patient_prefs:USR010,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0010B,USR010,patient_biometric:USR010,"{""enabled"": true, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0010C,USR010,patient_privacy:USR010,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0010D,USR010,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0011A,USR011,patient_prefs:USR011,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0011B,USR011,patient_biometric:USR011,"{""enabled"": true, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0011C,USR011,patient_privacy:USR011,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0011D,USR011,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0012A,USR012,patient_prefs:USR012,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0012B,USR012,patient_biometric:USR012,"{""enabled"": false, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0012C,USR012,patient_privacy:USR012,"{""share_anonymized_data"": false, ""allow_family_access"": true, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0012D,USR012,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0013A,USR013,patient_prefs:USR013,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0013B,USR013,patient_biometric:USR013,"{""enabled"": true, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0013C,USR013,patient_privacy:USR013,"{""share_anonymized_data"": false, ""allow_family_access"": false, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0013D,USR013,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0014A,USR014,patient_prefs:USR014,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0014B,USR014,patient_biometric:USR014,"{""enabled"": true, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0014C,USR014,patient_privacy:USR014,"{""share_anonymized_data"": false, ""allow_family_access"": false, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0014D,USR014,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0015A,USR015,patient_prefs:USR015,"{""language"": ""en"", ""theme"": ""light"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0015B,USR015,patient_biometric:USR015,"{""enabled"": false, ""method"": ""fingerprint""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0015C,USR015,patient_privacy:USR015,"{""share_anonymized_data"": false, ""allow_family_access"": false, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0015D,USR015,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0016A,USR016,patient_prefs:USR016,"{""language"": ""en"", ""theme"": ""dark"", ""notifications"": {""email"": true, ""sms"": true, ""push"": true, ""appointment_reminders"": true, ""lab_results"": true, ""prescription_updates"": true}, ""timezone"": ""Africa/Nairobi"", ""date_format"": ""YYYY-MM-DD""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0016B,USR016,patient_biometric:USR016,"{""enabled"": true, ""method"": ""face_id""}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0016C,USR016,patient_privacy:USR016,"{""share_anonymized_data"": false, ""allow_family_access"": false, ""marketing_emails"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True
+SET0016D,USR016,two_factor_enabled,"{""enabled"": false}",2026-05-26T17:00:00,2026-06-25T17:00:00,True

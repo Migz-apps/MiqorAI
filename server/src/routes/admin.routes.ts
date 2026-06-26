@@ -88,6 +88,29 @@ router.get("/hospitals", async (req, res, next) => {
   }
 });
 
+router.get("/hospitals/stats/pilot-ending", async (_req, res, next) => {
+  try {
+    res.json(await getHospitalsStatsFiltered(true));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/hospitals/stats", async (req, res, next) => {
+  try {
+    res.json(
+      await listHospitalsWithStats({
+        status: req.query.status ? String(req.query.status) : undefined,
+        search: req.query.search ? String(req.query.search) : undefined,
+        limit: req.query.limit ? parseInt(String(req.query.limit), 10) : undefined,
+        offset: req.query.offset ? parseInt(String(req.query.offset), 10) : undefined,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/hospitals/:id", async (req, res, next) => {
   try {
     res.json(await getHospital(param(req.params.id)));
@@ -419,6 +442,14 @@ router.get("/patients/search", async (req, res, next) => {
   }
 });
 
+router.get("/patients/enriched", async (req, res, next) => {
+  try {
+    res.json(await getEnrichedAdminPatients(req.query.limit ? parseInt(String(req.query.limit), 10) : 50));
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/onboarding/:id/approve", async (req, res, next) => {
   try {
     res.json(await approveOnboardingRequest(param(req.params.id), req.user!.sub));
@@ -431,21 +462,6 @@ router.post("/onboarding/:id/reject", async (req, res, next) => {
   try {
     res.json(
       await rejectOnboardingRequest(param(req.params.id), req.user!.sub, req.body.reason ?? ""),
-    );
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get("/hospitals/stats", async (req, res, next) => {
-  try {
-    res.json(
-      await listHospitalsWithStats({
-        status: req.query.status ? String(req.query.status) : undefined,
-        search: req.query.search ? String(req.query.search) : undefined,
-        limit: req.query.limit ? parseInt(String(req.query.limit), 10) : undefined,
-        offset: req.query.offset ? parseInt(String(req.query.offset), 10) : undefined,
-      }),
     );
   } catch (err) {
     next(err);
@@ -502,14 +518,6 @@ router.get("/pharmacies/:id", async (req, res, next) => {
 router.post("/pharmacies/:id/reject", async (req, res, next) => {
   try {
     res.json(await rejectPharmacy(param(req.params.id), req.body.reason ?? "", req.user!.sub));
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get("/hospitals/stats/pilot-ending", async (_req, res, next) => {
-  try {
-    res.json(await getHospitalsStatsFiltered(true));
   } catch (err) {
     next(err);
   }
@@ -574,14 +582,6 @@ router.post("/dashboard/export", async (req, res, next) => {
 router.post("/reports/insurer", async (req, res, next) => {
   try {
     res.json(await generateAdminInsurerReport(req.user!.sub));
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get("/patients/enriched", async (req, res, next) => {
-  try {
-    res.json(await getEnrichedAdminPatients(req.query.limit ? parseInt(String(req.query.limit), 10) : 50));
   } catch (err) {
     next(err);
   }

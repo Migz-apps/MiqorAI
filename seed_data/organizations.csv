@@ -1,0 +1,6 @@
+organization_id,organization_type,name,code,license_number,email,phone,website,address,city,country,latitude,longitude,status,operating_hours,accepts_insurance,created_at,notes
+HOSP001,hospital,St. Catherine Hospital,SCH001,HSP-RW-0001,info@stcatherine.demo,+250788100001,https://stcatherine.demo,KN 3 Rd,Kigali,Rwanda,-1.9441,30.0619,active,24/7,True,2026-01-01T09:00:00,Primary referral hospital
+HOSP002,hospital,Kijani Medical Centre,KMC001,HSP-RW-0002,info@kijani.demo,+250788100002,https://kijani.demo,KG 7 Ave,Kigali,Rwanda,-1.9495,30.0588,active,24/7,True,2026-01-01T09:00:00,Secondary hospital
+PHARM001,pharmacy,Miqor Pharmacy,MPH001,PHM-RW-0101,pharmacy@miqor.demo,+250788100003,https://pharmacy.demo,KK 15 Ave,Kigali,Rwanda,-1.9502,30.0624,active,08:00-22:00,True,2026-01-01T09:00:00,Connected dispensing pharmacy
+LAB001,laboratory,Miqor Diagnostic Lab,MDL001,LAB-RW-0201,lab@miqor.demo,+250788100004,https://lab.demo,KG 11 Ave,Kigali,Rwanda,-1.9468,30.0602,active,24/7,True,2026-01-01T09:00:00,Reference laboratory
+INS001,insurer,National Health Insurance Demo,NHI001,INS-RW-0301,claims@nhidemo.demo,+250788100005,https://nhidemo.demo,KN 5 Rd,Kigali,Rwanda,-1.9452,30.0596,active,08:00-17:00,True,2026-01-01T09:00:00,Insurance partner for prototype

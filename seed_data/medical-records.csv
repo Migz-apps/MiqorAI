@@ -1,0 +1,145 @@
+record_id,patient_id,record_type,data,hospital_id,recorded_by,recorded_at,is_active
+MR0001,PAT001,allergy,"{""name"": ""Penicillin"", ""severity"": ""severe"", ""reaction"": ""Facial swelling and difficulty breathing""}",HOSP001,USR017,2026-05-23T00:00:00,True
+MR0002,PAT001,diagnosis,"{""name"": ""Essential hypertension"", ""codes"": [""BA00""], ""since"": ""2021-04-18"", ""status"": ""active""}",HOSP001,USR017,2026-05-25T00:00:00,True
+MR0003,PAT001,diagnosis,"{""name"": ""Type 2 diabetes mellitus"", ""codes"": [""5A11""], ""since"": ""2022-08-09"", ""status"": ""active""}",HOSP001,USR017,2026-05-25T00:00:00,True
+MR0004,PAT001,medication,"{""name"": ""Amlodipine"", ""dose"": ""5 mg"", ""freq"": ""once daily"", ""since"": ""2021-04-18"", ""status"": ""active""}",HOSP001,USR017,2026-05-28T00:00:00,True
+MR0005,PAT001,medication,"{""name"": ""Metformin"", ""dose"": ""500 mg"", ""freq"": ""twice daily"", ""since"": ""2022-08-09"", ""status"": ""active""}",HOSP001,USR017,2026-05-28T00:00:00,True
+MR0006,PAT001,lab_result,"{""test"": ""HbA1c"", ""result"": 6.8, ""unit"": ""%"", ""date"": ""2026-06-10"", ""flag"": ""high"", ""ref_low"": 4.0, ""ref_high"": 5.6}",HOSP001,USR017,2026-06-04T00:00:00,True
+MR0007,PAT001,immunization,"{""name"": ""COVID-19 booster"", ""date"": ""2025-11-18"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR017,2026-06-06T00:00:00,True
+MR0008,PAT001,procedure,"{""name"": ""ECG screening"", ""date"": ""2025-12-02"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR017,2026-06-08T00:00:00,True
+MR0009,PAT001,visit,"{""date"": ""2026-06-10"", ""type"": ""consultation"", ""provider"": ""Dr. Amara Ndlovu"", ""notes"": ""Blood pressure and diabetes follow-up. Medication adherence reviewed.""}",HOSP001,USR017,2026-06-11T00:00:00,True
+MR0010,PAT002,allergy,"{""name"": ""Ibuprofen"", ""severity"": ""moderate"", ""reaction"": ""Gastric irritation and wheezing""}",HOSP002,USR018,2026-05-22T00:00:00,True
+MR0011,PAT002,diagnosis,"{""name"": ""Essential hypertension"", ""codes"": [""BA00""], ""since"": ""2020-03-12"", ""status"": ""active""}",HOSP002,USR018,2026-05-24T00:00:00,True
+MR0012,PAT002,diagnosis,"{""name"": ""Dyslipidemia"", ""codes"": [""5C80""], ""since"": ""2023-02-21"", ""status"": ""active""}",HOSP002,USR018,2026-05-24T00:00:00,True
+MR0013,PAT002,medication,"{""name"": ""Losartan"", ""dose"": ""50 mg"", ""freq"": ""once daily"", ""since"": ""2020-03-12"", ""status"": ""active""}",HOSP002,USR018,2026-05-27T00:00:00,True
+MR0014,PAT002,medication,"{""name"": ""Atorvastatin"", ""dose"": ""20 mg"", ""freq"": ""nightly"", ""since"": ""2023-02-21"", ""status"": ""active""}",HOSP002,USR018,2026-05-27T00:00:00,True
+MR0015,PAT002,lab_result,"{""test"": ""Lipid profile LDL"", ""result"": 142, ""unit"": ""mg/dL"", ""date"": ""2026-05-29"", ""flag"": ""high"", ""ref_low"": 0, ""ref_high"": 100}",HOSP002,USR018,2026-06-03T00:00:00,True
+MR0016,PAT002,immunization,"{""name"": ""Influenza vaccine"", ""date"": ""2025-06-05"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR018,2026-06-05T00:00:00,True
+MR0017,PAT002,procedure,"{""name"": ""Chest X-ray"", ""date"": ""2024-10-14"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR018,2026-06-07T00:00:00,True
+MR0018,PAT002,visit,"{""date"": ""2026-05-29"", ""type"": ""follow-up"", ""provider"": ""Dr. David Kimani"", ""notes"": ""Hypertension follow-up. Lifestyle counseling given.""}",HOSP002,USR018,2026-06-10T00:00:00,True
+MR0019,PAT003,allergy,"{""name"": ""Sulfa drugs"", ""severity"": ""severe"", ""reaction"": ""Generalized rash and throat tightness""}",HOSP001,USR019,2026-05-21T00:00:00,True
+MR0020,PAT003,diagnosis,"{""name"": ""Heart failure"", ""codes"": [""BD10""], ""since"": ""2022-09-11"", ""status"": ""active""}",HOSP001,USR019,2026-05-23T00:00:00,True
+MR0021,PAT003,diagnosis,"{""name"": ""Osteoarthritis"", ""codes"": [""FA01""], ""since"": ""2019-07-02"", ""status"": ""active""}",HOSP001,USR019,2026-05-23T00:00:00,True
+MR0022,PAT003,medication,"{""name"": ""Furosemide"", ""dose"": ""40 mg"", ""freq"": ""once daily"", ""since"": ""2022-09-11"", ""status"": ""active""}",HOSP001,USR019,2026-05-26T00:00:00,True
+MR0023,PAT003,medication,"{""name"": ""Carvedilol"", ""dose"": ""6.25 mg"", ""freq"": ""twice daily"", ""since"": ""2023-01-20"", ""status"": ""active""}",HOSP001,USR019,2026-05-26T00:00:00,True
+MR0024,PAT003,lab_result,"{""test"": ""BNP"", ""result"": 420, ""unit"": ""pg/mL"", ""date"": ""2026-06-01"", ""flag"": ""high"", ""ref_low"": 0, ""ref_high"": 100}",HOSP001,USR019,2026-06-02T00:00:00,True
+MR0025,PAT003,immunization,"{""name"": ""Pneumococcal vaccine"", ""date"": ""2024-08-22"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR019,2026-06-04T00:00:00,True
+MR0026,PAT003,procedure,"{""name"": ""Echocardiogram"", ""date"": ""2026-01-12"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR019,2026-06-06T00:00:00,True
+MR0027,PAT003,visit,"{""date"": ""2026-06-01"", ""type"": ""cardiology"", ""provider"": ""Dr. Amara Ndlovu"", ""notes"": ""Reports mild exertional shortness of breath. Diuretic adherence reinforced.""}",HOSP001,USR019,2026-06-09T00:00:00,True
+MR0028,PAT004,allergy,"{""name"": ""Aspirin"", ""severity"": ""moderate"", ""reaction"": ""Shortness of breath and chest tightness""}",HOSP002,USR017,2026-05-20T00:00:00,True
+MR0029,PAT004,diagnosis,"{""name"": ""Asthma"", ""codes"": [""CA23""], ""since"": ""2017-05-08"", ""status"": ""active""}",HOSP002,USR017,2026-05-22T00:00:00,True
+MR0030,PAT004,diagnosis,"{""name"": ""Allergic rhinitis"", ""codes"": [""CA08""], ""since"": ""2018-04-15"", ""status"": ""active""}",HOSP002,USR017,2026-05-22T00:00:00,True
+MR0031,PAT004,medication,"{""name"": ""Salbutamol inhaler"", ""dose"": ""100 mcg"", ""freq"": ""as needed"", ""since"": ""2017-05-08"", ""status"": ""active""}",HOSP002,USR017,2026-05-25T00:00:00,True
+MR0032,PAT004,medication,"{""name"": ""Budesonide inhaler"", ""dose"": ""200 mcg"", ""freq"": ""twice daily"", ""since"": ""2021-03-18"", ""status"": ""active""}",HOSP002,USR017,2026-05-25T00:00:00,True
+MR0033,PAT004,lab_result,"{""test"": ""Peak expiratory flow"", ""result"": 420, ""unit"": ""L/min"", ""date"": ""2026-06-03"", ""flag"": ""normal"", ""ref_low"": 400, ""ref_high"": 650}",HOSP002,USR017,2026-06-01T00:00:00,True
+MR0034,PAT004,immunization,"{""name"": ""Influenza vaccine"", ""date"": ""2025-07-12"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR017,2026-06-03T00:00:00,True
+MR0035,PAT004,procedure,"{""name"": ""Spirometry"", ""date"": ""2025-09-09"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR017,2026-06-05T00:00:00,True
+MR0036,PAT004,visit,"{""date"": ""2026-06-03"", ""type"": ""consultation"", ""provider"": ""Dr. David Kimani"", ""notes"": ""Asthma control reviewed. No current wheeze.""}",HOSP002,USR017,2026-06-08T00:00:00,True
+MR0037,PAT005,allergy,"{""name"": ""None known"", ""severity"": ""mild"", ""reaction"": ""No known drug allergy""}",HOSP001,USR018,2026-05-19T00:00:00,True
+MR0038,PAT005,diagnosis,"{""name"": ""Routine general medical examination"", ""codes"": [""QA00""], ""since"": ""2026-05-14"", ""status"": ""resolved""}",HOSP001,USR018,2026-05-21T00:00:00,True
+MR0039,PAT005,diagnosis,"{""name"": ""Vitamin D insufficiency"", ""codes"": [""5B5A""], ""since"": ""2025-10-01"", ""status"": ""active""}",HOSP001,USR018,2026-05-21T00:00:00,True
+MR0040,PAT005,medication,"{""name"": ""Vitamin D3"", ""dose"": ""1000 IU"", ""freq"": ""once daily"", ""since"": ""2025-10-01"", ""status"": ""active""}",HOSP001,USR018,2026-05-24T00:00:00,True
+MR0041,PAT005,medication,"{""name"": ""Multivitamin"", ""dose"": ""1 tablet"", ""freq"": ""once daily"", ""since"": ""2026-01-05"", ""status"": ""active""}",HOSP001,USR018,2026-05-24T00:00:00,True
+MR0042,PAT005,lab_result,"{""test"": ""Hemoglobin"", ""result"": 13.2, ""unit"": ""g/dL"", ""date"": ""2026-05-14"", ""flag"": ""normal"", ""ref_low"": 12, ""ref_high"": 16}",HOSP001,USR018,2026-05-31T00:00:00,True
+MR0043,PAT005,immunization,"{""name"": ""Tetanus booster"", ""date"": ""2024-05-20"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR018,2026-06-02T00:00:00,True
+MR0044,PAT005,procedure,"{""name"": ""Wellness screening"", ""date"": ""2026-05-14"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR018,2026-06-04T00:00:00,True
+MR0045,PAT005,visit,"{""date"": ""2026-05-14"", ""type"": ""wellness"", ""provider"": ""Dr. Ada Adeyemi"", ""notes"": ""Routine check-up. No acute complaint.""}",HOSP001,USR018,2026-06-07T00:00:00,True
+MR0046,PAT006,allergy,"{""name"": ""Ciprofloxacin"", ""severity"": ""moderate"", ""reaction"": ""Tendon pain and rash""}",HOSP002,USR019,2026-05-18T00:00:00,True
+MR0047,PAT006,diagnosis,"{""name"": ""Type 2 diabetes mellitus"", ""codes"": [""5A11""], ""since"": ""2018-02-11"", ""status"": ""active""}",HOSP002,USR019,2026-05-20T00:00:00,True
+MR0048,PAT006,diagnosis,"{""name"": ""Chronic kidney disease stage 3"", ""codes"": [""GB61.3""], ""since"": ""2023-06-18"", ""status"": ""active""}",HOSP002,USR019,2026-05-20T00:00:00,True
+MR0049,PAT006,medication,"{""name"": ""Insulin glargine"", ""dose"": ""18 units"", ""freq"": ""nightly"", ""since"": ""2021-07-01"", ""status"": ""active""}",HOSP002,USR019,2026-05-23T00:00:00,True
+MR0050,PAT006,medication,"{""name"": ""Linagliptin"", ""dose"": ""5 mg"", ""freq"": ""once daily"", ""since"": ""2023-06-18"", ""status"": ""active""}",HOSP002,USR019,2026-05-23T00:00:00,True
+MR0051,PAT006,lab_result,"{""test"": ""Creatinine"", ""result"": 1.6, ""unit"": ""mg/dL"", ""date"": ""2026-06-06"", ""flag"": ""high"", ""ref_low"": 0.7, ""ref_high"": 1.3}",HOSP002,USR019,2026-05-30T00:00:00,True
+MR0052,PAT006,immunization,"{""name"": ""Pneumococcal vaccine"", ""date"": ""2023-09-10"", ""provider"": ""St. Catherine Hospital""}",HOSP002,USR019,2026-06-01T00:00:00,True
+MR0053,PAT006,procedure,"{""name"": ""Diabetic foot exam"", ""date"": ""2026-04-19"", ""provider"": ""St. Catherine Hospital""}",HOSP002,USR019,2026-06-03T00:00:00,True
+MR0054,PAT006,visit,"{""date"": ""2026-06-06"", ""type"": ""diabetes clinic"", ""provider"": ""Dr. Amara Ndlovu"", ""notes"": ""Renal function reviewed. Avoid nephrotoxic medication.""}",HOSP002,USR019,2026-06-06T00:00:00,True
+MR0055,PAT007,allergy,"{""name"": ""Doxycycline"", ""severity"": ""moderate"", ""reaction"": ""Severe nausea and rash""}",HOSP001,USR017,2026-05-17T00:00:00,True
+MR0056,PAT007,diagnosis,"{""name"": ""Normal pregnancy supervision"", ""codes"": [""JA40""], ""since"": ""2026-02-02"", ""status"": ""active""}",HOSP001,USR017,2026-05-19T00:00:00,True
+MR0057,PAT007,diagnosis,"{""name"": ""Iron deficiency anemia"", ""codes"": [""3A00""], ""since"": ""2026-04-15"", ""status"": ""active""}",HOSP001,USR017,2026-05-19T00:00:00,True
+MR0058,PAT007,medication,"{""name"": ""Ferrous sulfate"", ""dose"": ""200 mg"", ""freq"": ""once daily"", ""since"": ""2026-04-15"", ""status"": ""active""}",HOSP001,USR017,2026-05-22T00:00:00,True
+MR0059,PAT007,medication,"{""name"": ""Folic acid"", ""dose"": ""5 mg"", ""freq"": ""once daily"", ""since"": ""2026-02-02"", ""status"": ""active""}",HOSP001,USR017,2026-05-22T00:00:00,True
+MR0060,PAT007,lab_result,"{""test"": ""Hemoglobin"", ""result"": 10.4, ""unit"": ""g/dL"", ""date"": ""2026-06-07"", ""flag"": ""low"", ""ref_low"": 12, ""ref_high"": 16}",HOSP001,USR017,2026-05-29T00:00:00,True
+MR0061,PAT007,immunization,"{""name"": ""Tetanus toxoid"", ""date"": ""2026-04-20"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR017,2026-05-31T00:00:00,True
+MR0062,PAT007,procedure,"{""name"": ""Obstetric ultrasound"", ""date"": ""2026-05-30"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR017,2026-06-02T00:00:00,True
+MR0063,PAT007,visit,"{""date"": ""2026-06-07"", ""type"": ""antenatal"", ""provider"": ""Dr. Ada Adeyemi"", ""notes"": ""Antenatal review. Fetal movements present. Iron therapy continued.""}",HOSP001,USR017,2026-06-05T00:00:00,True
+MR0064,PAT008,allergy,"{""name"": ""Morphine"", ""severity"": ""severe"", ""reaction"": ""Severe vomiting and hypotension""}",HOSP002,USR018,2026-05-16T00:00:00,True
+MR0065,PAT008,diagnosis,"{""name"": ""Left ankle sprain"", ""codes"": [""NC92""], ""since"": ""2026-06-12"", ""status"": ""active""}",HOSP002,USR018,2026-05-18T00:00:00,True
+MR0066,PAT008,diagnosis,"{""name"": ""Sports-related soft tissue injury"", ""codes"": [""NE81""], ""since"": ""2026-06-12"", ""status"": ""active""}",HOSP002,USR018,2026-05-18T00:00:00,True
+MR0067,PAT008,medication,"{""name"": ""Paracetamol"", ""dose"": ""1 g"", ""freq"": ""three times daily as needed"", ""since"": ""2026-06-12"", ""status"": ""active""}",HOSP002,USR018,2026-05-21T00:00:00,True
+MR0068,PAT008,medication,"{""name"": ""Diclofenac gel"", ""dose"": ""apply thin layer"", ""freq"": ""twice daily"", ""since"": ""2026-06-12"", ""status"": ""active""}",HOSP002,USR018,2026-05-21T00:00:00,True
+MR0069,PAT008,lab_result,"{""test"": ""Full blood count WBC"", ""result"": 7.1, ""unit"": ""10^9/L"", ""date"": ""2026-06-12"", ""flag"": ""normal"", ""ref_low"": 4.0, ""ref_high"": 11.0}",HOSP002,USR018,2026-05-28T00:00:00,True
+MR0070,PAT008,immunization,"{""name"": ""Tetanus booster"", ""date"": ""2026-06-12"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR018,2026-05-30T00:00:00,True
+MR0071,PAT008,procedure,"{""name"": ""Ankle X-ray"", ""date"": ""2026-06-12"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR018,2026-06-01T00:00:00,True
+MR0072,PAT008,visit,"{""date"": ""2026-06-12"", ""type"": ""emergency"", ""provider"": ""Dr. David Kimani"", ""notes"": ""Ankle injury after football. X-ray negative for fracture.""}",HOSP002,USR018,2026-06-04T00:00:00,True
+MR0073,PAT009,allergy,"{""name"": ""Latex"", ""severity"": ""moderate"", ""reaction"": ""Contact rash""}",HOSP001,USR019,2026-05-15T00:00:00,True
+MR0074,PAT009,diagnosis,"{""name"": ""Gallstones"", ""codes"": [""DC11""], ""since"": ""2025-11-04"", ""status"": ""resolved""}",HOSP001,USR019,2026-05-17T00:00:00,True
+MR0075,PAT009,diagnosis,"{""name"": ""Post-operative follow-up"", ""codes"": [""QA05""], ""since"": ""2026-02-18"", ""status"": ""active""}",HOSP001,USR019,2026-05-17T00:00:00,True
+MR0076,PAT009,medication,"{""name"": ""Omeprazole"", ""dose"": ""20 mg"", ""freq"": ""once daily"", ""since"": ""2026-02-18"", ""status"": ""active""}",HOSP001,USR019,2026-05-20T00:00:00,True
+MR0077,PAT009,medication,"{""name"": ""Paracetamol"", ""dose"": ""500 mg"", ""freq"": ""as needed"", ""since"": ""2026-02-18"", ""status"": ""active""}",HOSP001,USR019,2026-05-20T00:00:00,True
+MR0078,PAT009,lab_result,"{""test"": ""ALT"", ""result"": 34, ""unit"": ""U/L"", ""date"": ""2026-05-20"", ""flag"": ""normal"", ""ref_low"": 7, ""ref_high"": 56}",HOSP001,USR019,2026-05-27T00:00:00,True
+MR0079,PAT009,immunization,"{""name"": ""Hepatitis B vaccine"", ""date"": ""2024-12-04"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR019,2026-05-29T00:00:00,True
+MR0080,PAT009,procedure,"{""name"": ""Laparoscopic cholecystectomy"", ""date"": ""2026-02-12"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR019,2026-05-31T00:00:00,True
+MR0081,PAT009,visit,"{""date"": ""2026-05-20"", ""type"": ""surgical review"", ""provider"": ""Dr. Ada Adeyemi"", ""notes"": ""Post-operative recovery good. No abdominal tenderness.""}",HOSP001,USR019,2026-06-03T00:00:00,True
+MR0082,PAT010,allergy,"{""name"": ""Gentamicin"", ""severity"": ""severe"", ""reaction"": ""Worsened kidney function""}",HOSP002,USR017,2026-05-14T00:00:00,True
+MR0083,PAT010,diagnosis,"{""name"": ""Chronic kidney disease stage 2"", ""codes"": [""GB61.2""], ""since"": ""2024-07-19"", ""status"": ""active""}",HOSP002,USR017,2026-05-16T00:00:00,True
+MR0084,PAT010,diagnosis,"{""name"": ""Recurrent urinary tract infection"", ""codes"": [""GC08""], ""since"": ""2023-09-13"", ""status"": ""active""}",HOSP002,USR017,2026-05-16T00:00:00,True
+MR0085,PAT010,medication,"{""name"": ""Nitrofurantoin"", ""dose"": ""100 mg"", ""freq"": ""nightly when prescribed"", ""since"": ""2025-12-10"", ""status"": ""inactive""}",HOSP002,USR017,2026-05-19T00:00:00,True
+MR0086,PAT010,medication,"{""name"": ""Sodium bicarbonate"", ""dose"": ""500 mg"", ""freq"": ""twice daily"", ""since"": ""2025-06-14"", ""status"": ""active""}",HOSP002,USR017,2026-05-19T00:00:00,True
+MR0087,PAT010,lab_result,"{""test"": ""eGFR"", ""result"": 68, ""unit"": ""mL/min/1.73m2"", ""date"": ""2026-06-05"", ""flag"": ""mildly_low"", ""ref_low"": 90, ""ref_high"": 120}",HOSP002,USR017,2026-05-26T00:00:00,True
+MR0088,PAT010,immunization,"{""name"": ""Influenza vaccine"", ""date"": ""2025-06-21"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR017,2026-05-28T00:00:00,True
+MR0089,PAT010,procedure,"{""name"": ""Renal ultrasound"", ""date"": ""2025-08-16"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR017,2026-05-30T00:00:00,True
+MR0090,PAT010,visit,"{""date"": ""2026-06-05"", ""type"": ""nephrology"", ""provider"": ""Dr. Amara Ndlovu"", ""notes"": ""Renal function stable. Avoid aminoglycosides and NSAIDs.""}",HOSP002,USR017,2026-06-02T00:00:00,True
+MR0091,PAT011,allergy,"{""name"": ""Codeine"", ""severity"": ""moderate"", ""reaction"": ""Itching and dizziness""}",HOSP001,USR018,2026-05-13T00:00:00,True
+MR0092,PAT011,diagnosis,"{""name"": ""Hypothyroidism"", ""codes"": [""5A00""], ""since"": ""2020-01-09"", ""status"": ""active""}",HOSP001,USR018,2026-05-15T00:00:00,True
+MR0093,PAT011,diagnosis,"{""name"": ""Migraine without aura"", ""codes"": [""8A80.0""], ""since"": ""2022-03-19"", ""status"": ""active""}",HOSP001,USR018,2026-05-15T00:00:00,True
+MR0094,PAT011,medication,"{""name"": ""Levothyroxine"", ""dose"": ""75 mcg"", ""freq"": ""once daily before food"", ""since"": ""2020-01-09"", ""status"": ""active""}",HOSP001,USR018,2026-05-18T00:00:00,True
+MR0095,PAT011,medication,"{""name"": ""Sumatriptan"", ""dose"": ""50 mg"", ""freq"": ""as needed"", ""since"": ""2022-03-19"", ""status"": ""active""}",HOSP001,USR018,2026-05-18T00:00:00,True
+MR0096,PAT011,lab_result,"{""test"": ""TSH"", ""result"": 2.4, ""unit"": ""mIU/L"", ""date"": ""2026-06-02"", ""flag"": ""normal"", ""ref_low"": 0.4, ""ref_high"": 4.0}",HOSP001,USR018,2026-05-25T00:00:00,True
+MR0097,PAT011,immunization,"{""name"": ""COVID-19 booster"", ""date"": ""2025-12-11"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR018,2026-05-27T00:00:00,True
+MR0098,PAT011,procedure,"{""name"": ""Thyroid ultrasound"", ""date"": ""2024-03-20"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR018,2026-05-29T00:00:00,True
+MR0099,PAT011,visit,"{""date"": ""2026-06-02"", ""type"": ""endocrinology"", ""provider"": ""Dr. Ada Adeyemi"", ""notes"": ""Thyroid control stable. Continue current dose.""}",HOSP001,USR018,2026-06-01T00:00:00,True
+MR0100,PAT012,allergy,"{""name"": ""Warfarin"", ""severity"": ""severe"", ""reaction"": ""Major bleeding episode""}",HOSP002,USR019,2026-05-12T00:00:00,True
+MR0101,PAT012,diagnosis,"{""name"": ""Atrial fibrillation"", ""codes"": [""BC81""], ""since"": ""2021-11-25"", ""status"": ""active""}",HOSP002,USR019,2026-05-14T00:00:00,True
+MR0102,PAT012,diagnosis,"{""name"": ""Hypertensive heart disease"", ""codes"": [""BA01""], ""since"": ""2020-06-30"", ""status"": ""active""}",HOSP002,USR019,2026-05-14T00:00:00,True
+MR0103,PAT012,medication,"{""name"": ""Apixaban"", ""dose"": ""5 mg"", ""freq"": ""twice daily"", ""since"": ""2022-01-03"", ""status"": ""active""}",HOSP002,USR019,2026-05-17T00:00:00,True
+MR0104,PAT012,medication,"{""name"": ""Bisoprolol"", ""dose"": ""5 mg"", ""freq"": ""once daily"", ""since"": ""2021-11-25"", ""status"": ""active""}",HOSP002,USR019,2026-05-17T00:00:00,True
+MR0105,PAT012,lab_result,"{""test"": ""INR"", ""result"": 1.1, ""unit"": ""ratio"", ""date"": ""2026-05-25"", ""flag"": ""normal"", ""ref_low"": 0.8, ""ref_high"": 1.2}",HOSP002,USR019,2026-05-24T00:00:00,True
+MR0106,PAT012,immunization,"{""name"": ""Influenza vaccine"", ""date"": ""2025-06-12"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR019,2026-05-26T00:00:00,True
+MR0107,PAT012,procedure,"{""name"": ""12-lead ECG"", ""date"": ""2026-05-25"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR019,2026-05-28T00:00:00,True
+MR0108,PAT012,visit,"{""date"": ""2026-05-25"", ""type"": ""cardiology"", ""provider"": ""Dr. Amara Ndlovu"", ""notes"": ""Irregular pulse reviewed. Continue anticoagulation.""}",HOSP002,USR019,2026-05-31T00:00:00,True
+MR0109,PAT013,allergy,"{""name"": ""Peanuts"", ""severity"": ""severe"", ""reaction"": ""Wheezing and lip swelling""}",HOSP001,USR017,2026-05-11T00:00:00,True
+MR0110,PAT013,diagnosis,"{""name"": ""Childhood asthma"", ""codes"": [""CA23.0""], ""since"": ""2023-04-12"", ""status"": ""active""}",HOSP001,USR017,2026-05-13T00:00:00,True
+MR0111,PAT013,diagnosis,"{""name"": ""Eczema"", ""codes"": [""EA80""], ""since"": ""2021-12-08"", ""status"": ""active""}",HOSP001,USR017,2026-05-13T00:00:00,True
+MR0112,PAT013,medication,"{""name"": ""Salbutamol inhaler"", ""dose"": ""100 mcg"", ""freq"": ""as needed with spacer"", ""since"": ""2023-04-12"", ""status"": ""active""}",HOSP001,USR017,2026-05-16T00:00:00,True
+MR0113,PAT013,medication,"{""name"": ""Emollient cream"", ""dose"": ""apply"", ""freq"": ""twice daily"", ""since"": ""2021-12-08"", ""status"": ""active""}",HOSP001,USR017,2026-05-16T00:00:00,True
+MR0114,PAT013,lab_result,"{""test"": ""Oxygen saturation"", ""result"": 98, ""unit"": ""%"", ""date"": ""2026-06-08"", ""flag"": ""normal"", ""ref_low"": 95, ""ref_high"": 100}",HOSP001,USR017,2026-05-23T00:00:00,True
+MR0115,PAT013,immunization,"{""name"": ""Measles-rubella vaccine"", ""date"": ""2024-07-01"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR017,2026-05-25T00:00:00,True
+MR0116,PAT013,procedure,"{""name"": ""Nebulization therapy"", ""date"": ""2025-09-05"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR017,2026-05-27T00:00:00,True
+MR0117,PAT013,visit,"{""date"": ""2026-06-08"", ""type"": ""pediatric review"", ""provider"": ""Dr. Ada Adeyemi"", ""notes"": ""Asthma stable. Caregiver advised on inhaler technique.""}",HOSP001,USR017,2026-05-30T00:00:00,True
+MR0118,PAT014,allergy,"{""name"": ""Amoxicillin"", ""severity"": ""moderate"", ""reaction"": ""Maculopapular rash""}",HOSP002,USR018,2026-05-10T00:00:00,True
+MR0119,PAT014,diagnosis,"{""name"": ""Food allergy"", ""codes"": [""4A85""], ""since"": ""2022-05-22"", ""status"": ""active""}",HOSP002,USR018,2026-05-12T00:00:00,True
+MR0120,PAT014,diagnosis,"{""name"": ""Recurrent tonsillitis"", ""codes"": [""CA03""], ""since"": ""2024-02-16"", ""status"": ""active""}",HOSP002,USR018,2026-05-12T00:00:00,True
+MR0121,PAT014,medication,"{""name"": ""Cetirizine"", ""dose"": ""5 mg"", ""freq"": ""once daily as needed"", ""since"": ""2022-05-22"", ""status"": ""active""}",HOSP002,USR018,2026-05-15T00:00:00,True
+MR0122,PAT014,medication,"{""name"": ""Paracetamol syrup"", ""dose"": ""250 mg"", ""freq"": ""as needed"", ""since"": ""2024-02-16"", ""status"": ""active""}",HOSP002,USR018,2026-05-15T00:00:00,True
+MR0123,PAT014,lab_result,"{""test"": ""Eosinophil count"", ""result"": 0.6, ""unit"": ""10^9/L"", ""date"": ""2026-05-28"", ""flag"": ""high"", ""ref_low"": 0.0, ""ref_high"": 0.5}",HOSP002,USR018,2026-05-22T00:00:00,True
+MR0124,PAT014,immunization,"{""name"": ""DPT booster"", ""date"": ""2023-11-13"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR018,2026-05-24T00:00:00,True
+MR0125,PAT014,procedure,"{""name"": ""ENT examination"", ""date"": ""2026-05-28"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR018,2026-05-26T00:00:00,True
+MR0126,PAT014,visit,"{""date"": ""2026-05-28"", ""type"": ""pediatric consultation"", ""provider"": ""Dr. David Kimani"", ""notes"": ""Allergy symptoms reviewed. Avoid amoxicillin until formal review.""}",HOSP002,USR018,2026-05-29T00:00:00,True
+MR0127,PAT015,allergy,"{""name"": ""Naproxen"", ""severity"": ""moderate"", ""reaction"": ""Raised blood pressure and stomach pain""}",HOSP001,USR019,2026-05-09T00:00:00,True
+MR0128,PAT015,diagnosis,"{""name"": ""Essential hypertension"", ""codes"": [""BA00""], ""since"": ""2015-08-07"", ""status"": ""active""}",HOSP001,USR019,2026-05-11T00:00:00,True
+MR0129,PAT015,diagnosis,"{""name"": ""Benign prostatic hyperplasia"", ""codes"": [""GA91""], ""since"": ""2021-02-20"", ""status"": ""active""}",HOSP001,USR019,2026-05-11T00:00:00,True
+MR0130,PAT015,medication,"{""name"": ""Hydrochlorothiazide"", ""dose"": ""25 mg"", ""freq"": ""once daily"", ""since"": ""2015-08-07"", ""status"": ""active""}",HOSP001,USR019,2026-05-14T00:00:00,True
+MR0131,PAT015,medication,"{""name"": ""Tamsulosin"", ""dose"": ""400 mcg"", ""freq"": ""nightly"", ""since"": ""2021-02-20"", ""status"": ""active""}",HOSP001,USR019,2026-05-14T00:00:00,True
+MR0132,PAT015,lab_result,"{""test"": ""Potassium"", ""result"": 3.6, ""unit"": ""mmol/L"", ""date"": ""2026-06-04"", ""flag"": ""normal"", ""ref_low"": 3.5, ""ref_high"": 5.1}",HOSP001,USR019,2026-05-21T00:00:00,True
+MR0133,PAT015,immunization,"{""name"": ""Pneumococcal vaccine"", ""date"": ""2022-09-02"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR019,2026-05-23T00:00:00,True
+MR0134,PAT015,procedure,"{""name"": ""Prostate ultrasound"", ""date"": ""2025-06-18"", ""provider"": ""St. Catherine Hospital""}",HOSP001,USR019,2026-05-25T00:00:00,True
+MR0135,PAT015,visit,"{""date"": ""2026-06-04"", ""type"": ""geriatric review"", ""provider"": ""Dr. Amara Ndlovu"", ""notes"": ""Blood pressure reviewed. No dizziness reported.""}",HOSP001,USR019,2026-05-28T00:00:00,True
+MR0136,PAT016,allergy,"{""name"": ""None known"", ""severity"": ""mild"", ""reaction"": ""No known drug allergy""}",HOSP002,USR017,2026-05-08T00:00:00,True
+MR0137,PAT016,diagnosis,"{""name"": ""Routine health maintenance"", ""codes"": [""QA00""], ""since"": ""2026-06-01"", ""status"": ""active""}",HOSP002,USR017,2026-05-10T00:00:00,True
+MR0138,PAT016,diagnosis,"{""name"": ""Seasonal allergic rhinitis"", ""codes"": [""CA08""], ""since"": ""2024-10-10"", ""status"": ""active""}",HOSP002,USR017,2026-05-10T00:00:00,True
+MR0139,PAT016,medication,"{""name"": ""Loratadine"", ""dose"": ""10 mg"", ""freq"": ""once daily as needed"", ""since"": ""2024-10-10"", ""status"": ""active""}",HOSP002,USR017,2026-05-13T00:00:00,True
+MR0140,PAT016,medication,"{""name"": ""Multivitamin"", ""dose"": ""1 tablet"", ""freq"": ""once daily"", ""since"": ""2026-01-01"", ""status"": ""active""}",HOSP002,USR017,2026-05-13T00:00:00,True
+MR0141,PAT016,lab_result,"{""test"": ""Fasting glucose"", ""result"": 89, ""unit"": ""mg/dL"", ""date"": ""2026-06-01"", ""flag"": ""normal"", ""ref_low"": 70, ""ref_high"": 99}",HOSP002,USR017,2026-05-20T00:00:00,True
+MR0142,PAT016,immunization,"{""name"": ""COVID-19 booster"", ""date"": ""2025-10-05"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR017,2026-05-22T00:00:00,True
+MR0143,PAT016,procedure,"{""name"": ""Routine physical examination"", ""date"": ""2026-06-01"", ""provider"": ""Kijani Medical Centre""}",HOSP002,USR017,2026-05-24T00:00:00,True
+MR0144,PAT016,visit,"{""date"": ""2026-06-01"", ""type"": ""wellness"", ""provider"": ""Dr. Ada Adeyemi"", ""notes"": ""Routine wellness visit. Mild seasonal allergies only.""}",HOSP002,USR017,2026-05-27T00:00:00,True

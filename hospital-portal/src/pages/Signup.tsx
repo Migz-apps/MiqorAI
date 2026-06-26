@@ -9,6 +9,9 @@ import { useAuth, ROLE_LABEL } from "@/store/auth";
 import { AuthShell } from "@/components/auth/AuthShell";
 import type { Role } from "@/lib/types";
 import { toast } from "@/lib/notify";
+import { useAuthHydrated } from "@/hooks/useAuthHydrated";
+import { loadTokens } from "@/lib/api/client";
+import { AuthLoading } from "@/components/shared/AuthLoading";
 
 const ROLE_OPTIONS: { value: Role; icon: any; tagline: string }[] = [
   { value: "receptionist", icon: ScanLine,    tagline: "Front desk · check-in & QR" },
@@ -19,6 +22,7 @@ const ROLE_OPTIONS: { value: Role; icon: any; tagline: string }[] = [
 ];
 
 export default function Signup() {
+  const hydrated = useAuthHydrated();
   const session = useAuth(s => s.session);
   const nav = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
@@ -32,7 +36,8 @@ export default function Signup() {
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (session) return <Navigate to="/dashboard" replace />;
+  if (!hydrated) return <AuthLoading />;
+  if (session && loadTokens()) return <Navigate to="/dashboard" replace />;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +113,7 @@ export default function Signup() {
             <Label htmlFor="hcode">Hospital code</Label>
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-              <Input id="hcode" className="pl-9 h-11" placeholder="MP-LAGOS-001" value={code} onChange={e => setCode(e.target.value)} autoComplete="off" />
+              <Input id="hcode" className="pl-9 h-11" placeholder="Hospital code" value={code} onChange={e => setCode(e.target.value)} autoComplete="organization" />
             </div>
           </div>
           <div className="space-y-xs">

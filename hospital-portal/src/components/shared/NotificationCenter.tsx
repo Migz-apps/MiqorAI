@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,17 +18,24 @@ const typeColor: Record<string, string> = {
 
 export const NotificationCenter = () => {
   const session = useAuth(s => s.session);
-  const items = useNotifications(s => session ? s.forRole(session.role) : []);
-  const unread = useNotifications(s => session ? s.unreadFor(session.role) : 0);
+  const allItems = useNotifications(s => s.items);
   const markRead = useNotifications(s => s.markRead);
   const markAllRead = useNotifications(s => s.markAllRead);
   const load = useNotifications(s => s.load);
 
   useEffect(() => {
     if (session) load();
-  }, [session, load]);
+  }, [session?.role, load]);
+
+  const role = session?.role;
+  const items = useMemo(
+    () => role ? allItems.filter((n) => n.audience.includes(role)) : [],
+    [allItems, role],
+  );
+  const unread = items.filter((n) => !n.read).length;
 
   if (!session) return null;
+
   return (
     <Popover>
       <PopoverTrigger asChild>

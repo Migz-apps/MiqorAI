@@ -1,0 +1,81 @@
+access_log_id,patient_id,grant_id,accessor_id,accessor_type,action,resource_type,resource_id,hospital_id,ip_address,device,user_agent,accessed_at,status,notes
+AL00001,PAT001,AG0001,USR017,doctor,view_records,medical_record,MR0002,HOSP002,192.168.1.10,Mobile,Chrome 137 / Windows 11,2026-06-25T06:30:00,success,Access permitted under active patient grant.
+AL00002,PAT001,AG0002,USR018,doctor,view_lab,lab_order,LAB0001,HOSP002,192.168.1.11,Desktop,Chrome / Android,2026-06-25T05:30:00,success,Access permitted under active patient grant.
+AL00003,PAT001,AG0003,USR019,doctor,scan_qr,patient_qr,QRHASH1001,HOSP002,192.168.1.12,Desktop,Edge 137 / Windows 11,2026-06-25T04:30:00,success,Access permitted under active patient grant.
+AL00004,PAT001,AG0003,PHARM001,pharmacy,view_prescription,prescription,RX0001,HOSP002,192.168.1.13,Desktop,Chrome 137 / Windows 11,2026-06-25T03:30:00,success,Access permitted under active patient grant.
+AL00005,PAT001,AG0003,HOSP002,hospital,dispense,prescription,RX0001,HOSP002,192.168.1.14,Mobile,Chrome 137 / Windows 11,2026-06-25T02:30:00,success,Access permitted under active patient grant.
+AL00006,PAT002,AG0004,USR017,doctor,view_records,medical_record,MR0011,HOSP001,192.168.2.10,Mobile,Safari / iPad,2026-06-25T04:30:00,success,Access permitted under active patient grant.
+AL00007,PAT002,AG0005,USR018,doctor,view_lab,lab_order,LAB0003,HOSP001,192.168.2.11,Desktop,Chrome 137 / Windows 11,2026-06-25T03:30:00,success,Access permitted under active patient grant.
+AL00008,PAT002,AG0006,USR019,doctor,scan_qr,patient_qr,QRHASH1002,HOSP001,192.168.2.12,Desktop,Edge 137 / Windows 11,2026-06-25T02:30:00,success,Access permitted under active patient grant.
+AL00009,PAT002,AG0006,PHARM001,pharmacy,view_prescription,prescription,RX0003,HOSP001,192.168.2.13,Desktop,Chrome 137 / Windows 11,2026-06-25T01:30:00,success,Access permitted under active patient grant.
+AL00010,PAT002,AG0006,HOSP001,hospital,dispense,prescription,RX0003,HOSP001,192.168.2.14,Mobile,Edge 137 / Windows 11,2026-06-25T00:30:00,success,Access permitted under active patient grant.
+AL00011,PAT003,AG0007,USR017,doctor,view_records,medical_record,MR0020,HOSP002,192.168.3.10,Mobile,Safari / iPad,2026-06-25T02:30:00,success,Access permitted under active patient grant.
+AL00012,PAT003,AG0008,USR018,doctor,view_lab,lab_order,LAB0005,HOSP002,192.168.3.11,Desktop,Safari / iPad,2026-06-25T01:30:00,success,Access permitted under active patient grant.
+AL00013,PAT003,AG0009,USR019,doctor,scan_qr,patient_qr,QRHASH1003,HOSP002,192.168.3.12,Mobile,Chrome / Android,2026-06-25T00:30:00,success,Access permitted under active patient grant.
+AL00014,PAT003,AG0009,PHARM001,pharmacy,view_prescription,prescription,RX0005,HOSP002,192.168.3.13,Desktop,Edge 137 / Windows 11,2026-06-24T23:30:00,success,Access permitted under active patient grant.
+AL00015,PAT003,AG0009,HOSP002,hospital,dispense,prescription,RX0005,HOSP002,192.168.3.14,Mobile,Safari / iPad,2026-06-24T22:30:00,success,Access permitted under active patient grant.
+AL00016,PAT004,AG0010,USR017,doctor,view_records,medical_record,MR0029,HOSP001,192.168.4.10,Tablet,Chrome / Android,2026-06-25T00:30:00,success,Access permitted under active patient grant.
+AL00017,PAT004,AG0011,USR018,doctor,view_lab,lab_order,LAB0007,HOSP001,192.168.4.11,Desktop,Edge 137 / Windows 11,2026-06-24T23:30:00,success,Access permitted under active patient grant.
+AL00018,PAT004,AG0012,USR019,doctor,scan_qr,patient_qr,QRHASH1004,HOSP001,192.168.4.12,Tablet,Chrome 137 / Windows 11,2026-06-24T22:30:00,success,Access permitted under active patient grant.
+AL00019,PAT004,AG0012,PHARM001,pharmacy,view_prescription,prescription,RX0007,HOSP001,192.168.4.13,Desktop,Safari / iPad,2026-06-24T21:30:00,success,Access permitted under active patient grant.
+AL00020,PAT004,AG0012,HOSP001,hospital,dispense,prescription,RX0007,HOSP001,192.168.4.14,Desktop,Chrome / Android,2026-06-24T20:30:00,success,Access permitted under active patient grant.
+AL00021,PAT005,AG0013,USR017,doctor,view_records,medical_record,MR0038,HOSP002,192.168.5.10,Tablet,Chrome / Android,2026-06-24T22:30:00,success,Access permitted under active patient grant.
+AL00022,PAT005,AG0014,USR018,doctor,view_lab,lab_order,LAB0009,HOSP002,192.168.5.11,Desktop,Safari / iPad,2026-06-24T21:30:00,success,Access permitted under active patient grant.
+AL00023,PAT005,AG0015,USR019,doctor,scan_qr,patient_qr,QRHASH1005,HOSP002,192.168.5.12,Mobile,Chrome 137 / Windows 11,2026-06-24T20:30:00,success,Access permitted under active patient grant.
+AL00024,PAT005,AG0015,PHARM001,pharmacy,view_prescription,prescription,RX0009,HOSP002,192.168.5.13,Tablet,Chrome 137 / Windows 11,2026-06-24T19:30:00,success,Access permitted under active patient grant.
+AL00025,PAT005,AG0015,HOSP002,hospital,dispense,prescription,RX0009,HOSP002,192.168.5.14,Mobile,Chrome / Android,2026-06-24T18:30:00,success,Access permitted under active patient grant.
+AL00026,PAT006,AG0016,USR017,doctor,view_records,medical_record,MR0047,HOSP001,192.168.6.10,Mobile,Chrome / Android,2026-06-24T20:30:00,success,Access permitted under active patient grant.
+AL00027,PAT006,AG0017,USR018,doctor,view_lab,lab_order,LAB0011,HOSP001,192.168.6.11,Mobile,Edge 137 / Windows 11,2026-06-24T19:30:00,success,Access permitted under active patient grant.
+AL00028,PAT006,AG0018,USR019,doctor,scan_qr,patient_qr,QRHASH1006,HOSP001,192.168.6.12,Mobile,Chrome 137 / Windows 11,2026-06-24T18:30:00,success,Access permitted under active patient grant.
+AL00029,PAT006,AG0018,PHARM001,pharmacy,view_prescription,prescription,RX0011,HOSP001,192.168.6.13,Desktop,Edge 137 / Windows 11,2026-06-24T17:30:00,success,Access permitted under active patient grant.
+AL00030,PAT006,AG0018,HOSP001,hospital,dispense,prescription,RX0011,HOSP001,192.168.6.14,Tablet,Chrome 137 / Windows 11,2026-06-24T16:30:00,success,Access permitted under active patient grant.
+AL00031,PAT007,AG0019,USR017,doctor,view_records,medical_record,MR0056,HOSP002,192.168.7.10,Desktop,Chrome 137 / Windows 11,2026-06-24T18:30:00,success,Access permitted under active patient grant.
+AL00032,PAT007,AG0020,USR018,doctor,view_lab,lab_order,LAB0013,HOSP002,192.168.7.11,Tablet,Chrome / Android,2026-06-24T17:30:00,success,Access permitted under active patient grant.
+AL00033,PAT007,AG0021,USR019,doctor,scan_qr,patient_qr,QRHASH1007,HOSP002,192.168.7.12,Tablet,Chrome / Android,2026-06-24T16:30:00,success,Access permitted under active patient grant.
+AL00034,PAT007,AG0021,PHARM001,pharmacy,view_prescription,prescription,RX0013,HOSP002,192.168.7.13,Desktop,Chrome / Android,2026-06-24T15:30:00,success,Access permitted under active patient grant.
+AL00035,PAT007,AG0021,HOSP002,hospital,dispense,prescription,RX0013,HOSP002,192.168.7.14,Tablet,Edge 137 / Windows 11,2026-06-24T14:30:00,success,Access permitted under active patient grant.
+AL00036,PAT008,AG0022,USR017,doctor,view_records,medical_record,MR0065,HOSP001,192.168.8.10,Mobile,Chrome / Android,2026-06-24T16:30:00,success,Access permitted under active patient grant.
+AL00037,PAT008,AG0023,USR018,doctor,view_lab,lab_order,LAB0015,HOSP001,192.168.8.11,Mobile,Chrome 137 / Windows 11,2026-06-24T15:30:00,success,Access permitted under active patient grant.
+AL00038,PAT008,AG0024,USR019,doctor,scan_qr,patient_qr,QRHASH1008,HOSP001,192.168.8.12,Mobile,Edge 137 / Windows 11,2026-06-24T14:30:00,success,Access permitted under active patient grant.
+AL00039,PAT008,AG0024,PHARM001,pharmacy,view_prescription,prescription,RX0015,HOSP001,192.168.8.13,Mobile,Edge 137 / Windows 11,2026-06-24T13:30:00,success,Access permitted under active patient grant.
+AL00040,PAT008,AG0024,HOSP001,hospital,dispense,prescription,RX0015,HOSP001,192.168.8.14,Desktop,Safari / iPad,2026-06-24T12:30:00,success,Access permitted under active patient grant.
+AL00041,PAT009,AG0025,USR017,doctor,view_records,medical_record,MR0074,HOSP002,192.168.9.10,Tablet,Chrome / Android,2026-06-24T14:30:00,success,Access permitted under active patient grant.
+AL00042,PAT009,AG0026,USR018,doctor,view_lab,lab_order,LAB0017,HOSP002,192.168.9.11,Mobile,Edge 137 / Windows 11,2026-06-24T13:30:00,success,Access permitted under active patient grant.
+AL00043,PAT009,AG0027,USR019,doctor,scan_qr,patient_qr,QRHASH1009,HOSP002,192.168.9.12,Mobile,Chrome / Android,2026-06-24T12:30:00,success,Access permitted under active patient grant.
+AL00044,PAT009,AG0027,PHARM001,pharmacy,view_prescription,prescription,RX0017,HOSP002,192.168.9.13,Desktop,Edge 137 / Windows 11,2026-06-24T11:30:00,success,Access permitted under active patient grant.
+AL00045,PAT009,AG0027,HOSP002,hospital,dispense,prescription,RX0017,HOSP002,192.168.9.14,Desktop,Chrome / Android,2026-06-24T10:30:00,success,Access permitted under active patient grant.
+AL00046,PAT010,AG0028,USR017,doctor,view_records,medical_record,MR0083,HOSP001,192.168.10.10,Tablet,Chrome / Android,2026-06-24T12:30:00,success,Access permitted under active patient grant.
+AL00047,PAT010,AG0029,USR018,doctor,view_lab,lab_order,LAB0019,HOSP001,192.168.10.11,Desktop,Edge 137 / Windows 11,2026-06-24T11:30:00,success,Access permitted under active patient grant.
+AL00048,PAT010,AG0030,USR019,doctor,scan_qr,patient_qr,QRHASH1010,HOSP001,192.168.10.12,Mobile,Chrome / Android,2026-06-24T10:30:00,success,Access permitted under active patient grant.
+AL00049,PAT010,AG0030,PHARM001,pharmacy,view_prescription,prescription,RX0019,HOSP001,192.168.10.13,Desktop,Safari / iPad,2026-06-24T09:30:00,success,Access permitted under active patient grant.
+AL00050,PAT010,AG0030,HOSP001,hospital,dispense,prescription,RX0019,HOSP001,192.168.10.14,Tablet,Safari / iPad,2026-06-24T08:30:00,success,Access permitted under active patient grant.
+AL00051,PAT011,AG0031,USR017,doctor,view_records,medical_record,MR0092,HOSP002,192.168.11.10,Desktop,Chrome / Android,2026-06-24T10:30:00,success,Access permitted under active patient grant.
+AL00052,PAT011,AG0032,USR018,doctor,view_lab,lab_order,LAB0021,HOSP002,192.168.11.11,Desktop,Edge 137 / Windows 11,2026-06-24T09:30:00,success,Access permitted under active patient grant.
+AL00053,PAT011,AG0033,USR019,doctor,scan_qr,patient_qr,QRHASH1011,HOSP002,192.168.11.12,Mobile,Chrome / Android,2026-06-24T08:30:00,success,Access permitted under active patient grant.
+AL00054,PAT011,AG0033,PHARM001,pharmacy,view_prescription,prescription,RX0021,HOSP002,192.168.11.13,Mobile,Safari / iPad,2026-06-24T07:30:00,success,Access permitted under active patient grant.
+AL00055,PAT011,AG0033,HOSP002,hospital,dispense,prescription,RX0021,HOSP002,192.168.11.14,Mobile,Safari / iPad,2026-06-24T06:30:00,success,Access permitted under active patient grant.
+AL00056,PAT012,AG0034,USR017,doctor,view_records,medical_record,MR0101,HOSP001,192.168.12.10,Tablet,Edge 137 / Windows 11,2026-06-24T08:30:00,success,Access permitted under active patient grant.
+AL00057,PAT012,AG0035,USR018,doctor,view_lab,lab_order,LAB0023,HOSP001,192.168.12.11,Desktop,Safari / iPad,2026-06-24T07:30:00,success,Access permitted under active patient grant.
+AL00058,PAT012,AG0036,USR019,doctor,scan_qr,patient_qr,QRHASH1012,HOSP001,192.168.12.12,Desktop,Chrome 137 / Windows 11,2026-06-24T06:30:00,success,Access permitted under active patient grant.
+AL00059,PAT012,AG0036,PHARM001,pharmacy,view_prescription,prescription,RX0023,HOSP001,192.168.12.13,Desktop,Edge 137 / Windows 11,2026-06-24T05:30:00,success,Access permitted under active patient grant.
+AL00060,PAT012,AG0036,HOSP001,hospital,dispense,prescription,RX0023,HOSP001,192.168.12.14,Mobile,Edge 137 / Windows 11,2026-06-24T04:30:00,success,Access permitted under active patient grant.
+AL00061,PAT013,AG0037,USR017,doctor,view_records,medical_record,MR0110,HOSP002,192.168.13.10,Mobile,Safari / iPad,2026-06-24T06:30:00,success,Access permitted under active patient grant.
+AL00062,PAT013,AG0038,USR018,doctor,view_lab,lab_order,LAB0025,HOSP002,192.168.13.11,Mobile,Chrome 137 / Windows 11,2026-06-24T05:30:00,success,Access permitted under active patient grant.
+AL00063,PAT013,AG0039,USR019,doctor,scan_qr,patient_qr,QRHASH1013,HOSP002,192.168.13.12,Tablet,Safari / iPad,2026-06-24T04:30:00,success,Access permitted under active patient grant.
+AL00064,PAT013,AG0039,PHARM001,pharmacy,view_prescription,prescription,RX0025,HOSP002,192.168.13.13,Mobile,Safari / iPad,2026-06-24T03:30:00,success,Access permitted under active patient grant.
+AL00065,PAT013,AG0039,HOSP002,hospital,dispense,prescription,RX0025,HOSP002,192.168.13.14,Mobile,Chrome / Android,2026-06-24T02:30:00,success,Access permitted under active patient grant.
+AL00066,PAT014,AG0040,USR017,doctor,view_records,medical_record,MR0119,HOSP001,192.168.14.10,Mobile,Chrome 137 / Windows 11,2026-06-24T04:30:00,success,Access permitted under active patient grant.
+AL00067,PAT014,AG0041,USR018,doctor,view_lab,lab_order,LAB0027,HOSP001,192.168.14.11,Mobile,Chrome 137 / Windows 11,2026-06-24T03:30:00,success,Access permitted under active patient grant.
+AL00068,PAT014,AG0042,USR019,doctor,scan_qr,patient_qr,QRHASH1014,HOSP001,192.168.14.12,Mobile,Chrome / Android,2026-06-24T02:30:00,success,Access permitted under active patient grant.
+AL00069,PAT014,AG0042,PHARM001,pharmacy,view_prescription,prescription,RX0027,HOSP001,192.168.14.13,Mobile,Chrome / Android,2026-06-24T01:30:00,success,Access permitted under active patient grant.
+AL00070,PAT014,AG0042,HOSP001,hospital,dispense,prescription,RX0027,HOSP001,192.168.14.14,Desktop,Chrome / Android,2026-06-24T00:30:00,success,Access permitted under active patient grant.
+AL00071,PAT015,AG0043,USR017,doctor,view_records,medical_record,MR0128,HOSP002,192.168.15.10,Tablet,Edge 137 / Windows 11,2026-06-24T02:30:00,success,Access permitted under active patient grant.
+AL00072,PAT015,AG0044,USR018,doctor,view_lab,lab_order,LAB0029,HOSP002,192.168.15.11,Tablet,Chrome 137 / Windows 11,2026-06-24T01:30:00,success,Access permitted under active patient grant.
+AL00073,PAT015,AG0045,USR019,doctor,scan_qr,patient_qr,QRHASH1015,HOSP002,192.168.15.12,Mobile,Chrome / Android,2026-06-24T00:30:00,success,Access permitted under active patient grant.
+AL00074,PAT015,AG0045,PHARM001,pharmacy,view_prescription,prescription,RX0029,HOSP002,192.168.15.13,Mobile,Edge 137 / Windows 11,2026-06-23T23:30:00,success,Access permitted under active patient grant.
+AL00075,PAT015,AG0045,HOSP002,hospital,dispense,prescription,RX0029,HOSP002,192.168.15.14,Mobile,Chrome 137 / Windows 11,2026-06-23T22:30:00,success,Access permitted under active patient grant.
+AL00076,PAT016,AG0046,USR017,doctor,view_records,medical_record,MR0137,HOSP001,192.168.16.10,Mobile,Chrome / Android,2026-06-24T00:30:00,success,Access permitted under active patient grant.
+AL00077,PAT016,AG0047,USR018,doctor,view_lab,lab_order,LAB0031,HOSP001,192.168.16.11,Mobile,Edge 137 / Windows 11,2026-06-23T23:30:00,success,Access permitted under active patient grant.
+AL00078,PAT016,AG0048,USR019,doctor,scan_qr,patient_qr,QRHASH1016,HOSP001,192.168.16.12,Desktop,Chrome / Android,2026-06-23T22:30:00,success,Access permitted under active patient grant.
+AL00079,PAT016,AG0048,PHARM001,pharmacy,view_prescription,prescription,RX0031,HOSP001,192.168.16.13,Desktop,Chrome 137 / Windows 11,2026-06-23T21:30:00,success,Access permitted under active patient grant.
+AL00080,PAT016,AG0048,HOSP001,hospital,dispense,prescription,RX0031,HOSP001,192.168.16.14,Mobile,Chrome / Android,2026-06-23T20:30:00,success,Access permitted under active patient grant.

@@ -20,6 +20,10 @@ const trackPill: Record<ReturnType<typeof getTrack>, string> = {
 };
 
 function getTrack(r: Role) { return ROLE_TRACK[r]; }
+function initials(name: string | undefined) {
+  const fallback = name?.trim() || "Staff";
+  return fallback.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+}
 
 export const TopBar = () => {
   const session = useAuth(s => s.session);
@@ -28,7 +32,9 @@ export const TopBar = () => {
   const nav = useNavigate();
   if (!session) return null;
   const pendingCount = queue.filter(q => q.status === "pending").length;
-  const track = getTrack(session.role);
+  const track = getTrack(session.role) ?? "clinical";
+  const roleLabel = ROLE_LABEL[session.role] ?? "Staff";
+  const staffName = session.name?.trim() || "Staff";
 
   return (
     <div className="flex-1 flex items-center justify-between gap-md">
@@ -38,7 +44,7 @@ export const TopBar = () => {
           <div className="text-[11px] text-text-secondary truncate">Code: {session.hospitalCode}</div>
         </div>
         <Badge variant="outline" className={`hidden md:inline-flex capitalize ${trackPill[track]}`}>
-          {ROLE_LABEL[session.role]}
+          {roleLabel}
         </Badge>
       </div>
 
@@ -65,18 +71,18 @@ export const TopBar = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-2 h-9">
               <div className="h-7 w-7 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-semibold">
-                {session.name.split(" ").map(n => n[0]).slice(0,2).join("")}
+                {initials(staffName)}
               </div>
               <div className="text-left hidden sm:block">
-                <div className="text-xs font-medium leading-tight">{session.name}</div>
-                <div className="text-[10px] text-text-secondary leading-tight">{ROLE_LABEL[session.role]}</div>
+                <div className="text-xs font-medium leading-tight">{staffName}</div>
+                <div className="text-[10px] text-text-secondary leading-tight">{roleLabel}</div>
               </div>
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>{session.name}</DropdownMenuLabel>
-            <DropdownMenuLabel className="text-text-secondary font-normal">{ROLE_LABEL[session.role]}</DropdownMenuLabel>
+            <DropdownMenuLabel>{staffName}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-text-secondary font-normal">{roleLabel}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => nav("/settings")}>Settings</DropdownMenuItem>
             <DropdownMenuItem onClick={async () => { await logout(); nav("/login"); }} className="text-error focus:text-error">

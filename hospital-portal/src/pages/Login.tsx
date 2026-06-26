@@ -8,21 +8,32 @@ import { FormAlert } from "@/components/shared/FormAlert";
 import { useAuth } from "@/store/auth";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { MESSAGES } from "@/lib/user-messages";
+import { useAuthHydrated } from "@/hooks/useAuthHydrated";
+import { loadTokens } from "@/lib/api/client";
+import { AuthLoading } from "@/components/shared/AuthLoading";
 
 export default function Login() {
+  const hydrated = useAuthHydrated();
   const session = useAuth(s => s.session);
   const login = useAuth(s => s.login);
   const nav = useNavigate();
-  const [code, setCode] = useState("MP-LAGOS-001");
-  const [email, setEmail] = useState("amara@stcatherine.med");
-  const [password, setPassword] = useState("MiqorAI123!");
+  const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (session) return <Navigate to="/dashboard" replace />;
+  if (!hydrated) return <AuthLoading />;
+
+  if (session && loadTokens()) return <Navigate to="/dashboard" replace />;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    if (!code.trim() || !email.trim() || !password) {
+      setError(MESSAGES.form.required);
+      return;
+    }
     const res = await login(code.trim(), email.trim(), password);
     if (!res.ok) setError(res.error || MESSAGES.auth.invalidCredentials);
     else nav("/dashboard");
@@ -50,12 +61,12 @@ export default function Login() {
           <Label htmlFor="hcode">Hospital code</Label>
           <div className="relative">
             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-            <Input id="hcode" className="pl-9 h-11" value={code} onChange={e => setCode(e.target.value)} placeholder="MP-LAGOS-001" autoComplete="off" />
+            <Input id="hcode" className="pl-9 h-11" value={code} onChange={e => setCode(e.target.value)} placeholder="Hospital code" autoComplete="organization" />
           </div>
         </div>
         <div className="space-y-xs">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" className="h-11" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@hospital.med" />
+          <Input id="email" type="email" className="h-11" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@hospital.med" autoComplete="username" />
         </div>
         <div className="space-y-xs">
           <div className="flex items-center justify-between">
@@ -63,7 +74,7 @@ export default function Login() {
             <a href="#" className="text-xs text-primary hover:underline">Forgot?</a>
           </div>
           <div className="relative">
-            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className="pr-10 h-11" />
+            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className="pr-10 h-11" autoComplete="current-password" />
             <button type="button" onClick={() => setShowPw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -78,7 +89,7 @@ export default function Login() {
       </div>
 
       <div className="mt-lg p-sm rounded-md bg-primary-light/40 border border-primary/10 text-[11px] text-primary leading-relaxed">
-        <strong>Demo:</strong> password <code className="font-mono">MiqorAI123!</code>. Try <code>adaeze@stcatherine.med</code> (receptionist), <code>joseph@stcatherine.med</code> (nurse), <code>amara@stcatherine.med</code> (doctor), <code>tunde@stcatherine.med</code> (admin).
+        Use the local development credentials from the project credentials file. Passwords are never pre-filled in the portal.
       </div>
     </AuthShell>
   );

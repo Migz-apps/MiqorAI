@@ -232,6 +232,7 @@ model User {
   syncQueue           SyncQueue[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  clinicalSafetyActions AiPendingClinicalAction[] @relation("ClinicalSafetyDoctor")
 
   @@map("users")
 }
@@ -296,6 +297,7 @@ model Patient {
   appointments          Appointment[]
   emergencyContacts     EmergencyContact[]
   deletionRequests      DataDeletionRequest[]
+  aiPendingClinicalActions AiPendingClinicalAction[]
 
   @@map("patients")
 }
@@ -329,6 +331,7 @@ model Hospital {
   departments        Department[]
   notifications      HospitalNotification[]
   subscriptions      HospitalSubscription[]
+  aiPendingClinicalActions AiPendingClinicalAction[]
 
   @@map("hospitals")
 }
@@ -1176,3 +1179,62 @@ model ReportSchedule {
   @@map("report_schedules")
 }
 
+enum AiPendingClinicalActionStatus {
+  PENDING
+  CANCELLED
+  OVERRIDDEN
+  COMPLETED
+}
+
+enum ClinicalSafetyActionType {
+  test_order
+  medication_prescription
+}
+
+enum ClinicalSafetyDecision {
+  ALLOWED
+  BLOCKED
+  OVERRIDDEN
+  CANCELLED
+}
+
+model AiPendingClinicalAction {
+  id                 String                        @id @default(uuid()) @db.Uuid
+  patientId          String                        @map("patient_id") @db.Uuid
+  doctorId           String                        @map("doctor_id") @db.Uuid
+  hospitalId         String                        @map("hospital_id") @db.Uuid
+  actionType         ClinicalSafetyActionType      @map("action_type")
+  actionItem         String                        @map("action_item")
+  currentComplaint   String?                       @map("current_complaint")
+  requestPayloadJson Json                          @map("request_payload_json")
+  aiResponseJson     Json                          @map("ai_response_json")
+  status             AiPendingClinicalActionStatus @default(PENDING)
+  overrideReason     String?                       @map("override_reason")
+  createdAt          DateTime                      @default(now()) @map("created_at")
+  updatedAt          DateTime                      @updatedAt @map("updated_at")
+  patient            Patient                       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor             User                          @relation("ClinicalSafetyDoctor", fields: [doctorId], references: [id], onDelete: Restrict)
+  hospital           Hospital                      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  auditLogs          ClinicalSafetyAuditLog[]
+
+  @@index([doctorId, status])
+  @@index([patientId])
+  @@map("ai_pending_clinical_actions")
+}
+
+model ClinicalSafetyAuditLog {
+  id              String                   @id @default(uuid()) @db.Uuid
+  patientId       String                   @map("patient_id") @db.Uuid
+  doctorId        String                   @map("doctor_id") @db.Uuid
+  hospitalId      String?                  @map("hospital_id") @db.Uuid
+  attemptedAction Json                     @map("attempted_action")
+  aiAlert         Json                     @map("ai_alert")
+  finalDecision   ClinicalSafetyDecision   @map("final_decision")
+  overrideReason  String?                  @map("override_reason")
+  pendingActionId String?                  @map("pending_action_id") @db.Uuid
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  pendingAction   AiPendingClinicalAction? @relation(fields: [pendingActionId], references: [id], onDelete: SetNull)
+
+  @@index([patientId, createdAt])
+  @@map("clinical_safety_audit_logs")
+}

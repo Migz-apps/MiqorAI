@@ -1,0 +1,25 @@
+user_id,email,phone,password_hash,role,display_name,is_active
+USR001,grace.muthoni@example.com,+254712345678,<bcrypt: MiqorAI123!>,patient,Grace Muthoni,True
+USR002,daniel.kimani@example.com,+254712345679,<bcrypt: MiqorAI123!>,patient,Daniel Kimani,True
+USR003,mary.acheru@example.com,+254712345680,<bcrypt: MiqorAI123!>,patient,Mary Acheru,True
+USR004,james.otieno@example.com,+254712345681,<bcrypt: MiqorAI123!>,patient,James Otieno,True
+USR005,faith.njeri@example.com,+254712345682,<bcrypt: MiqorAI123!>,patient,Faith Njeri,True
+USR006,peter.kamau@example.com,+254712345683,<bcrypt: MiqorAI123!>,patient,Peter Kamau,True
+USR007,esther.wanjiku@example.com,+254712345684,<bcrypt: MiqorAI123!>,patient,Esther Wanjiku,True
+USR008,samuel.odhiambo@example.com,+254712345685,<bcrypt: MiqorAI123!>,patient,Samuel Odhiambo,True
+USR009,lilian.chebet@example.com,+254712345686,<bcrypt: MiqorAI123!>,patient,Lilian Chebet,True
+USR010,brian.mutiso@example.com,+254712345687,<bcrypt: MiqorAI123!>,patient,Brian Mutiso,True
+USR011,ruth.atieno@example.com,+254712345688,<bcrypt: MiqorAI123!>,patient,Ruth Atieno,True
+USR012,george.maina@example.com,+254712345689,<bcrypt: MiqorAI123!>,patient,George Maina,True
+USR013,noah.muthoni@example.com,+254712345690,<bcrypt: MiqorAI123!>,patient,Noah Muthoni,True
+USR014,lucy.muthoni@example.com,+254712345691,<bcrypt: MiqorAI123!>,patient,Lucy Muthoni,True
+USR015,joseph.muthoni@example.com,+254712345692,<bcrypt: MiqorAI123!>,patient,Joseph Muthoni,True
+USR016,ann.muthoni@example.com,+254712345693,<bcrypt: MiqorAI123!>,patient,Ann Muthoni,True
+USR017,dr.amara@example.com,+254712345700,<bcrypt: MiqorAI123!>,doctor,Dr. Amara Ndlovu,True
+USR018,dr.kimani@example.com,+254712345701,<bcrypt: MiqorAI123!>,doctor,Dr. David Kimani,True
+USR019,dr.adeyemi@example.com,+254712345702,<bcrypt: MiqorAI123!>,doctor,Dr. Ada Adeyemi,True
+USR020,nurse.rose@example.com,+254712345703,<bcrypt: MiqorAI123!>,nurse,Rose Wambui,True
+USR021,nurse.paul@example.com,+254712345704,<bcrypt: MiqorAI123!>,nurse,Paul Mwangi,True
+USR022,lab.jane@example.com,+254712345705,<bcrypt: MiqorAI123!>,lab_technician,Jane Kiptoo,True
+USR023,pharm.kevin@example.com,+254712345706,<bcrypt: MiqorAI123!>,pharmacist,Kevin Ochieng,True
+USR024,admin.sarah@example.com,+254712345707,<bcrypt: MiqorAI123!>,admin,Sarah Ncube,True

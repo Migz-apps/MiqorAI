@@ -6,8 +6,15 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
+    strictPort: true,
     hmr: {
-      overlay: false,
+      overlay: true,
+    },
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
     },
   },
   plugins: [react()],

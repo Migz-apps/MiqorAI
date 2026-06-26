@@ -28,10 +28,13 @@ import Reports from "./pages/Reports";
 import AuditLog from "./pages/AuditLog";
 import SystemHealth from "./pages/SystemHealth";
 
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
@@ -71,6 +74,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

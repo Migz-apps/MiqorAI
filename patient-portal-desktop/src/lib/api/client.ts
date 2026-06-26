@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "http://localhost:3000");
 const TOKEN_KEY = "miqorai-patient-tokens";
 
 export type Tokens = { access_token: string; refresh_token: string };
@@ -77,6 +77,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function loginApi(email: string, password: string) {
+  saveTokens(null);
   const data = await api<{ access_token: string; refresh_token: string }>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),

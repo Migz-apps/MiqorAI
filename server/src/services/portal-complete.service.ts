@@ -1113,7 +1113,7 @@ export async function getEnrichedAdminPatients(limit = 50) {
       id: p.id,
       name: `${p.firstName} ${p.lastName}`,
       email: p.user.email,
-      insurer: p.insurerMembers[0]?.insurer.name,
+      insurer: p.insurerMembers[0]?.insurer?.name,
       visit_count: visits,
       flagged: flag.flagged ?? false,
     });

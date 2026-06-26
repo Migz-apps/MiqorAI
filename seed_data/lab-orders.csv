@@ -1,0 +1,33 @@
+lab_order_id,patient_id,visit_id,hospital_id,test_name,test_code,status,results,ordered_by,ordered_at,completed_at,notes
+LAB0001,PAT001,VIS0001,HOSP002,HbA1c,4548-4,completed,"{""value"": 6.8, ""unit"": ""%"", ""ref_low"": 4.0, ""ref_high"": 5.6}",USR017,2026-06-19T10:00:00,2026-06-19T14:00:00,Results reviewed by clinician.
+LAB0002,PAT001,VIS0002,HOSP002,Complete Blood Count,57021-8,ordered,,USR017,2026-06-21T10:00:00,,Sample pending collection.
+LAB0003,PAT002,VIS0003,HOSP001,Complete Blood Count,57021-8,completed,"{""hemoglobin"": 13.5, ""unit"": ""g/dL"", ""ref_low"": 12, ""ref_high"": 16}",USR018,2026-06-18T10:00:00,2026-06-18T14:00:00,Results reviewed by clinician.
+LAB0004,PAT002,VIS0004,HOSP001,Lipid Panel,57698-3,ordered,,USR018,2026-06-22T10:00:00,,Sample pending collection.
+LAB0005,PAT003,VIS0005,HOSP002,Lipid Panel,57698-3,completed,"{""ldl"": 142, ""hdl"": 48, ""unit"": ""mg/dL"", ""ref_low"": 0, ""ref_high"": 100}",USR019,2026-06-17T10:00:00,2026-06-17T14:00:00,Results reviewed by clinician.
+LAB0006,PAT003,VIS0006,HOSP002,Serum Creatinine,2160-0,ordered,,USR019,2026-06-23T10:00:00,,Sample pending collection.
+LAB0007,PAT004,VIS0007,HOSP001,Serum Creatinine,2160-0,completed,"{""value"": 1.6, ""unit"": ""mg/dL"", ""ref_low"": 0.7, ""ref_high"": 1.3}",USR017,2026-06-16T10:00:00,2026-06-16T14:00:00,Results reviewed by clinician.
+LAB0008,PAT004,VIS0008,HOSP001,TSH,3016-3,ordered,,USR017,2026-06-20T10:00:00,,Sample pending collection.
+LAB0009,PAT005,VIS0009,HOSP002,TSH,3016-3,completed,"{""value"": 2.4, ""unit"": ""mIU/L"", ""ref_low"": 0.4, ""ref_high"": 4.0}",USR018,2026-06-15T10:00:00,2026-06-15T14:00:00,Results reviewed by clinician.
+LAB0010,PAT005,VIS0010,HOSP002,Urinalysis,5804-0,ordered,,USR018,2026-06-21T10:00:00,,Sample pending collection.
+LAB0011,PAT006,VIS0011,HOSP001,Urinalysis,5804-0,completed,"{""protein"": ""negative"", ""glucose"": ""negative""}",USR019,2026-06-14T10:00:00,2026-06-14T14:00:00,Results reviewed by clinician.
+LAB0012,PAT006,VIS0012,HOSP001,Troponin I,10839-9,ordered,,USR019,2026-06-22T10:00:00,,Sample pending collection.
+LAB0013,PAT007,VIS0013,HOSP002,Troponin I,10839-9,completed,"{""value"": 0.01, ""unit"": ""ng/mL"", ""ref_low"": 0, ""ref_high"": 0.04}",USR017,2026-06-13T10:00:00,2026-06-13T14:00:00,Results reviewed by clinician.
+LAB0014,PAT007,VIS0014,HOSP002,Pregnancy hCG,21198-7,ordered,,USR017,2026-06-23T10:00:00,,Sample pending collection.
+LAB0015,PAT008,VIS0015,HOSP001,Pregnancy hCG,21198-7,completed,"{""value"": ""positive""}",USR018,2026-06-12T10:00:00,2026-06-12T14:00:00,Results reviewed by clinician.
+LAB0016,PAT008,VIS0016,HOSP001,Peak Flow,3349-8,ordered,,USR018,2026-06-20T10:00:00,,Sample pending collection.
+LAB0017,PAT009,VIS0017,HOSP002,Peak Flow,3349-8,completed,"{""value"": 420, ""unit"": ""L/min"", ""ref_low"": 400, ""ref_high"": 650}",USR019,2026-06-11T10:00:00,2026-06-11T14:00:00,Results reviewed by clinician.
+LAB0018,PAT009,VIS0018,HOSP002,Vitamin D,1989-3,ordered,,USR019,2026-06-21T10:00:00,,Sample pending collection.
+LAB0019,PAT010,VIS0019,HOSP001,Vitamin D,1989-3,completed,"{""value"": 28, ""unit"": ""ng/mL"", ""ref_low"": 30, ""ref_high"": 100}",USR017,2026-06-10T10:00:00,2026-06-10T14:00:00,Results reviewed by clinician.
+LAB0020,PAT010,VIS0020,HOSP001,HbA1c,4548-4,ordered,,USR017,2026-06-22T10:00:00,,Sample pending collection.
+LAB0021,PAT011,VIS0021,HOSP002,HbA1c,4548-4,completed,"{""value"": 6.8, ""unit"": ""%"", ""ref_low"": 4.0, ""ref_high"": 5.6}",USR018,2026-06-09T10:00:00,2026-06-09T14:00:00,Results reviewed by clinician.
+LAB0022,PAT011,VIS0022,HOSP002,Complete Blood Count,57021-8,ordered,,USR018,2026-06-23T10:00:00,,Sample pending collection.
+LAB0023,PAT012,VIS0023,HOSP001,Complete Blood Count,57021-8,completed,"{""hemoglobin"": 13.5, ""unit"": ""g/dL"", ""ref_low"": 12, ""ref_high"": 16}",USR019,2026-06-08T10:00:00,2026-06-08T14:00:00,Results reviewed by clinician.
+LAB0024,PAT012,VIS0024,HOSP001,Lipid Panel,57698-3,ordered,,USR019,2026-06-20T10:00:00,,Sample pending collection.
+LAB0025,PAT013,VIS0025,HOSP002,Lipid Panel,57698-3,completed,"{""ldl"": 142, ""hdl"": 48, ""unit"": ""mg/dL"", ""ref_low"": 0, ""ref_high"": 100}",USR017,2026-06-07T10:00:00,2026-06-07T14:00:00,Results reviewed by clinician.
+LAB0026,PAT013,VIS0026,HOSP002,Serum Creatinine,2160-0,ordered,,USR017,2026-06-21T10:00:00,,Sample pending collection.
+LAB0027,PAT014,VIS0027,HOSP001,Serum Creatinine,2160-0,completed,"{""value"": 1.6, ""unit"": ""mg/dL"", ""ref_low"": 0.7, ""ref_high"": 1.3}",USR018,2026-06-06T10:00:00,2026-06-06T14:00:00,Results reviewed by clinician.
+LAB0028,PAT014,VIS0028,HOSP001,TSH,3016-3,ordered,,USR018,2026-06-22T10:00:00,,Sample pending collection.
+LAB0029,PAT015,VIS0029,HOSP002,TSH,3016-3,completed,"{""value"": 2.4, ""unit"": ""mIU/L"", ""ref_low"": 0.4, ""ref_high"": 4.0}",USR019,2026-06-05T10:00:00,2026-06-05T14:00:00,Results reviewed by clinician.
+LAB0030,PAT015,VIS0030,HOSP002,Urinalysis,5804-0,ordered,,USR019,2026-06-23T10:00:00,,Sample pending collection.
+LAB0031,PAT016,VIS0031,HOSP001,Urinalysis,5804-0,completed,"{""protein"": ""negative"", ""glucose"": ""negative""}",USR017,2026-06-04T10:00:00,2026-06-04T14:00:00,Results reviewed by clinician.
+LAB0032,PAT016,VIS0032,HOSP001,Troponin I,10839-9,ordered,,USR017,2026-06-20T10:00:00,,Sample pending collection.

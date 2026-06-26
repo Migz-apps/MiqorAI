@@ -42,4 +42,6 @@ export const config = {
   auditArchiveDays: parseInt(process.env.AUDIT_ARCHIVE_DAYS ?? "365", 10),
   otpExpiresMinutes: parseInt(process.env.OTP_EXPIRES_MINUTES ?? "10", 10),
   baseUrl: process.env.BASE_URL ?? "http://localhost:3000",
+  aiServiceUrl: (process.env.AI_SERVICE_URL ?? "").replace(/\/$/, ""),
+  aiMock: process.env.MIQORAI_AI_MOCK === "true",
 };

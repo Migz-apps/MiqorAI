@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:all": "npm run db:seed && vitest run"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
@@ -25,6 +26,7 @@
     "helmet": "^8.0.0",
     "ioredis": "^5.4.2",
     "jsonwebtoken": "^9.0.2",
+    "MiqorAI": "file:..",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
     "otplib": "^13.4.1",

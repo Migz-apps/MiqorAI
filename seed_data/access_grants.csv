@@ -1,0 +1,49 @@
+grant_id,patient_id,grantee_type,grantee_id,scope,granted_by,granted_at,expires_at,is_active,notes
+AG0001,PAT001,hospital,HOSP002,full,USR001,2026-06-19T09:00:00,2027-06-19T09:00:00,True,Primary treating hospital has full access.
+AG0002,PAT001,pharmacy,PHARM001,medications,USR001,2026-06-19T09:00:00,2026-12-16T09:00:00,True,Medication access for dispensing.
+AG0003,PAT001,doctor,USR017,lab_results,USR001,2026-06-19T09:00:00,2026-09-17T09:00:00,True,Limited clinician access.
+AG0004,PAT002,hospital,HOSP001,full,USR002,2026-06-18T09:00:00,2027-06-18T09:00:00,True,Primary treating hospital has full access.
+AG0005,PAT002,pharmacy,PHARM001,medications,USR002,2026-06-18T09:00:00,2026-12-15T09:00:00,True,Medication access for dispensing.
+AG0006,PAT002,doctor,USR018,emergency_only,USR002,2026-06-18T09:00:00,2026-09-16T09:00:00,True,Limited clinician access.
+AG0007,PAT003,hospital,HOSP002,full,USR003,2026-06-17T09:00:00,2027-06-17T09:00:00,True,Primary treating hospital has full access.
+AG0008,PAT003,pharmacy,PHARM001,medications,USR003,2026-06-17T09:00:00,2026-12-14T09:00:00,True,Medication access for dispensing.
+AG0009,PAT003,doctor,USR019,lab_results,USR003,2026-06-17T09:00:00,2026-09-15T09:00:00,True,Limited clinician access.
+AG0010,PAT004,hospital,HOSP001,full,USR004,2026-06-16T09:00:00,2027-06-16T09:00:00,True,Primary treating hospital has full access.
+AG0011,PAT004,pharmacy,PHARM001,medications,USR004,2026-06-16T09:00:00,2026-12-13T09:00:00,True,Medication access for dispensing.
+AG0012,PAT004,doctor,USR017,emergency_only,USR004,2026-06-16T09:00:00,2026-09-14T09:00:00,True,Limited clinician access.
+AG0013,PAT005,hospital,HOSP002,full,USR005,2026-06-15T09:00:00,2027-06-15T09:00:00,True,Primary treating hospital has full access.
+AG0014,PAT005,pharmacy,PHARM001,medications,USR005,2026-06-15T09:00:00,2026-12-12T09:00:00,True,Medication access for dispensing.
+AG0015,PAT005,doctor,USR018,lab_results,USR005,2026-06-15T09:00:00,2026-09-13T09:00:00,True,Limited clinician access.
+AG0016,PAT006,hospital,HOSP001,full,USR006,2026-06-14T09:00:00,2027-06-14T09:00:00,True,Primary treating hospital has full access.
+AG0017,PAT006,pharmacy,PHARM001,medications,USR006,2026-06-14T09:00:00,2026-12-11T09:00:00,True,Medication access for dispensing.
+AG0018,PAT006,doctor,USR019,emergency_only,USR006,2026-06-14T09:00:00,2026-09-12T09:00:00,True,Limited clinician access.
+AG0019,PAT007,hospital,HOSP002,full,USR007,2026-06-13T09:00:00,2027-06-13T09:00:00,True,Primary treating hospital has full access.
+AG0020,PAT007,pharmacy,PHARM001,medications,USR007,2026-06-13T09:00:00,2026-12-10T09:00:00,True,Medication access for dispensing.
+AG0021,PAT007,doctor,USR017,lab_results,USR007,2026-06-13T09:00:00,2026-09-11T09:00:00,True,Limited clinician access.
+AG0022,PAT008,hospital,HOSP001,full,USR008,2026-06-12T09:00:00,2027-06-12T09:00:00,True,Primary treating hospital has full access.
+AG0023,PAT008,pharmacy,PHARM001,medications,USR008,2026-06-12T09:00:00,2026-12-09T09:00:00,True,Medication access for dispensing.
+AG0024,PAT008,doctor,USR018,emergency_only,USR008,2026-06-12T09:00:00,2026-09-10T09:00:00,True,Limited clinician access.
+AG0025,PAT009,hospital,HOSP002,full,USR009,2026-06-11T09:00:00,2027-06-11T09:00:00,True,Primary treating hospital has full access.
+AG0026,PAT009,pharmacy,PHARM001,medications,USR009,2026-06-11T09:00:00,2026-12-08T09:00:00,True,Medication access for dispensing.
+AG0027,PAT009,doctor,USR019,lab_results,USR009,2026-06-11T09:00:00,2026-09-09T09:00:00,True,Limited clinician access.
+AG0028,PAT010,hospital,HOSP001,full,USR010,2026-06-10T09:00:00,2027-06-10T09:00:00,True,Primary treating hospital has full access.
+AG0029,PAT010,pharmacy,PHARM001,medications,USR010,2026-06-10T09:00:00,2026-12-07T09:00:00,True,Medication access for dispensing.
+AG0030,PAT010,doctor,USR017,emergency_only,USR010,2026-06-10T09:00:00,2026-09-08T09:00:00,True,Limited clinician access.
+AG0031,PAT011,hospital,HOSP002,full,USR011,2026-06-09T09:00:00,2027-06-09T09:00:00,True,Primary treating hospital has full access.
+AG0032,PAT011,pharmacy,PHARM001,medications,USR011,2026-06-09T09:00:00,2026-12-06T09:00:00,True,Medication access for dispensing.
+AG0033,PAT011,doctor,USR018,lab_results,USR011,2026-06-09T09:00:00,2026-09-07T09:00:00,True,Limited clinician access.
+AG0034,PAT012,hospital,HOSP001,full,USR012,2026-06-08T09:00:00,2027-06-08T09:00:00,True,Primary treating hospital has full access.
+AG0035,PAT012,pharmacy,PHARM001,medications,USR012,2026-06-08T09:00:00,2026-12-05T09:00:00,True,Medication access for dispensing.
+AG0036,PAT012,doctor,USR019,emergency_only,USR012,2026-06-08T09:00:00,2026-09-06T09:00:00,True,Limited clinician access.
+AG0037,PAT013,hospital,HOSP002,full,USR013,2026-06-07T09:00:00,2027-06-07T09:00:00,True,Primary treating hospital has full access.
+AG0038,PAT013,pharmacy,PHARM001,medications,USR013,2026-06-07T09:00:00,2026-12-04T09:00:00,True,Medication access for dispensing.
+AG0039,PAT013,doctor,USR017,lab_results,USR013,2026-06-07T09:00:00,2026-09-05T09:00:00,True,Limited clinician access.
+AG0040,PAT014,hospital,HOSP001,full,USR014,2026-06-06T09:00:00,2027-06-06T09:00:00,True,Primary treating hospital has full access.
+AG0041,PAT014,pharmacy,PHARM001,medications,USR014,2026-06-06T09:00:00,2026-12-03T09:00:00,True,Medication access for dispensing.
+AG0042,PAT014,doctor,USR018,emergency_only,USR014,2026-06-06T09:00:00,2026-09-04T09:00:00,True,Limited clinician access.
+AG0043,PAT015,hospital,HOSP002,full,USR015,2026-06-05T09:00:00,2027-06-05T09:00:00,True,Primary treating hospital has full access.
+AG0044,PAT015,pharmacy,PHARM001,medications,USR015,2026-06-05T09:00:00,2026-12-02T09:00:00,True,Medication access for dispensing.
+AG0045,PAT015,doctor,USR019,lab_results,USR015,2026-06-05T09:00:00,2026-09-03T09:00:00,True,Limited clinician access.
+AG0046,PAT016,hospital,HOSP001,full,USR016,2026-06-04T09:00:00,2027-06-04T09:00:00,True,Primary treating hospital has full access.
+AG0047,PAT016,pharmacy,PHARM001,medications,USR016,2026-06-04T09:00:00,2026-12-01T09:00:00,True,Medication access for dispensing.
+AG0048,PAT016,doctor,USR017,emergency_only,USR016,2026-06-04T09:00:00,2026-09-02T09:00:00,True,Limited clinician access.

@@ -1,5 +1,6 @@
 import { useNavigate, Link, useSearchParams, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { FormAlert } from "@/components/FormAlert";
@@ -16,6 +17,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -57,22 +59,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      <div className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary-foreground text-primary font-bold">M+</div>
-          <span className="text-lg font-bold">MiqorAI</span>
-        </Link>
-        <div>
-          <h2 className="text-4xl font-bold leading-tight">Your health, in your hands.</h2>
-          <p className="mt-4 opacity-90">Join 50,000+ patients across Africa taking control of their medical records.</p>
-        </div>
-        <div className="text-sm opacity-75">© 2026 MiqorAI</div>
-      </div>
-
-      <div className="flex items-center justify-center p-6 md:p-12">
+    <div className="flex min-h-screen items-center justify-center bg-background p-6 md:p-12">
         <div className="w-full max-w-sm">
-          <Link to="/" className="md:hidden flex items-center gap-2 mb-8">
+          <Link to="/" className="flex items-center gap-2 mb-8">
             <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground font-bold">M+</div>
             <span className="text-lg font-bold">MiqorAI</span>
           </Link>
@@ -119,7 +108,7 @@ export default function LoginPage() {
 
           <h1 className="text-2xl font-bold">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "login" ? "Sign in to your medical portal" : "Free forever — no credit card needed"}
+            {mode === "login" ? "Email format: name@example.com" : "Use a valid email address like name@example.com"}
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
@@ -129,8 +118,24 @@ export default function LoginPage() {
                 <Field label="Phone" value={phone} onChange={setPhone} placeholder="+254 712 345 678" disabled={isLoggedIn && wantsSignup} />
               </>
             )}
-            <Field label="Email" value={email} onChange={setEmail} type="email" disabled={isLoggedIn && wantsSignup} />
-            <Field label="Password" value={password} onChange={setPassword} type="password" disabled={isLoggedIn && wantsSignup} />
+            <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="name@example.com" disabled={isLoggedIn && wantsSignup} />
+            <Field
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              type={showPassword ? "text" : "password"}
+              disabled={isLoggedIn && wantsSignup}
+              rightElement={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((show) => !show)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              }
+            />
             {formError ? <FormAlert>{formError}</FormAlert> : null}
             <button
               type="submit"
@@ -141,11 +146,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            By continuing you agree to our Terms and Privacy Policy.
-          </p>
         </div>
-      </div>
     </div>
   );
 }
@@ -157,6 +158,7 @@ function Field({
   type = "text",
   placeholder,
   disabled = false,
+  rightElement,
 }: {
   label: string;
   value: string;
@@ -164,18 +166,22 @@ function Field({
   type?: string;
   placeholder?: string;
   disabled?: boolean;
+  rightElement?: React.ReactNode;
 }) {
   return (
     <label className="block">
       <span className="text-sm font-medium">{label}</span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-      />
+      <div className="relative mt-1">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${rightElement ? "pr-10" : ""}`}
+        />
+        {rightElement}
+      </div>
     </label>
   );
 }

@@ -1,0 +1,9 @@
+staff_id,user_id,organization_id,employee_number,first_name,last_name,display_name,role,department,specialization,license_number,email,phone,status,shift,years_experience,can_prescribe,created_at,notes
+STF001,USR017,HOSP001,EMP1001,Amara,Ndlovu,Dr. Amara Ndlovu,doctor,Cardiology,Cardiology,MD-RW-1001,dr.amara@example.com,+254712345700,active,Day,12,True,2026-01-01T09:00:00,Senior cardiologist
+STF002,USR018,HOSP002,EMP1002,David,Kimani,Dr. David Kimani,doctor,General Medicine,Internal Medicine,MD-RW-1002,dr.kimani@example.com,+254712345701,active,Day,9,True,2026-01-01T09:00:00,General physician
+STF003,USR019,HOSP001,EMP1003,Ada,Adeyemi,Dr. Ada Adeyemi,doctor,Obstetrics,Obstetrics & Gynecology,MD-RW-1003,dr.adeyemi@example.com,+254712345702,active,Day,11,True,2026-01-01T09:00:00,OB/GYN consultant
+STF004,USR020,HOSP001,EMP2001,Rose,Wambui,Rose Wambui,nurse,Emergency,Emergency Nursing,RN-RW-2001,nurse.rose@example.com,+254712345703,active,Day,7,False,2026-01-01T09:00:00,Charge nurse
+STF005,USR021,HOSP002,EMP2002,Paul,Mwangi,Paul Mwangi,nurse,General Medicine,Medical-Surgical Nursing,RN-RW-2002,nurse.paul@example.com,+254712345704,active,Night,5,False,2026-01-01T09:00:00,Ward nurse
+STF006,USR022,LAB001,EMP3001,Jane,Kiptoo,Jane Kiptoo,lab_technician,Laboratory,Clinical Laboratory,LAB-RW-3001,lab.jane@example.com,+254712345705,active,Day,8,False,2026-01-01T09:00:00,Lead laboratory technologist
+STF007,USR023,PHARM001,EMP4001,Kevin,Ochieng,Kevin Ochieng,pharmacist,Pharmacy,Clinical Pharmacy,PHARM-RW-4001,pharm.kevin@example.com,+254712345706,active,Day,10,False,2026-01-01T09:00:00,Supervising pharmacist
+STF008,USR024,HOSP001,EMP5001,Sarah,Ncube,Sarah Ncube,admin,Administration,Hospital Administration,ADM-RW-5001,admin.sarah@example.com,+254712345707,active,Day,14,False,2026-01-01T09:00:00,Hospital administrator

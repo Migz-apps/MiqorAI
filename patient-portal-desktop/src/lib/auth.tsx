@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const profile = await patientApi.profile();
           persist(toUser(profile));
         } else {
-          const raw = localStorage.getItem(KEY);
-          if (raw) setUser(JSON.parse(raw) as User);
+          localStorage.removeItem(KEY);
+          setUser(null);
         }
       } catch {
         saveTokens(null);

@@ -12,6 +12,11 @@ const statusStyle: Record<string, string> = {
   "with-doctor": "bg-success/15 text-success border-success/30",
 };
 
+function initials(value: string | undefined) {
+  const label = value?.trim() || "Patient";
+  return label.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+}
+
 export const CheckInList = () => {
   const nav = useNavigate();
   const entries = useWaitlist(s => s.entries);
@@ -32,14 +37,15 @@ export const CheckInList = () => {
           {active.map(item => {
             const status = mapVisitStatus(item.status.replace(/-/g, "_"));
             const displayStatus = item.status;
+            const patientLabel = item.patientName ?? item.patientId;
             return (
               <div key={item.id} className="flex items-center gap-md px-md py-sm hover:bg-background-grey transition-colors">
                 <div className="h-10 w-10 rounded-full bg-primary-light text-primary flex items-center justify-center text-sm font-semibold shrink-0">
-                  {(item.patientName ?? item.patientId).split(" ").map(n => n[0]).slice(0, 2).join("")}
+                  {initials(patientLabel)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-sm">
-                    <div className="font-medium truncate">{item.patientName ?? item.patientId}</div>
+                    <div className="font-medium truncate">{patientLabel}</div>
                   </div>
                   <div className="text-xs text-text-secondary truncate">{item.reason || item.department} · {item.checkInTime}</div>
                 </div>

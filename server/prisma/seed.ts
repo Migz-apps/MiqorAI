@@ -1,19 +1,269 @@
 import {
-  DosageForm,
+  AccessAction,
+  AccessScope,
+  AppointmentStatus,
+  ClaimStatus,
+  FamilyAccessLevel,
+  FamilyRelationship,
+  GranteeType,
   HospitalStaffRole,
   InsurerStaffRole,
+  LabOrderStatus,
   PharmacyStaffRole,
+  PrescriptionStatus,
+  RecordType,
   UserRole,
+  VisitStatus,
 } from "@prisma/client";
+import { randomUUID } from "crypto";
 import { prisma } from "../src/lib/prisma.js";
 import { hashPassword } from "../src/utils/crypto.js";
 import { regeneratePatientQr } from "../src/services/qr.service.js";
+import {
+  emailDomain,
+  parseBool,
+  parseLooseJson,
+  parseOptionalDate,
+  parseRequiredDate,
+  readCsv,
+} from "./csv-utils.js";
 
 const PASSWORD = "MiqorAI123!";
+const passwordHash = hashPassword(PASSWORD);
 
-async function main() {
-  console.log("Seeding MiqorAI database...");
+const ids = new Map<string, string>();
+function idFor(seedKey: string): string {
+  if (!ids.has(seedKey)) ids.set(seedKey, randomUUID());
+  return ids.get(seedKey)!;
+}
 
+function mapUserRole(csvRole: string, staffRole?: string): UserRole {
+  switch (csvRole) {
+    case "patient":
+      return UserRole.patient;
+    case "doctor":
+    case "nurse":
+    case "lab_technician":
+      return UserRole.hospital_staff;
+    case "pharmacist":
+      return UserRole.pharmacy_staff;
+    case "admin":
+      return staffRole === "admin" ? UserRole.hospital_admin : UserRole.hospital_staff;
+    default:
+      throw new Error(`Unsupported user role: ${csvRole}`);
+  }
+}
+
+function mapHospitalStaffRole(role: string): HospitalStaffRole {
+  switch (role) {
+    case "doctor":
+      return HospitalStaffRole.doctor;
+    case "nurse":
+      return HospitalStaffRole.nurse;
+    case "admin":
+      return HospitalStaffRole.admin;
+    case "lab_technician":
+      return HospitalStaffRole.nurse;
+    default:
+      return HospitalStaffRole.receptionist;
+  }
+}
+
+function mapVisitStatus(value: string): VisitStatus {
+  switch (value) {
+    case "completed":
+      return VisitStatus.completed;
+    case "waiting":
+      return VisitStatus.waiting;
+    case "with_nurse":
+      return VisitStatus.with_nurse;
+    case "with_doctor":
+      return VisitStatus.with_doctor;
+    case "no_show":
+      return VisitStatus.no_show;
+    default:
+      return VisitStatus.waiting;
+  }
+}
+
+function mapPrescriptionStatus(value: string): PrescriptionStatus {
+  switch (value) {
+    case "dispensed":
+      return PrescriptionStatus.dispensed;
+    case "verified":
+      return PrescriptionStatus.verified;
+    case "ready":
+      return PrescriptionStatus.ready;
+    case "held":
+      return PrescriptionStatus.held;
+    case "rejected":
+      return PrescriptionStatus.rejected;
+    case "sent_to_pharmacy":
+      return PrescriptionStatus.sent_to_pharmacy;
+    case "picked_up":
+      return PrescriptionStatus.picked_up;
+    case "expired":
+      return PrescriptionStatus.expired;
+    default:
+      return PrescriptionStatus.pending;
+  }
+}
+
+function mapLabStatus(value: string): LabOrderStatus {
+  switch (value) {
+    case "completed":
+      return LabOrderStatus.completed;
+    case "in_progress":
+      return LabOrderStatus.in_progress;
+    case "cancelled":
+      return LabOrderStatus.cancelled;
+    default:
+      return LabOrderStatus.ordered;
+  }
+}
+
+function mapClaimStatus(value: string): ClaimStatus {
+  switch (value) {
+    case "approved":
+      return ClaimStatus.cleared;
+    case "under_review":
+      return ClaimStatus.investigating;
+    case "flagged":
+      return ClaimStatus.flagged;
+    case "confirmed":
+      return ClaimStatus.confirmed;
+    case "rejected":
+      return ClaimStatus.flagged;
+    case "submitted":
+      return ClaimStatus.pending;
+    case "cleared":
+      return ClaimStatus.cleared;
+    default:
+      return ClaimStatus.pending;
+  }
+}
+
+function mapAppointmentStatus(value: string): AppointmentStatus {
+  switch (value) {
+    case "completed":
+      return AppointmentStatus.completed;
+    case "cancelled":
+      return AppointmentStatus.cancelled;
+    case "no_show":
+      return AppointmentStatus.no_show;
+    case "confirmed":
+    case "scheduled":
+    default:
+      return AppointmentStatus.scheduled;
+  }
+}
+
+function mapAccessAction(value: string): AccessAction {
+  switch (value) {
+    case "add_record":
+      return AccessAction.add_record;
+    case "view_visit":
+      return AccessAction.view_visit;
+    case "view_lab":
+      return AccessAction.view_lab;
+    case "view_prescription":
+      return AccessAction.view_prescription;
+    case "dispense":
+      return AccessAction.dispense;
+    case "scan_qr":
+      return AccessAction.scan_qr;
+    default:
+      return AccessAction.view_records;
+  }
+}
+
+function mapGranteeType(value: string): GranteeType {
+  switch (value) {
+    case "pharmacy":
+      return GranteeType.pharmacy;
+    case "doctor":
+      return GranteeType.doctor;
+    default:
+      return GranteeType.hospital;
+  }
+}
+
+function mapAccessScope(value: string): AccessScope {
+  switch (value) {
+    case "lab_results":
+      return AccessScope.lab_results;
+    case "medications":
+      return AccessScope.medications;
+    case "emergency_only":
+      return AccessScope.emergency_only;
+    default:
+      return AccessScope.full;
+  }
+}
+
+function mapFamilyRelationship(value: string): FamilyRelationship {
+  switch (value) {
+    case "parent":
+      return FamilyRelationship.parent;
+    case "spouse":
+      return FamilyRelationship.spouse;
+    case "sibling":
+      return FamilyRelationship.sibling;
+    case "other":
+      return FamilyRelationship.other;
+    default:
+      return FamilyRelationship.child;
+  }
+}
+
+function mapFamilyAccessLevel(value: string): FamilyAccessLevel {
+  switch (value) {
+    case "caregiver_only":
+      return FamilyAccessLevel.caregiver_only;
+    case "read_only":
+      return FamilyAccessLevel.read_only;
+    default:
+      return FamilyAccessLevel.full;
+  }
+}
+
+function mapRecordType(value: string): RecordType {
+  switch (value) {
+    case "diagnosis":
+      return RecordType.diagnosis;
+    case "medication":
+      return RecordType.medication;
+    case "lab_result":
+      return RecordType.lab_result;
+    case "immunization":
+      return RecordType.immunization;
+    case "procedure":
+      return RecordType.procedure;
+    case "visit":
+      return RecordType.visit;
+    default:
+      return RecordType.allergy;
+  }
+}
+
+function resolveGranteeId(granteeType: string, granteeSeedId: string): string {
+  if (granteeType === "doctor") return idFor(granteeSeedId);
+  if (granteeType === "hospital") return idFor(granteeSeedId);
+  if (granteeType === "pharmacy") return idFor(granteeSeedId);
+  return idFor(granteeSeedId);
+}
+
+function resolveAccessorId(accessorSeedId: string, accessorType: string): string {
+  if (accessorSeedId.startsWith("USR")) return idFor(accessorSeedId);
+  if (accessorSeedId.startsWith("PHARM")) return idFor("USR023");
+  if (accessorSeedId === "HOSP001") return idFor("USR017");
+  if (accessorSeedId === "HOSP002") return idFor("USR018");
+  if (accessorType === "pharmacy") return idFor("USR023");
+  if (accessorType === "hospital") return idFor("USR017");
+  return idFor("USR017");
+}
+
+async function clearDatabase() {
   await prisma.$transaction([
     prisma.inventoryAdjustment.deleteMany(),
     prisma.dispenseEvent.deleteMany(),
@@ -73,460 +323,417 @@ async function main() {
     prisma.user.deleteMany(),
     prisma.drugInteraction.deleteMany(),
   ]);
+}
 
-  const admin = await prisma.user.create({
+async function seedOrganizations() {
+  const rows = readCsv("organizations.csv");
+  const superAdminId = idFor("SUPER_ADMIN");
+
+  await prisma.user.create({
     data: {
+      id: superAdminId,
       email: "admin@miqorai.com",
-      passwordHash: hashPassword(PASSWORD),
+      passwordHash,
       role: UserRole.super_admin,
+      displayName: "MiqorAI Platform Admin",
       organizationType: "none",
+      isActive: true,
     },
   });
 
-  const hospital = await prisma.hospital.create({
-    data: {
-      code: "MP-LAGOS-001",
-      name: "St. Catherine General Hospital",
-      registrationNumber: "MOH-2024-0892",
-      emailDomain: "stcatherine.med",
-      address: "Lagos, Nigeria",
-      city: "Lagos",
-      country: "Nigeria",
-      phone: "+234800000001",
-      verified: true,
-      verifiedBy: admin.id,
-      verifiedAt: new Date(),
-      pilotEndDate: new Date(Date.now() + 90 * 86400000),
-    },
-  });
-
-  const hospitalAdmin = await prisma.user.create({
-    data: {
-      email: "tunde@stcatherine.med",
-      passwordHash: hashPassword(PASSWORD),
-      role: UserRole.hospital_admin,
-      organizationId: hospital.id,
-      organizationType: "hospital",
-      displayName: "Tunde Adeyemi",
-    },
-  });
-
-  const hospitalDoctor = await prisma.user.create({
-    data: {
-      email: "amara@stcatherine.med",
-      passwordHash: hashPassword(PASSWORD),
-      role: UserRole.hospital_staff,
-      organizationId: hospital.id,
-      organizationType: "hospital",
-      displayName: "Dr. Amara Eze",
-    },
-  });
-
-  async function addHospitalStaff(
-    email: string,
-    displayName: string,
-    role: HospitalStaffRole,
-    department?: string,
-  ) {
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash: hashPassword(PASSWORD),
-        role: UserRole.hospital_staff,
-        organizationId: hospital.id,
-        organizationType: "hospital",
-        displayName,
-      },
-    });
-    await prisma.hospitalStaff.create({
-      data: { hospitalId: hospital.id, userId: user.id, role, department },
-    });
-    return user;
+  for (const row of rows) {
+    const orgId = idFor(row.organization_id!);
+    const orgType = row.organization_type!;
+    if (orgType === "hospital") {
+      await prisma.hospital.create({
+        data: {
+          id: orgId,
+          code: row.code!,
+          name: row.name!,
+          registrationNumber: row.license_number!,
+          emailDomain: emailDomain(row.email!),
+          address: row.address,
+          city: row.city,
+          country: row.country,
+          phone: row.phone,
+          verified: true,
+          verifiedBy: superAdminId,
+          verifiedAt: parseOptionalDate(row.created_at) ?? new Date(),
+          isActive: row.status === "active",
+        },
+      });
+      await prisma.department.createMany({
+        data: [
+          { hospitalId: orgId, name: "General Medicine", code: "GEN", slaTargetMinutes: 30 },
+          { hospitalId: orgId, name: "Cardiology", code: "CARD", slaTargetMinutes: 45 },
+          { hospitalId: orgId, name: "Emergency", code: "ER", slaTargetMinutes: 15 },
+          { hospitalId: orgId, name: "Laboratory", code: "LAB", slaTargetMinutes: 20 },
+        ],
+      });
+    } else if (orgType === "pharmacy") {
+      await prisma.pharmacy.create({
+        data: {
+          id: orgId,
+          code: row.code!,
+          name: row.name!,
+          licenseNumber: row.license_number!,
+          address: row.address,
+          city: row.city,
+          country: row.country,
+          phone: row.phone,
+          verified: true,
+          verifiedBy: superAdminId,
+          verifiedAt: parseOptionalDate(row.created_at) ?? new Date(),
+          isActive: row.status === "active",
+        },
+      });
+    } else if (orgType === "insurer") {
+      await prisma.insurer.create({
+        data: {
+          id: orgId,
+          code: row.code!,
+          name: row.name!,
+          registrationNumber: row.license_number!,
+          address: row.address,
+          city: row.city,
+          country: row.country,
+          phone: row.phone,
+          isActive: row.status === "active",
+        },
+      });
+    }
   }
 
-  await prisma.hospitalStaff.createMany({
-    data: [
-      { hospitalId: hospital.id, userId: hospitalAdmin.id, role: HospitalStaffRole.admin },
-      { hospitalId: hospital.id, userId: hospitalDoctor.id, role: HospitalStaffRole.doctor, department: "General" },
-    ],
-  });
-
-  await addHospitalStaff("adaeze@stcatherine.med", "Adaeze Okafor", HospitalStaffRole.receptionist, "General");
-  await addHospitalStaff("joseph@stcatherine.med", "Joseph Mensah", HospitalStaffRole.nurse, "General");
-  await addHospitalStaff("ibrahim@stcatherine.med", "Dr. Ibrahim Musa", HospitalStaffRole.doctor, "Cardiology");
-  const chikaUser = await addHospitalStaff("chika@stcatherine.med", "Dr. Chika Nwosu", HospitalStaffRole.dept_head, "Cardiology");
-  const chikaStaff = await prisma.hospitalStaff.findFirst({ where: { userId: chikaUser.id } });
-
-  await prisma.department.createMany({
-    data: [
-      { hospitalId: hospital.id, name: "General", code: "GEN", slaTargetMinutes: 30, isActive: true },
-      { hospitalId: hospital.id, name: "Cardiology", code: "CARD", headStaffId: chikaStaff?.id, slaTargetMinutes: 45, isActive: true },
-      { hospitalId: hospital.id, name: "Pediatrics", code: "PED", slaTargetMinutes: 25, isActive: true },
-      { hospitalId: hospital.id, name: "Emergency", code: "ER", slaTargetMinutes: 15, isActive: true },
-      { hospitalId: hospital.id, name: "Maternity", code: "MAT", slaTargetMinutes: 35, isActive: true },
-      { hospitalId: hospital.id, name: "Lab", code: "LAB", slaTargetMinutes: 20, isActive: true },
-    ],
-  });
-
-  const pharmacy = await prisma.pharmacy.create({
+  const insurerId = idFor("INS001");
+  const insurerStaffUserId = idFor("INSURER_STAFF");
+  await prisma.user.create({
     data: {
-      code: "MPC-GOODLIFE-001",
-      name: "GoodLife Pharmacy — Westlands",
-      licenseNumber: "PC-2023-1140",
-      address: "Waiyaki Way, Nairobi",
-      city: "Nairobi",
-      country: "Kenya",
-      phone: "+254711000000",
-      verified: true,
-      verifiedBy: admin.id,
-      verifiedAt: new Date(),
-    },
-  });
-
-  const pharmacyManager = await prisma.user.create({
-    data: {
-      email: "wanjiku@goodlife.co.ke",
-      passwordHash: hashPassword(PASSWORD),
-      role: UserRole.pharmacy_manager,
-      organizationId: pharmacy.id,
-      organizationType: "pharmacy",
-      displayName: "Wanjiku Mwangi",
-    },
-  });
-
-  const pharmacyStaff = await prisma.user.create({
-    data: {
-      email: "brian@goodlife.co.ke",
-      passwordHash: hashPassword(PASSWORD),
-      role: UserRole.pharmacy_staff,
-      organizationId: pharmacy.id,
-      organizationType: "pharmacy",
-      displayName: "Brian Otieno",
-    },
-  });
-
-  async function addPharmacyStaff(email: string, displayName: string, role: PharmacyStaffRole) {
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash: hashPassword(PASSWORD),
-        role: role === PharmacyStaffRole.manager ? UserRole.pharmacy_manager : UserRole.pharmacy_staff,
-        organizationId: pharmacy.id,
-        organizationType: "pharmacy",
-        displayName,
-      },
-    });
-    await prisma.pharmacyStaff.create({ data: { pharmacyId: pharmacy.id, userId: user.id, role } });
-  }
-
-  await prisma.pharmacyStaff.createMany({
-    data: [
-      { pharmacyId: pharmacy.id, userId: pharmacyManager.id, role: PharmacyStaffRole.manager },
-      { pharmacyId: pharmacy.id, userId: pharmacyStaff.id, role: PharmacyStaffRole.pharmacist },
-    ],
-  });
-
-  await addPharmacyStaff("aisha@goodlife.co.ke", "Aisha Hassan", PharmacyStaffRole.pharmacist);
-  await addPharmacyStaff("david@goodlife.co.ke", "David Kamau", PharmacyStaffRole.technician);
-  await addPharmacyStaff("grace@goodlife.co.ke", "Grace Njeri", PharmacyStaffRole.cashier);
-
-  const insurer = await prisma.insurer.create({
-    data: {
-      code: "JUBILEE_001",
-      name: "Jubilee Insurance",
-      registrationNumber: "INS-JUB-001",
-      country: "Kenya",
-      currency: "KES",
-      memberCount: 3,
-      feePercentage: 20,
-      contractStartDate: new Date("2025-01-01"),
-      contractEndDate: new Date("2027-12-31"),
-    },
-  });
-
-  const insurerAdmin = await prisma.user.create({
-    data: {
-      email: "fatima@jubilee.co.ke",
-      passwordHash: hashPassword(PASSWORD),
+      id: insurerStaffUserId,
+      email: "claims.reviewer@nhidemo.demo",
+      phone: "+250788100099",
+      passwordHash,
       role: UserRole.insurer_admin,
-      organizationId: insurer.id,
+      displayName: "Claims Reviewer",
+      organizationId: insurerId,
       organizationType: "insurer",
-      displayName: "Fatima Hassan",
+      isActive: true,
     },
   });
+  await prisma.insurerStaff.create({
+    data: {
+      insurerId,
+      userId: insurerStaffUserId,
+      role: InsurerStaffRole.admin,
+      isActive: true,
+    },
+  });
+}
 
-  async function addInsurerStaff(email: string, displayName: string, role: InsurerStaffRole) {
-    const user = await prisma.user.create({
+async function seedUsersAndPatients() {
+  const staffRows = readCsv("staff_users.csv");
+  const staffByUserId = new Map(staffRows.map((row) => [row.user_id!, row]));
+  const userRows = readCsv("users.csv");
+
+  for (const row of userRows) {
+    const userId = idFor(row.user_id!);
+    const staff = staffByUserId.get(row.user_id!);
+    const csvRole = row.role!;
+    const userRole = mapUserRole(csvRole, staff?.role);
+
+    let organizationId: string | undefined;
+    let organizationType: string | undefined;
+    if (staff?.organization_id) {
+      const orgType = staff.organization_id.startsWith("HOSP")
+        ? "hospital"
+        : staff.organization_id.startsWith("PHARM")
+          ? "pharmacy"
+          : staff.organization_id.startsWith("LAB")
+            ? "hospital"
+            : undefined;
+      if (orgType === "hospital") {
+        organizationId = idFor(staff.organization_id.startsWith("LAB") ? "HOSP001" : staff.organization_id);
+        organizationType = "hospital";
+      } else if (orgType === "pharmacy") {
+        organizationId = idFor(staff.organization_id);
+        organizationType = "pharmacy";
+      }
+    }
+
+    await prisma.user.create({
       data: {
-        email,
-        passwordHash: hashPassword(PASSWORD),
-        role: role === InsurerStaffRole.admin ? UserRole.insurer_admin : UserRole.insurer_analyst,
-        organizationId: insurer.id,
-        organizationType: "insurer",
-        displayName,
+        id: userId,
+        email: row.email!.toLowerCase(),
+        phone: row.phone || null,
+        passwordHash,
+        role: userRole,
+        displayName: row.display_name,
+        organizationId,
+        organizationType,
+        isActive: parseBool(row.is_active),
       },
     });
-    await prisma.insurerStaff.create({ data: { insurerId: insurer.id, userId: user.id, role } });
+
+    if (staff) {
+      if (organizationType === "hospital") {
+        await prisma.hospitalStaff.create({
+          data: {
+            hospitalId: organizationId!,
+            userId,
+            role: mapHospitalStaffRole(staff.role!),
+            department: staff.department,
+            isActive: staff.status === "active",
+          },
+        });
+      } else if (organizationType === "pharmacy") {
+        await prisma.pharmacyStaff.create({
+          data: {
+            pharmacyId: organizationId!,
+            userId,
+            role:
+              staff.role === "pharmacist"
+                ? PharmacyStaffRole.pharmacist
+                : PharmacyStaffRole.manager,
+            isActive: staff.status === "active",
+          },
+        });
+      }
+    }
   }
 
-  await prisma.insurerStaff.create({
-    data: { insurerId: insurer.id, userId: insurerAdmin.id, role: InsurerStaffRole.admin },
-  });
-
-  await addInsurerStaff("wanjiku@jubilee.co.ke", "Wanjiku Mwangi", InsurerStaffRole.analyst);
-  await addInsurerStaff("brian@jubilee.co.ke", "Brian Otieno", InsurerStaffRole.fraud_investigator);
-  await addInsurerStaff("grace@jubilee.co.ke", "Grace Kamau", InsurerStaffRole.contracts_manager);
-  await addInsurerStaff("daniel@jubilee.co.ke", "Daniel Njoroge", InsurerStaffRole.executive);
-
-  await prisma.insurerContract.create({
-    data: {
-      insurerId: insurer.id,
-      startDate: new Date("2025-01-01"),
-      endDate: new Date("2027-12-31"),
-      feePercentage: 20,
-      status: "active",
-    },
-  });
-
-  const patientUser = await prisma.user.create({
-    data: {
-      email: "grace.muthoni@example.com",
-      phone: "+254712345678",
-      passwordHash: hashPassword(PASSWORD),
-      role: UserRole.patient,
-      organizationType: "none",
-      displayName: "Grace Muthoni",
-    },
-  });
-
-  const patient = await prisma.patient.create({
-    data: {
-      userId: patientUser.id,
-      firstName: "Grace",
-      lastName: "Muthoni",
-      nationalId: "1199887766554433",
-      insuranceId: "NHIF-87654321",
-      dateOfBirth: new Date("1985-03-12"),
-      emergencyContactName: "John Muthoni",
-      emergencyContactPhone: "+254722111222",
-    },
-  });
-
-  await regeneratePatientQr(patient.id);
-
-  await prisma.appointment.create({
-    data: {
-      patientId: patient.id,
-      hospitalId: hospital.id,
-      scheduledAt: new Date(Date.now() + 7 * 86400000),
-      department: "Cardiology",
-      provider: "Dr. Amara Okafor",
-      status: "scheduled",
-      notes: "BP follow-up review",
-    },
-  });
-
-  await prisma.insurerMember.create({
-    data: {
-      insurerId: insurer.id,
-      patientId: patient.id,
-      memberNumber: "JB-554211",
-    },
-  });
-
-  await prisma.accessGrant.create({
-    data: {
-      patientId: patient.id,
-      granteeType: "hospital",
-      granteeId: hospital.id,
-      grantedBy: patientUser.id,
-      expiresAt: new Date(Date.now() + 180 * 86400000),
-    },
-  });
-
-  await prisma.medicalRecord.create({
-    data: {
-      patientId: patient.id,
-      hospitalId: hospital.id,
-      recordType: "allergy",
-      data: { name: "Penicillin", severity: "severe", reaction: "Anaphylaxis" },
-      recordedBy: hospitalDoctor.id,
-    },
-  });
-
-  const visit = await prisma.visit.create({
-    data: {
-      patientId: patient.id,
-      hospitalId: hospital.id,
-      department: "General",
-      priority: "normal",
-      recordedBy: hospitalDoctor.id,
-      status: "completed",
-      chiefComplaint: "BP follow-up",
-      diagnosisCodes: ["BA00"],
-      checkedOutAt: new Date(),
-    },
-  });
-
-  const prescription = await prisma.prescription.create({
-    data: {
-      visitId: visit.id,
-      patientId: patient.id,
-      hospitalId: hospital.id,
-      pharmacyId: pharmacy.id,
-      prescribedBy: hospitalDoctor.id,
-      status: "pending",
-      diagnosis: "Hypertension",
-      insuranceProvider: "Jubilee",
-      insuranceMember: "JB-554211",
-      totalAmount: 180,
-    },
-  });
-
-  const invMetformin = await prisma.pharmacyInventory.create({
-    data: {
-      pharmacyId: pharmacy.id,
-      drugName: "Metformin",
-      strength: "500mg",
-      dosageForm: DosageForm.tablet,
-      barcode: "8901234567003",
-      stock: 95,
-      reorderPoint: 100,
-      unitPrice: 5,
-      costPrice: 3,
-      category: "Antidiabetic",
-      expiryDate: new Date("2027-12-01"),
-    },
-  });
-
-  await prisma.prescriptionItem.create({
-    data: {
-      prescriptionId: prescription.id,
-      inventoryId: invMetformin.id,
-      drugName: "Metformin",
-      strength: "500mg",
-      dosageForm: DosageForm.tablet,
-      dose: "1 tab x2/day",
-      durationDays: 30,
-      quantity: 60,
-      unitPrice: 5,
-      frequency: "twice daily",
-    },
-  });
-
-  await prisma.drugInteraction.createMany({
-    data: [
-      {
-        drugA: "lisinopril",
-        drugB: "losartan",
-        severity: "severe",
-        note: "Combined ACEi + ARB increases AKI risk",
+  const patientRows = readCsv("patients.csv");
+  for (const row of patientRows) {
+    await prisma.patient.create({
+      data: {
+        id: idFor(row.patient_id!),
+        userId: idFor(row.user_id!),
+        firstName: row.first_name!,
+        lastName: row.last_name!,
+        nationalId: row.national_id || null,
+        insuranceId: row.insurance_id || null,
+        dateOfBirth: parseRequiredDate(row.date_of_birth, row.patient_id!),
+        gender: row.gender || null,
+        bloodType: row.blood_type || null,
+        emergencyContactName: row.emergency_contact_name || null,
+        emergencyContactPhone: row.emergency_contact_phone || null,
+        recoveryPhraseEnc: row.recovery_phrase_enc || null,
+        qrCodeHash: row.qr_code_hash || null,
+        qrVersion: Number(row.qr_version || "0"),
+        isActive: parseBool(row.is_active),
       },
-      {
-        drugA: "warfarin",
-        drugB: "ibuprofen",
-        severity: "severe",
-        note: "Increased bleeding risk",
+    });
+  }
+
+  for (const row of readCsv("emergency_contacts.csv")) {
+    await prisma.emergencyContact.create({
+      data: {
+        patientId: idFor(row.patient_id!),
+        name: row.name!,
+        phone: row.phone!,
+        relationship: row.relationship!,
+        isPrimary: parseBool(row.is_primary),
       },
-    ],
-  });
+    });
+  }
 
-  await prisma.claim.create({
-    data: {
-      insurerId: insurer.id,
-      patientId: patient.id,
-      providerName: "Mbagathi Hospital",
-      amount: 45,
-      fraudScore: 98,
-      pattern: "Duplicate lab (CBC)",
-      status: "pending",
-    },
-  });
+  for (const row of readCsv("family_members.csv")) {
+    await prisma.familyMember.create({
+      data: {
+        primaryPatientId: idFor(row.primary_patient_id!),
+        dependentPatientId: idFor(row.dependent_patient_id!),
+        relationship: mapFamilyRelationship(row.relationship!),
+        accessLevel: mapFamilyAccessLevel(row.access_level!),
+        isActive: parseBool(row.is_active),
+      },
+    });
+  }
 
-  await prisma.savingsRecord.create({
-    data: {
-      insurerId: insurer.id,
-      patientId: patient.id,
-      testType: "Complete Blood Count",
-      category: "lab",
-      firstTestDate: new Date("2026-04-10"),
-      firstProvider: "Kenyatta National",
-      attemptedDate: new Date("2026-04-12"),
-      attemptedProvider: "Mbagathi Hospital",
-      preventionMethod: "MiqorAI duplicate alert",
-      savings: 45,
-    },
-  });
+  await regeneratePatientQr(idFor("PAT001"));
+}
 
-  await prisma.insurerAlert.create({
-    data: {
-      insurerId: insurer.id,
-      severity: "high",
-      category: "fraud",
-      title: "Duplicate test spike",
-      message: "Mbagathi Hospital duplicate test rate elevated",
-    },
-  });
+async function seedClinicalAndInsuranceData() {
+  for (const row of readCsv("medical-records.csv")) {
+    await prisma.medicalRecord.create({
+      data: {
+        id: idFor(row.record_id!),
+        patientId: idFor(row.patient_id!),
+        hospitalId: row.hospital_id ? idFor(row.hospital_id) : null,
+        recordType: mapRecordType(row.record_type!),
+        data: parseLooseJson(row.data, row.record_id!) as object,
+        recordedBy: idFor(row.recorded_by!),
+        recordedAt: parseRequiredDate(row.recorded_at, row.record_id!),
+        isActive: parseBool(row.is_active),
+      },
+    });
+  }
 
-  await prisma.insurerInvoice.create({
-    data: {
-      insurerId: insurer.id,
-      period: "Apr 2026",
-      grossSavings: 1247000,
-      fee: 249400,
-      status: "pending",
-      dueDate: new Date("2026-05-15"),
-    },
-  });
+  for (const row of readCsv("visits.csv")) {
+    await prisma.visit.create({
+      data: {
+        id: idFor(row.visit_id!),
+        patientId: idFor(row.patient_id!),
+        hospitalId: idFor(row.hospital_id!),
+        department: row.department!,
+        visitType: row.visit_type || "consultation",
+        reason: row.reason || null,
+        priority: row.priority || "normal",
+        vitals: parseLooseJson(row.vitals, row.visit_id!) as object,
+        diagnosisCodes: (parseLooseJson(row.diagnosis_codes, row.visit_id!) as string[]) ?? [],
+        notes: row.notes || null,
+        checkedInAt: parseRequiredDate(row.checked_in_at, row.visit_id!),
+        checkedOutAt: parseOptionalDate(row.checked_out_at),
+        assignedStaffId: row.assigned_staff_id ? idFor(row.assigned_staff_id) : null,
+        recordedBy: idFor(row.recorded_by!),
+        status: mapVisitStatus(row.status!),
+      },
+    });
+  }
 
-  await prisma.pharmacyInvoice.create({
-    data: {
-      pharmacyId: pharmacy.id,
-      period: "Apr 2026",
-      amount: 8400,
-      status: "pending",
-      dueDate: new Date("2026-05-15"),
-    },
-  });
+  for (const row of readCsv("prescriptions.csv")) {
+    await prisma.prescription.create({
+      data: {
+        id: idFor(row.prescription_id!),
+        patientId: idFor(row.patient_id!),
+        visitId: row.visit_id ? idFor(row.visit_id) : null,
+        hospitalId: row.hospital_id ? idFor(row.hospital_id) : null,
+        pharmacyId: row.pharmacy_id ? idFor(row.pharmacy_id) : null,
+        diagnosis: row.diagnosis || null,
+        notes: row.notes || null,
+        insuranceProvider: row.insurance_provider || null,
+        insuranceMember: row.insurance_member || null,
+        prescribedBy: idFor(row.prescribed_by!),
+        prescribedAt: parseRequiredDate(row.created_at, row.prescription_id!),
+        pharmacyReceivedAt: parseOptionalDate(row.verified_at),
+        dispensedAt: parseOptionalDate(row.dispensed_at),
+        status: mapPrescriptionStatus(row.status!),
+        totalAmount: row.total_amount || "0",
+      },
+    });
+  }
 
-  await prisma.onboardingRequest.create({
-    data: {
-      type: "hospital",
-      name: "Mombasa General Hospital",
-      registrationRef: "MOH-2024-0999",
-      location: "Mombasa, Kenya",
-      submittedByEmail: "admin@mombasa.gov",
-    },
-  });
+  for (const row of readCsv("lab-orders.csv")) {
+    await prisma.labOrder.create({
+      data: {
+        id: idFor(row.lab_order_id!),
+        patientId: idFor(row.patient_id!),
+        visitId: row.visit_id ? idFor(row.visit_id) : null,
+        hospitalId: idFor(row.hospital_id!),
+        testName: row.test_name!,
+        testCode: row.test_code || null,
+        orderedBy: idFor(row.ordered_by!),
+        orderedAt: parseRequiredDate(row.ordered_at, row.lab_order_id!),
+        results: parseLooseJson(row.results, row.lab_order_id!) as object,
+        resultsAvailableAt: parseOptionalDate(row.completed_at),
+        status: mapLabStatus(row.status!),
+      },
+    });
+  }
 
-  await prisma.networkNode.createMany({
-    data: [
-      { city: "Nairobi", country: "Kenya", hospitals: 47, pharmacies: 12, patients: 12847, mapX: 62, mapY: 58 },
-      { city: "Lagos", country: "Nigeria", hospitals: 23, pharmacies: 8, patients: 8234, mapX: 22, mapY: 52 },
-    ],
-  });
+  for (const row of readCsv("appointments.csv")) {
+    await prisma.appointment.create({
+      data: {
+        id: idFor(row.appointment_id!),
+        patientId: idFor(row.patient_id!),
+        hospitalId: row.hospital_id ? idFor(row.hospital_id) : null,
+        scheduledAt: parseRequiredDate(row.scheduled_at, row.appointment_id!),
+        department: row.department || null,
+        provider: row.provider || null,
+        notes: row.notes || null,
+        status: mapAppointmentStatus(row.status!),
+      },
+    });
+  }
 
-  await prisma.activityFeedEntry.createMany({
-    data: [
-      { kind: "checkin", text: "Grace Muthoni checked in at Kenyatta Hospital", actor: "Patient" },
-      { kind: "rx", text: "Prescription queued at GoodLife Pharmacy", actor: "Pharmacy" },
-    ],
-  });
+  for (const row of readCsv("insurer_members.csv")) {
+    await prisma.insurerMember.create({
+      data: {
+        id: idFor(row.member_id!),
+        insurerId: idFor(row.insurer_id!),
+        patientId: idFor(row.patient_id!),
+        memberNumber: row.member_number!,
+        isActive: row.status === "active",
+      },
+    });
+  }
 
-  await prisma.revenueSnapshot.create({
-    data: {
-      month: "2026-04",
-      insurersRevenue: 698000,
-      hospitalsRevenue: 99000,
-      pharmaciesRevenue: 56000,
-    },
-  });
+  for (const row of readCsv("claims.csv")) {
+    await prisma.claim.create({
+      data: {
+        id: idFor(row.claim_id!),
+        insurerId: idFor("INS001"),
+        patientId: idFor(row.patient_id!),
+        providerName: row.provider_name!,
+        amount: row.amount_claimed || "0",
+        fraudScore: Math.min(100, Math.round(Number(row.fraud_score || "0") * 10)),
+        pattern: row.fraud_pattern || null,
+        status: mapClaimStatus(row.status!),
+        notes: row.notes || null,
+        createdAt: parseRequiredDate(row.submitted_at, row.claim_id!),
+      },
+    });
+  }
 
-  const hour = new Date();
-  hour.setMinutes(0, 0, 0);
-  await prisma.hourlyMetric.create({
-    data: { hour, scans: 42, scripts: 18 },
-  });
+  const pharmacyId = idFor("PHARM001");
+  for (const row of readCsv("patients_adherence_snapshots.csv")) {
+    await prisma.patientAdherenceSnapshot.create({
+      data: {
+        id: idFor(row.snapshot_id!),
+        patientId: idFor(row.patient_id!),
+        pharmacyId,
+        overallRate: row.overall_rate || "0",
+        medications: parseLooseJson(row.medications, row.snapshot_id!) as object,
+        calculatedAt: parseRequiredDate(row.calculated_at, row.snapshot_id!),
+      },
+    });
+  }
+
+  for (const row of readCsv("savings_record.csv")) {
+    await prisma.savingsRecord.create({
+      data: {
+        id: idFor(row.saving_id!),
+        insurerId: idFor(row.insurer_id!),
+        patientId: idFor(row.patient_id!),
+        testType: row.test_type!,
+        category: row.reason || "duplicate_test",
+        firstTestDate: parseRequiredDate(row.recorded_at, row.saving_id!),
+        firstProvider: row.first_provider!,
+        attemptedDate: parseRequiredDate(row.recorded_at, row.saving_id!),
+        attemptedProvider: row.attempted_provider!,
+        preventionMethod: row.ai_recommendation || row.reason || "duplicate_prevention",
+        savings: row.savings_amount || row.avoided_cost || "0",
+      },
+    });
+  }
+
+  for (const row of readCsv("access_grants.csv")) {
+    await prisma.accessGrant.create({
+      data: {
+        id: idFor(row.grant_id!),
+        patientId: idFor(row.patient_id!),
+        granteeType: mapGranteeType(row.grantee_type!),
+        granteeId: resolveGranteeId(row.grantee_type!, row.grantee_id!),
+        scope: mapAccessScope(row.scope!),
+        grantedBy: idFor(row.granted_by!),
+        grantedAt: parseRequiredDate(row.granted_at, row.grant_id!),
+        expiresAt: parseRequiredDate(row.expires_at, row.grant_id!),
+        isActive: parseBool(row.is_active),
+      },
+    });
+  }
+
+  for (const row of readCsv("access_logs.csv")) {
+    await prisma.accessLog.create({
+      data: {
+        id: idFor(row.access_log_id!),
+        patientId: idFor(row.patient_id!),
+        accessorId: resolveAccessorId(row.accessor_id!, row.accessor_type || "doctor"),
+        grantId: row.grant_id ? idFor(row.grant_id) : null,
+        action: mapAccessAction(row.action!),
+        ipAddress: row.ip_address || null,
+        userAgent: row.user_agent || row.device || null,
+        createdAt: parseRequiredDate(row.accessed_at, row.access_log_id!),
+      },
+    });
+  }
 
   await prisma.platformSetting.createMany({
     data: [
@@ -536,21 +743,55 @@ async function main() {
     ],
   });
 
-  await regeneratePatientQr(patient.id);
+  await prisma.pharmacyInventory.createMany({
+    data: [
+      {
+        pharmacyId,
+        drugName: "Amlodipine",
+        genericName: "Amlodipine",
+        strength: "5mg",
+        stock: 120,
+        unitPrice: "5.50",
+        costPrice: "3.20",
+        category: "Cardiovascular",
+      },
+      {
+        pharmacyId,
+        drugName: "Metformin",
+        genericName: "Metformin",
+        strength: "500mg",
+        stock: 200,
+        unitPrice: "4.25",
+        costPrice: "2.10",
+        category: "Diabetes",
+      },
+    ],
+  });
 
+  await prisma.onboardingRequest.create({
+    data: {
+      type: "hospital",
+      name: "Lakeview Community Hospital",
+      registrationRef: "HSP-RW-PENDING-001",
+      location: "Kigali, Rwanda",
+      submittedByEmail: "onboarding@lakeview.demo",
+      status: "pending",
+    },
+  });
+}
+
+async function main() {
+  console.log("Seeding MiqorAI database from /seed_data CSV files...");
+  await clearDatabase();
+  await seedOrganizations();
+  await seedUsersAndPatients();
+  await seedClinicalAndInsuranceData();
   console.log("Seed complete.");
-  console.log("");
-  console.log("Test credentials (password for all: MiqorAI123!)");
-  console.log("  Super admin:    admin@miqorai.com");
-  console.log("  Hospital:       amara@stcatherine.med  + org MP-LAGOS-001");
-  console.log("  Pharmacy:       brian@goodlife.co.ke  + org MPC-GOODLIFE-001");
-  console.log("  Insurer:        wanjiku@jubilee.co.ke  + org JUBILEE_001");
-  console.log("  Patient:        grace.muthoni@example.com (no org code)");
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error);
     process.exit(1);
   })
   .finally(async () => {

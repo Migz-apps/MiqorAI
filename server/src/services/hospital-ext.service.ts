@@ -258,6 +258,153 @@ export async function getExtendedHospitalAnalytics(hospitalId: string, startDate
   };
 }
 
+const LAB_TEST_ALIASES: Record<string, string[]> = {
+  cbc: ["cbc", "complete blood count"],
+  "lipid panel": ["lipid panel", "lipid", "cholesterol panel"],
+  hba1c: ["hba1c", "glycated hemoglobin", "a1c"],
+  "serum creatinine": ["serum creatinine", "creatinine"],
+  tsh: ["tsh", "thyroid stimulating hormone"],
+  urinalysis: ["urinalysis", "urine analysis"],
+  "pregnancy hcg": ["pregnancy hcg", "hcg", "beta hcg"],
+  "peak flow": ["peak flow", "peak expiratory flow"],
+  "vitamin d": ["vitamin d", "25-hydroxyvitamin d"],
+  troponin: ["troponin", "troponin i"],
+};
+
+function normalizeTestName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function testNamesMatch(a: string, b: string): boolean {
+  const na = normalizeTestName(a);
+  const nb = normalizeTestName(b);
+  if (na === nb || na.includes(nb) || nb.includes(na)) return true;
+  for (const aliases of Object.values(LAB_TEST_ALIASES)) {
+    const inA = aliases.some((alias) => na.includes(alias) || alias.includes(na));
+    const inB = aliases.some((alias) => nb.includes(alias) || alias.includes(nb));
+    if (inA && inB) return true;
+  }
+  return false;
+}
+
+function formatLabResults(results: unknown): string {
+  if (results == null) return "No result details available.";
+  if (typeof results === "string") return results;
+  if (typeof results === "object") {
+    const obj = results as Record<string, unknown>;
+    if (obj.summary) return String(obj.summary);
+    return Object.entries(obj)
+      .filter(([, v]) => v != null && v !== "")
+      .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
+      .join(" · ");
+  }
+  return String(results);
+}
+
+function formatDisplayDate(d: Date): string {
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = String(d.getFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+}
+
+export async function findPriorLabTest(patientId: string, testName: string) {
+  const orders = await prisma.labOrder.findMany({
+    where: { patientId, status: "completed" },
+    orderBy: { orderedAt: "desc" },
+    take: 50,
+  });
+
+  const match = orders.find((o) => testNamesMatch(o.testName, testName));
+  if (!match) return null;
+
+  return {
+    test_name: match.testName,
+    taken_on: formatDisplayDate(match.orderedAt),
+    taken_on_iso: match.orderedAt.toISOString().slice(0, 10),
+    results: formatLabResults(match.results),
+    results_raw: match.results,
+    lab_order_id: match.id,
+  };
+}
+
+export interface VisitRecordDraft {
+  chief_complaint?: string;
+  duration?: string;
+  severity?: string;
+  vitals?: {
+    bp?: string;
+    hr?: string;
+    temp?: string;
+    spo2?: string;
+    height?: string;
+    weight?: string;
+  };
+  diagnoses?: Array<{ code: string; label: string }>;
+  labs?: string[];
+  notes?: string;
+}
+
+function buildVitalsNarrative(vitals?: VisitRecordDraft["vitals"]): string | null {
+  if (!vitals) return null;
+  const parts: string[] = [];
+  if (vitals.bp) parts.push(`blood pressure ${vitals.bp} mmHg`);
+  if (vitals.hr) parts.push(`heart rate ${vitals.hr} bpm`);
+  if (vitals.temp) parts.push(`temperature ${vitals.temp}°C`);
+  if (vitals.spo2) parts.push(`SpO₂ ${vitals.spo2}%`);
+  if (vitals.height) parts.push(`height ${vitals.height} cm`);
+  if (vitals.weight) parts.push(`weight ${vitals.weight} kg`);
+  if (!parts.length) return null;
+  return `Vital signs recorded: ${parts.join(", ")}.`;
+}
+
+export function generateVisitRecordFromDraft(draft: VisitRecordDraft) {
+  const sections: Array<{ title: string; content: string }> = [];
+
+  if (draft.chief_complaint?.trim()) {
+    const duration = draft.duration ? ` Duration: ${draft.duration}.` : "";
+    const severity = draft.severity ? ` Severity: ${draft.severity}.` : "";
+    sections.push({
+      title: "Presenting concern",
+      content: `Patient reports ${draft.chief_complaint.trim()}.${duration}${severity}`,
+    });
+  }
+
+  const vitalsText = buildVitalsNarrative(draft.vitals);
+  if (vitalsText) {
+    sections.push({ title: "Vital signs", content: vitalsText });
+  }
+
+  if (draft.diagnoses?.length) {
+    const dxList = draft.diagnoses.map((d) => `${d.code} — ${d.label}`).join("; ");
+    sections.push({
+      title: "Assessment",
+      content: `Working diagnoses documented: ${dxList}.`,
+    });
+  }
+
+  if (draft.labs?.length) {
+    sections.push({
+      title: "Investigations ordered",
+      content: `Laboratory tests ordered during this encounter: ${draft.labs.join(", ")}.`,
+    });
+  }
+
+  if (draft.notes?.trim()) {
+    sections.push({
+      title: "Clinical notes",
+      content: draft.notes.trim(),
+    });
+  }
+
+  if (!sections.length) {
+    return { sections: [], narrative: "" };
+  }
+
+  const narrative = sections.map((s) => `${s.title}\n${s.content}`).join("\n\n");
+  return { sections, narrative };
+}
+
 export async function recordPlatformTransaction(kind: string, text: string, actor?: string, metadata?: Record<string, unknown>) {
   await recordActivity(kind, text, actor, metadata);
 }

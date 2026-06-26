@@ -126,6 +126,11 @@ MiqorAI_finetune/dataset/*.jsonl
 *.safetensors
 *.ckpt
 
+# MiqorAI AI inference service (local adapter weights)
+miqorai-ai-service/model/**/*
+!miqorai-ai-service/model/**/.gitkeep
+!miqorai-ai-service/model/**/README*
+
 # -----------------------------------------------------------------------------
 # Expo / React Native (mobile_patient)
 # -----------------------------------------------------------------------------

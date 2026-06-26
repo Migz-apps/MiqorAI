@@ -28,6 +28,11 @@ import {
 } from "../services/portal-complete.service.js";
 import { badRequest, notFound } from "../utils/errors.js";
 import { param } from "../utils/param.js";
+import {
+  approveQrAccessRequest,
+  denyQrAccessRequest,
+  listPendingQrAccessRequestsForPatient,
+} from "../services/qr-access-request.service.js";
 
 const router = Router();
 
@@ -359,6 +364,55 @@ router.post("/access-grants", validateBody(accessGrantSchema), async (req, res, 
     const patient = await requirePatient(req.user!.sub);
     const grant = await createAccessGrantWithScope(patient.id, req.user!.sub, req.body);
     res.status(201).json(grant);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/access-requests", async (req, res, next) => {
+  try {
+    const patient = await requirePatient(req.user!.sub);
+    const requests = await listPendingQrAccessRequestsForPatient(patient.id);
+    res.json(
+      requests.map((request) => ({
+        id: request.id,
+        hospital_name: request.hospitalName,
+        hospital_code: request.hospitalCode,
+        requester_name: request.requesterName,
+        requester_email: request.requesterEmail,
+        status: request.status,
+        created_at: request.createdAt,
+        expires_at: request.expiresAt,
+      })),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/access-requests/:id/approve", async (req, res, next) => {
+  try {
+    const patient = await requirePatient(req.user!.sub);
+    const { request, grant } = await approveQrAccessRequest(param(req.params.id), patient.id, req.user!.sub);
+    res.json({
+      id: request.id,
+      status: request.status,
+      grant_id: grant.id,
+      expires_at: grant.expiresAt,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/access-requests/:id/deny", async (req, res, next) => {
+  try {
+    const patient = await requirePatient(req.user!.sub);
+    const request = await denyQrAccessRequest(param(req.params.id), patient.id);
+    res.json({
+      id: request.id,
+      status: request.status,
+    });
   } catch (err) {
     next(err);
   }

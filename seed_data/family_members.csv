@@ -1,0 +1,5 @@
+family_member_id,primary_patient_id,dependent_patient_id,relationship,access_level,linked_by_user_id,is_active,created_at,notes
+FM001,PAT001,PAT013,child,full,USR001,True,2026-06-11T09:00:00,Child linked to patient account.
+FM002,PAT001,PAT014,child,full,USR001,True,2026-06-12T09:00:00,Child linked to patient account.
+FM003,PAT001,PAT015,parent,read_only,USR001,True,2026-06-13T09:00:00,Parent linked to patient account.
+FM004,PAT001,PAT016,spouse,caregiver_only,USR001,True,2026-06-14T09:00:00,Spouse linked to patient account.

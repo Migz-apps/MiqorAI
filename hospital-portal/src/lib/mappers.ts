@@ -13,6 +13,9 @@ import type {
   Prescription,
   LabOrder,
   Visit,
+  PatientSafetyProfile,
+  VisitDraftState,
+  ClinicalFlags,
 } from "./types";
 
 const ALL_ROLES: Role[] = ["receptionist", "nurse", "doctor", "dept_head", "admin"];
@@ -199,6 +202,14 @@ export function mapPatientFromApi(raw: Record<string, unknown>): Patient {
 
   const lastVisit = mappedVisits[0]?.date;
 
+  const latestVitals = mappedVisits.find((v) => v.vitals?.height || v.vitals?.weight)?.vitals;
+  const height = latestVitals?.height;
+  const weight = latestVitals?.weight;
+  const bmi =
+    height && weight && height > 0
+      ? Math.round((weight / ((height / 100) ** 2)) * 10) / 10
+      : undefined;
+
   return {
     id: String(raw.id),
     name: `${raw.firstName ?? ""} ${raw.lastName ?? ""}`.trim(),
@@ -216,6 +227,9 @@ export function mapPatientFromApi(raw: Record<string, unknown>): Patient {
     insuranceProvider: raw.insuranceId ? String(raw.insuranceId) : undefined,
     nationalId: raw.nationalId ? String(raw.nationalId) : undefined,
     lastVisit,
+    height,
+    weight,
+    bmi,
   };
 }
 
@@ -367,6 +381,194 @@ export function mapIcd(row: Record<string, unknown>) {
 
 export const mapApiPatient = mapPatientFromApi;
 export const mapIcdCode = mapIcd;
+
+const FOOD_ALLERGY_KEYWORDS = [
+  "peanut", "tree nut", "shellfish", "fish", "egg", "milk", "soy", "wheat", "gluten", "sesame", "food",
+];
+const DRUG_ALLERGY_KEYWORDS = [
+  "penicillin", "amoxicillin", "aspirin", "ibuprofen", "sulfa", "ciprofloxacin", "doxycycline",
+  "morphine", "gentamicin", "codeine", "warfarin", "naproxen", "cipro",
+];
+
+function categorizeAllergy(name: string): "drug" | "food" | "other" {
+  const lower = name.toLowerCase();
+  if (lower.includes("none known") || lower === "none") return "other";
+  if (FOOD_ALLERGY_KEYWORDS.some((k) => lower.includes(k))) return "food";
+  if (DRUG_ALLERGY_KEYWORDS.some((k) => lower.includes(k))) return "drug";
+  return "drug";
+}
+
+function calcAge(dob: string): number {
+  return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 86400 * 1000));
+}
+
+function calcBmi(heightCm?: number, weightKg?: number): number | undefined {
+  if (!heightCm || !weightKg || heightCm <= 0) return undefined;
+  return Math.round((weightKg / ((heightCm / 100) ** 2)) * 10) / 10;
+}
+
+function parseVitalDraft(v: VisitDraftState | undefined, field: "height" | "weight"): number | undefined {
+  if (!v) return undefined;
+  const raw = field === "height" ? v.height : v.weight;
+  const num = parseFloat(raw);
+  return Number.isFinite(num) && num > 0 ? num : undefined;
+}
+
+export function mapPatientSafetyProfile(
+  patient: Patient,
+  raw?: Record<string, unknown>,
+  visitDraft?: VisitDraftState,
+): PatientSafetyProfile {
+  const medicalRecords = (raw?.medicalRecords as Array<Record<string, unknown>>) ?? [];
+
+  const drugAllergies: string[] = [];
+  const foodAllergies: string[] = [];
+  const otherAllergies: string[] = [];
+  for (const a of patient.allergies) {
+    const label = a.severity ? `${a.name} (${a.severity})` : a.name;
+    const cat = categorizeAllergy(a.name);
+    if (cat === "food") foodAllergies.push(label);
+    else if (cat === "drug") drugAllergies.push(label);
+    else otherAllergies.push(label);
+  }
+
+  const chronicDiseases: string[] = [];
+  const activeConditions: string[] = [];
+  const currentMedications: string[] = [];
+  const criticalMedicalInfo: string[] = [];
+  const implantableDevices: string[] = [];
+  let pregnancyStatus: string | undefined;
+  let transplantStatus: string | undefined;
+  let codeStatus: string | undefined;
+  let isolationPrecautions: string | undefined;
+
+  const chronicKeywords = ["diabetes", "hypertension", "asthma", "kidney", "heart failure", "copd", "epilepsy", "eczema"];
+
+  for (const r of medicalRecords) {
+    const data = (r.data as Record<string, unknown>) ?? {};
+    const name = String(data.name ?? "");
+    const status = String(data.status ?? "active").toLowerCase();
+
+    if (r.recordType === "diagnosis") {
+      const entry = data.codes ? `${name} [${(data.codes as string[]).join(", ")}]` : name;
+      if (status === "active") activeConditions.push(entry);
+      if (chronicKeywords.some((k) => name.toLowerCase().includes(k))) chronicDiseases.push(entry);
+      if (/pregnancy/i.test(name)) pregnancyStatus = status === "active" ? "Pregnant — active supervision" : name;
+      if (/transplant/i.test(name)) transplantStatus = name;
+    }
+
+    if (r.recordType === "medication" && status === "active") {
+      const dose = data.dose ? ` ${data.dose}` : "";
+      const freq = data.freq ? ` — ${data.freq}` : data.frequency ? ` — ${data.frequency}` : "";
+      currentMedications.push(`${name}${dose}${freq}`);
+    }
+
+    if (r.recordType === "procedure") {
+      if (/pacemaker|defibrillator|implant/i.test(name)) implantableDevices.push(name);
+    }
+
+    if (data.critical === true || data.critical_info) {
+      criticalMedicalInfo.push(String(data.critical_info ?? name));
+    }
+    if (data.code_status) codeStatus = String(data.code_status);
+    if (data.isolation_precautions) isolationPrecautions = String(data.isolation_precautions);
+  }
+
+  for (const rx of patient.prescriptions.filter((p) => p.status === "active" || p.status === "pending")) {
+    const entry = `${rx.medication} ${rx.dosage} — ${rx.frequency}`;
+    if (!currentMedications.some((m) => m.toLowerCase().includes(rx.medication.toLowerCase()))) {
+      currentMedications.push(entry);
+    }
+  }
+
+  if (patient.allergies.some((a) => a.severity === "severe")) {
+    criticalMedicalInfo.push("Severe allergy documented — verify before prescribing");
+  }
+
+  const draftHeight = parseVitalDraft(visitDraft, "height");
+  const draftWeight = parseVitalDraft(visitDraft, "weight");
+  const height = draftHeight ?? patient.height;
+  const weight = draftWeight ?? patient.weight;
+  const bmi = calcBmi(height, weight) ?? patient.bmi;
+
+  const age = calcAge(patient.dob);
+  const flags: ClinicalFlags = {
+    highRisk:
+      patient.allergies.some((a) => a.severity === "severe") ||
+      chronicDiseases.length >= 2 ||
+      activeConditions.length >= 3,
+    fallRisk: age >= 65 || activeConditions.some((c) => /fall|frailty/i.test(c)),
+    seizureHistory: activeConditions.some((c) => /seizure|epilepsy/i.test(c)),
+    bleedingDisorder:
+      patient.allergies.some((a) => /warfarin|bleeding/i.test(a.name)) ||
+      activeConditions.some((c) => /bleeding|coagulopathy|anticoagulant/i.test(c)),
+    immunocompromised: activeConditions.some((c) => /immunocomprom|hiv|chemotherapy|transplant/i.test(c)),
+    isolationPrecautions,
+  };
+
+  const insurerMembers = (raw?.insurerMembers as Array<Record<string, unknown>>) ?? [];
+  const insurerName = insurerMembers[0]
+    ? String((insurerMembers[0].insurer as { name?: string })?.name ?? insurerMembers[0].plan ?? "")
+    : undefined;
+
+  return {
+    patientId: patient.id,
+    name: patient.name,
+    dob: patient.dob,
+    age,
+    sex: patient.gender,
+    bloodGroup: patient.bloodType,
+    height,
+    weight,
+    bmi,
+    emergencyContact: patient.emergencyContact,
+    insuranceProvider: insurerName || patient.insuranceProvider,
+    criticalMedicalInfo,
+    drugAllergies,
+    foodAllergies,
+    otherAllergies,
+    chronicDiseases,
+    activeConditions,
+    currentMedications,
+    pregnancyStatus,
+    transplantStatus,
+    implantableDevices,
+    codeStatus,
+    clinicalFlags: flags,
+  };
+}
+
+export function visitDraftHasContent(draft: VisitDraftState): boolean {
+  return Boolean(
+    draft.chief.trim() ||
+      draft.notes.trim() ||
+      draft.bp ||
+      draft.hr ||
+      draft.temp ||
+      draft.spo2 ||
+      draft.height ||
+      draft.weight ||
+      draft.diagnoses.length ||
+      draft.labs.length,
+  );
+}
+
+export function emptyVisitDraft(): VisitDraftState {
+  return {
+    chief: "",
+    duration: "3 days",
+    severity: "Moderate",
+    bp: "",
+    hr: "",
+    temp: "",
+    spo2: "",
+    height: "",
+    weight: "",
+    diagnoses: [],
+    labs: [],
+    notes: "",
+  };
+}
 
 export function mapDrugInteraction(row: Record<string, unknown>) {
   return {

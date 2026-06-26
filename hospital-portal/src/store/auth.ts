@@ -23,11 +23,23 @@ type AuthState = {
   switchRole: (role: Role) => void;
 };
 
+const AUTH_STORAGE_KEY = "MiqorAI-hospital-auth-v2";
+const LEGACY_AUTH_STORAGE_KEYS = ["MiqorAI-auth"];
+
 function mapRole(me: MeResponse): Role {
   if (me.role === "hospital_admin" || me.staff_role === "admin") return "admin";
   const r = me.staff_role as Role | undefined;
-  if (r && ["receptionist", "nurse", "doctor", "dept_head", "admin"].includes(r)) return r;
+  if (isRole(r)) return r;
   return "doctor";
+}
+
+function isRole(role: unknown): role is Role {
+  return typeof role === "string" && ["receptionist", "nurse", "doctor", "dept_head", "admin"].includes(role);
+}
+
+function clearLegacyAuthStorage() {
+  if (typeof window === "undefined") return;
+  LEGACY_AUTH_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key));
 }
 
 function sessionFromMe(me: MeResponse, hospitalCode: string): Session {
@@ -48,35 +60,26 @@ export const useAuth = create<AuthState>()(
       failedAttempts: 0,
       lockoutUntil: null,
       login: async (hospitalCode, email, password) => {
-        const now = Date.now();
-        if (get().lockoutUntil && get().lockoutUntil! > now) {
-          const mins = Math.ceil((get().lockoutUntil! - now) / 60000);
-          return { ok: false, error: MESSAGES.auth.locked(mins) };
-        }
         try {
           const me = await loginApi(email.trim(), password, hospitalCode.trim());
           const session = sessionFromMe(me, hospitalCode.trim());
+          clearLegacyAuthStorage();
           set({ failedAttempts: 0, lockoutUntil: null, session });
           return { ok: true };
         } catch (err) {
           const body = err instanceof ApiError ? (err.body as { error?: { details?: { retry_after?: number } } }) : null;
           if (err instanceof ApiError && err.status === 401 && body?.error?.details?.retry_after) {
             const retry = body.error.details.retry_after;
-            set({ lockoutUntil: now + retry * 1000, failedAttempts: 5 });
+            set({ lockoutUntil: Date.now() + retry * 1000, failedAttempts: 5 });
             return { ok: false, error: MESSAGES.auth.tooManyAttempts };
           }
-          const attempts = get().failedAttempts + 1;
-          set({
-            failedAttempts: attempts,
-            lockoutUntil: attempts >= 5 ? now + 15 * 60 * 1000 : null,
-          });
-          if (attempts >= 5) return { ok: false, error: MESSAGES.auth.tooManyAttempts };
-          return { ok: false, error: MESSAGES.auth.attemptsRemaining(5 - attempts) };
+          set({ session: null, failedAttempts: 0, lockoutUntil: null });
+          return { ok: false, error: err instanceof ApiError ? err.message : MESSAGES.auth.invalidCredentials };
         }
       },
       logout: async () => {
         await logoutApi();
-        set({ session: null });
+        set({ session: null, failedAttempts: 0, lockoutUntil: null });
       },
       restoreSession: async () => {
         if (!loadTokens()) return;
@@ -88,7 +91,7 @@ export const useAuth = create<AuthState>()(
           });
         } catch {
           saveTokens(null);
-          set({ session: null });
+          set({ session: null, failedAttempts: 0, lockoutUntil: null });
         }
       },
       switchRole: (role) => {
@@ -97,7 +100,16 @@ export const useAuth = create<AuthState>()(
         set({ session: { ...s, role } });
       },
     }),
-    { name: "MiqorAI-auth", partialize: (s) => ({ session: s.session, failedAttempts: s.failedAttempts, lockoutUntil: s.lockoutUntil }) },
+    { name: AUTH_STORAGE_KEY, partialize: (s) => ({ session: s.session, failedAttempts: s.failedAttempts, lockoutUntil: s.lockoutUntil }),
+      onRehydrateStorage: () => (state) => {
+        clearLegacyAuthStorage();
+        if (state && (typeof window !== "undefined" && !loadTokens() || !isRole(state.session?.role))) {
+          state.session = null;
+          state.failedAttempts = 0;
+          state.lockoutUntil = null;
+        }
+      },
+    },
   ),
 );
 
@@ -110,7 +122,7 @@ export const PERMISSIONS = {
 } as const;
 
 export type PermKey = keyof typeof PERMISSIONS["admin"];
-export const can = (role: Role, perm: PermKey) => PERMISSIONS[role][perm];
+export const can = (role: Role, perm: PermKey) => PERMISSIONS[role]?.[perm] ?? false;
 
 export const ROLE_LABEL: Record<Role, string> = {
   receptionist: "Receptionist",

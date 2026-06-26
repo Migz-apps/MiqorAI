@@ -1,5 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-const TOKEN_KEY = "miqorai-hospital-tokens";
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "http://localhost:3000");
+const TOKEN_KEY = "miqorai-hospital-tokens-v2";
+const LEGACY_TOKEN_KEYS = ["miqorai-hospital-tokens"];
 
 export type Tokens = { access_token: string; refresh_token: string };
 
@@ -19,7 +20,10 @@ export function loadTokens(): Tokens | null {
 export function saveTokens(t: Tokens | null) {
   tokens = t;
   if (t) localStorage.setItem(TOKEN_KEY, JSON.stringify(t));
-  else localStorage.removeItem(TOKEN_KEY);
+  else {
+    localStorage.removeItem(TOKEN_KEY);
+    LEGACY_TOKEN_KEYS.forEach((key) => localStorage.removeItem(key));
+  }
 }
 
 export class ApiError extends Error {
@@ -73,6 +77,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function loginApi(email: string, password: string, organization_code: string) {
+  saveTokens(null);
   const data = await api<{ access_token: string; refresh_token: string }>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password, organization_code }),

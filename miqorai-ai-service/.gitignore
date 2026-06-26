@@ -1,0 +1,10 @@
+# MiqorAI weights (do not commit adapters)
+model/**/*
+!model/**/.gitkeep
+!model/**/README*
+
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc

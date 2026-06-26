@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError, unauthorized } from "../utils/errors.js";
 import { verifyAccessToken } from "../utils/crypto.js";
-import { getRedis } from "../lib/redis.js";
+import { getRedis, isRedisReady } from "../lib/redis.js";
 import { hashToken } from "../utils/crypto.js";
 
 export async function authenticate(req: Request, _res: Response, next: NextFunction) {
@@ -10,7 +10,7 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     if (!header?.startsWith("Bearer ")) throw unauthorized();
     const token = header.slice(7);
     const redis = getRedis();
-    if (redis.status === "ready") {
+    if (isRedisReady()) {
       const blacklisted = await redis.get(`bl:${hashToken(token)}`);
       if (blacklisted) throw unauthorized("Session revoked");
     }

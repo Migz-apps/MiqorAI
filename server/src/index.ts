@@ -2,7 +2,7 @@ import { createApp } from "./app.js";
 import { config } from "./config.js";
 import { logger } from "./lib/logger.js";
 import { connectDb, disconnectDb } from "./lib/prisma.js";
-import { connectRedis } from "./lib/redis.js";
+import { connectRedis, disconnectRedis } from "./lib/redis.js";
 import { archiveOldAuditLogs } from "./services/sync.service.js";
 import { ensureUploadDir } from "./services/file.service.js";
 import { seedReferenceDataIfEmpty } from "./services/reference.service.js";
@@ -24,6 +24,7 @@ async function main() {
   const shutdown = async (signal: string) => {
     logger.info(`${signal} received — shutting down`);
     server.close(async () => {
+      await disconnectRedis();
       await disconnectDb();
       process.exit(0);
     });

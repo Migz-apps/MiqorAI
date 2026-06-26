@@ -29,6 +29,8 @@ import {
   getExtendedHospitalAnalytics,
   getHospitalBilling,
   getPatientAiSummary,
+  findPriorLabTest,
+  generateVisitRecordFromDraft,
   listDepartments,
   listHospitalLabs,
   listHospitalNotifications,
@@ -41,6 +43,16 @@ import {
 import { getHospitalSettings, updateHospitalSettings } from "../services/insurer-ext.service.js";
 import { hospitalStaffSignup } from "../services/staff.service.js";
 import { getSystemHealth } from "../services/admin.service.js";
+import {
+  buildLabOrderGateContext,
+  buildPrescriptionGateContext,
+  gateClinicalSafetyOrder,
+} from "../services/clinical-safety.service.js";
+import {
+  createLabOrder,
+  createPrescriptionOrder,
+  normalizePrescriptionItems,
+} from "../services/hospital-order.service.js";
 import {
   checkPrescriptionAllergies,
   completeVisitCheckout,
@@ -471,6 +483,7 @@ router.get("/patient/:id", async (req, res, next) => {
         visits: { orderBy: { checkedInAt: "desc" }, take: 20 },
         prescriptions: { include: { items: true }, orderBy: { prescribedAt: "desc" }, take: 20 },
         labOrders: { orderBy: { orderedAt: "desc" }, take: 20 },
+        insurerMembers: { include: { insurer: { select: { name: true } } }, take: 1 },
       },
     });
     if (!patient) throw notFound("Patient not found");
@@ -565,66 +578,20 @@ router.post("/prescription", validateBody(prescriptionSchema), async (req, res, 
 
     await assertHospitalPatientAccess(hospitalId, body.patient_id, userId);
 
-    const items =
-      body.items ??
-      (body.drug_name
-        ? [
-            {
-              drug_name: body.drug_name,
-              strength: body.strength!,
-              dosage: body.dosage!,
-              quantity: body.quantity!,
-              frequency: body.frequency,
-              duration_days: body.duration_days!,
-              unit_price: 0,
-            },
-          ]
-        : []);
-
+    const items = normalizePrescriptionItems(body);
     if (!items.length) throw badRequest("At least one prescription item required");
 
-    const totalAmount = items.reduce(
-      (sum: number, item: z.infer<typeof prescriptionItemSchema>) =>
-        sum + item.unit_price * item.quantity,
-      0,
+    const gate = await gateClinicalSafetyOrder(
+      buildPrescriptionGateContext(hospitalId, userId, body),
+      req,
     );
+    if (!gate.allowed) {
+      res.status(409).json(gate.response);
+      return;
+    }
 
-    const prescription = await prisma.prescription.create({
-      data: {
-        patientId: body.patient_id,
-        visitId: body.visit_id,
-        hospitalId,
-        pharmacyId: body.pharmacy_id,
-        diagnosis: body.diagnosis,
-        notes: body.notes,
-        insuranceProvider: body.insurance_provider,
-        insuranceMember: body.insurance_member,
-        prescribedBy: userId,
-        status: body.pharmacy_id ? PrescriptionStatus.sent_to_pharmacy : PrescriptionStatus.pending,
-        totalAmount,
-        items: {
-          create: items.map((item: z.infer<typeof prescriptionItemSchema>) => ({
-            drugName: item.drug_name,
-            genericName: item.generic_name,
-            strength: item.strength,
-            dose: item.dosage,
-            quantity: item.quantity,
-            frequency: item.frequency,
-            durationDays: item.duration_days,
-            unitPrice: item.unit_price,
-          })),
-        },
-      },
-      include: { items: true },
-    });
-
-    await touchPatientData(body.patient_id);
-
-    res.status(201).json({
-      prescription_id: prescription.id,
-      status: prescription.status,
-      items: prescription.items,
-    });
+    const prescription = await createPrescriptionOrder(hospitalId, userId, body);
+    res.status(201).json(prescription);
   } catch (err) {
     next(err);
   }
@@ -637,24 +604,17 @@ router.post("/lab-order", validateBody(labOrderSchema), async (req, res, next) =
 
     await assertHospitalPatientAccess(hospitalId, body.patient_id, userId);
 
-    const labOrder = await prisma.labOrder.create({
-      data: {
-        patientId: body.patient_id,
-        visitId: body.visit_id,
-        hospitalId,
-        testName: body.test_name,
-        testCode: body.test_code,
-        orderedBy: userId,
-        status: "ordered",
-      },
-    });
+    const gate = await gateClinicalSafetyOrder(
+      buildLabOrderGateContext(hospitalId, userId, body),
+      req,
+    );
+    if (!gate.allowed) {
+      res.status(409).json(gate.response);
+      return;
+    }
 
-    await touchPatientData(body.patient_id);
-
-    res.status(201).json({
-      lab_order_id: labOrder.id,
-      status: labOrder.status,
-    });
+    const labOrder = await createLabOrder(hospitalId, userId, body);
+    res.status(201).json(labOrder);
   } catch (err) {
     next(err);
   }
@@ -1212,6 +1172,35 @@ router.get("/patient/:id/summary", async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     res.json(await getPatientAiSummary(hospitalId, param(req.params.id)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/patient/:id/lab-prior", async (req, res, next) => {
+  try {
+    const { hospitalId, userId } = await requireHospitalContext(req.user!);
+    const patientId = param(req.params.id);
+    const testName = String(req.query.test_name ?? "").trim();
+    if (!testName) throw badRequest("test_name query parameter required");
+
+    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+
+    const prior = await findPriorLabTest(patientId, testName);
+    res.json({ found: !!prior, prior });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/patient/:id/visit-record", async (req, res, next) => {
+  try {
+    const { hospitalId, userId } = await requireHospitalContext(req.user!);
+    const patientId = param(req.params.id);
+
+    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+
+    res.json(generateVisitRecordFromDraft(req.body ?? {}));
   } catch (err) {
     next(err);
   }

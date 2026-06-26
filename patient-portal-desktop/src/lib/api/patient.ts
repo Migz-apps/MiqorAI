@@ -62,6 +62,17 @@ export type AccessLogItem = {
   createdAt: string;
 };
 
+export type AccessRequest = {
+  id: string;
+  hospital_name: string;
+  hospital_code: string;
+  requester_name: string;
+  requester_email: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+};
+
 export type FamilyMember = {
   id: string;
   relationship: string;
@@ -120,6 +131,9 @@ export const patientApi = {
   allergies: () => api<MedicalRecord[]>("/api/patient/allergies"),
   labs: () => api<Array<{ id: string; testName?: string; orderedAt?: string; status?: string }>>("/api/patient/labs"),
   accessGrants: () => api<AccessGrant[]>("/api/patient/access-grants"),
+  accessRequests: () => api<AccessRequest[]>("/api/patient/access-requests"),
+  approveAccessRequest: (id: string) => api(`/api/patient/access-requests/${id}/approve`, { method: "POST" }),
+  denyAccessRequest: (id: string) => api(`/api/patient/access-requests/${id}/deny`, { method: "POST" }),
   revokeAccessGrant: (id: string) => api(`/api/patient/access-grants/${id}`, { method: "DELETE" }),
   accessLogs: () => api<{ items: AccessLogItem[]; total: number }>("/api/patient/access-logs"),
   family: () => api<FamilyMember[]>("/api/patient/family"),

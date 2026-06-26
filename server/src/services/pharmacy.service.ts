@@ -720,7 +720,11 @@ export async function getPharmacyPatient(pharmacyId: string, patientId: string) 
         where: { pharmacyId },
         orderBy: { prescribedAt: "desc" },
         take: 20,
-        include: { items: true },
+        include: {
+          items: true,
+          patient: { select: { firstName: true, lastName: true } },
+          hospital: { select: { id: true, name: true } },
+        },
       },
     },
   });

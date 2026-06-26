@@ -6,7 +6,7 @@ import {
   FiActivity, FiDownload, FiEye, FiX, FiChevronRight, FiClock, FiShield,
 } from "react-icons/fi";
 import { useAuth } from "@/lib/auth";
-import { patientApi, type AccessGrant, type AccessLogItem, type FamilyMember, type MedicalRecord, type PatientDashboard, type PatientSettings, type EmergencyContact } from "@/lib/api/patient";
+import { patientApi, type AccessGrant, type AccessLogItem, type AccessRequest, type FamilyMember, type MedicalRecord, type PatientDashboard, type PatientSettings, type EmergencyContact } from "@/lib/api/patient";
 import { Modal } from "@/components/Modal";
 import { useToast } from "@/components/Toast";
 import { MESSAGES } from "@/lib/user-messages";
@@ -123,15 +123,35 @@ export default function PortalPage() {
 }
 
 function HomeTab({ user }: { user: { id: string; name: string } }) {
+  const { toast } = useToast();
   const [dash, setDash] = useState<PatientDashboard | null>(null);
   const [qr, setQr] = useState<string | null>(null);
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [enlarge, setEnlarge] = useState(false);
+
+  const loadRequests = () => {
+    patientApi.accessRequests().then(setRequests).catch(() => setRequests([]));
+  };
 
   useEffect(() => {
     Promise.all([patientApi.dashboard(), patientApi.qrCode()])
       .then(([d, q]) => { setDash(d); setQr(q.qr_code); })
       .catch(() => undefined);
+    loadRequests();
+    const timer = window.setInterval(loadRequests, 5000);
+    return () => window.clearInterval(timer);
   }, []);
+
+  const respondToRequest = async (id: string, decision: "approve" | "deny") => {
+    if (decision === "approve") {
+      await patientApi.approveAccessRequest(id);
+      toast("Access granted.");
+    } else {
+      await patientApi.denyAccessRequest(id);
+      toast("Access denied.", "success");
+    }
+    setRequests((current) => current.filter((request) => request.id !== id));
+  };
 
   const stats = dash?.quick_stats;
   const insight = dash?.health_insights?.summary ?? "Your health data is loading from the network.";
@@ -142,6 +162,38 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
         <h1 className="text-2xl font-bold">Welcome back, {user.name.split(" ")[0]}</h1>
         <p className="text-sm text-muted-foreground mt-1">Here's a quick snapshot of your health today.</p>
       </div>
+
+      {requests.length > 0 && (
+        <Card title="Access Requests">
+          <div className="space-y-3">
+            {requests.map((request) => (
+              <div key={request.id} className="rounded-lg border border-warning/40 bg-warning/10 p-4">
+                <div className="font-semibold text-sm">QR scan access request</div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {request.requester_name} from {request.hospital_name} ({request.hospital_code}) scanned your QR code and wants to view your medical record.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => void respondToRequest(request.id, "approve")}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-dark"
+                  >
+                    Grant access
+                  </button>
+                  <button
+                    onClick={() => void respondToRequest(request.id, "deny")}
+                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+                  >
+                    Deny
+                  </button>
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Expires {new Date(request.expires_at).toLocaleTimeString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 rounded-xl bg-card border border-border p-6 flex flex-col items-center">

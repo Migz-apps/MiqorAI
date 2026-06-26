@@ -13,6 +13,15 @@ export const hospitalApi = {
   patientsSearch: (q: string) => api<unknown>(`/api/hospital/patients/search?q=${encodeURIComponent(q)}`),
   patient: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}`),
   patientSummary: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}/summary`),
+  labPrior: (patientId: string, testName: string) =>
+    api<{ found: boolean; prior: Record<string, unknown> | null }>(
+      `/api/hospital/patient/${patientId}/lab-prior?test_name=${encodeURIComponent(testName)}`,
+    ),
+  visitRecord: (patientId: string, draft: Record<string, unknown>) =>
+    api(`/api/hospital/patient/${patientId}/visit-record`, {
+      method: "POST",
+      body: JSON.stringify(draft),
+    }),
   patientQr: (id: string) => api<{ qr_code: string; hash: string }>(`/api/hospital/patient/${id}/qr`),
   checkinsToday: () => api<unknown>("/api/hospital/checkins/today"),
   checkin: (body: Record<string, unknown>) =>
@@ -106,4 +115,13 @@ export const syncApi = {
 export const scanApi = {
   qr: (patient_id: string, hash: string) =>
     api("/api/scan/qr", { method: "POST", body: JSON.stringify({ patient_id, hash, context: "hospital" }) }),
+  requestAccess: (patient_id: string, hash: string) =>
+    api<{ request_id: string; status: string; expires_at: string; message: string }>("/api/scan/qr/request-access", {
+      method: "POST",
+      body: JSON.stringify({ patient_id, hash, context: "hospital" }),
+    }),
+  accessRequest: (requestId: string) =>
+    api<{ request_id: string; patient_id: string; status: "pending" | "approved" | "denied" | "expired"; expires_at: string }>(
+      `/api/scan/qr/access-request/${requestId}`,
+    ),
 };

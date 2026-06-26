@@ -9,12 +9,18 @@ import { toast } from "@/lib/notify";
 
 type Props = { onScanned?: (patientId: string) => void };
 
+function firstName(name: unknown) {
+  const safeName = typeof name === "string" && name.trim() ? name.trim() : "Patient";
+  return safeName.split(" ")[0];
+}
+
 export const QRScanner = ({ onScanned }: Props) => {
   const [scanning, setScanning] = useState(false);
   const [manual, setManual] = useState(false);
   const [manualValue, setManualValue] = useState("");
   const [detected, setDetected] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const nav = useNavigate();
 
   const { data: census = [] } = useQuery({
@@ -23,23 +29,41 @@ export const QRScanner = ({ onScanned }: Props) => {
     enabled: scanning,
   });
 
+  const waitForApproval = async (requestId: string) => {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const status = await scanApi.accessRequest(requestId);
+      if (status.status === "approved") return true;
+      if (status.status === "denied" || status.status === "expired") {
+        throw new Error(status.status);
+      }
+    }
+    throw new Error("timeout");
+  };
+
   const handlePatient = async (patientId: string) => {
     try {
-      const patient = await hospitalApi.patient(patientId);
-      const hash = patient.qrCodeHash as string | undefined;
-      if (hash) {
-        await scanApi.qr(patientId, hash);
-      }
+      setPendingMessage(null);
+      const qr = await hospitalApi.patientQr(patientId);
+      const request = await scanApi.requestAccess(patientId, qr.hash);
       setDetected(patientId);
       if (navigator.vibrate) navigator.vibrate(120);
-      toast.success(`Patient detected`);
-      setTimeout(() => {
-        onScanned?.(patientId);
-        nav(`/patients/${patientId}`);
-      }, 700);
-    } catch {
+      setPendingMessage("Approval request sent. Waiting for the patient to approve access...");
+      toast.success("Approval request sent to the patient.");
+      await waitForApproval(request.request_id);
+      setPendingMessage(null);
+      toast.success("Patient approved access.");
       onScanned?.(patientId);
       nav(`/patients/${patientId}`);
+    } catch (err) {
+      const message = err instanceof Error && err.message === "denied"
+        ? "Patient denied access."
+        : err instanceof Error && err.message === "expired"
+          ? "Access request expired. Scan again if care is still needed."
+          : "Unable to request access. Ask the patient to refresh their QR code and try again.";
+      setPendingMessage(null);
+      setDetected(null);
+      toast.error(message);
     }
   };
 
@@ -103,11 +127,16 @@ export const QRScanner = ({ onScanned }: Props) => {
 
       {scanning && (
         <div className="space-y-xs">
-          <div className="text-xs text-text-secondary">Tap a patient to simulate a successful scan</div>
+          <div className="text-xs text-text-secondary">Tap a patient to simulate a QR scan and request access</div>
+          {pendingMessage && (
+            <div className="rounded-md border border-secondary/30 bg-secondary/10 px-sm py-xs text-xs text-foreground">
+              {pendingMessage}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-xs">
             {demoPatients.map(p => (
               <Button key={p.id} variant="outline" size="sm" className="justify-start text-xs h-9" onClick={() => handlePatient(p.id)}>
-                <ScanLine className="h-3 w-3 mr-1" /> {p.name.split(" ")[0]}
+                <ScanLine className="h-3 w-3 mr-1" /> {firstName(p.name)}
               </Button>
             ))}
             {demoPatients.length === 0 && (

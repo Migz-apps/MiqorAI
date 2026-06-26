@@ -71,6 +71,72 @@ export type Patient = {
   lastVisit?: string;
   checkedInAt?: string;
   photoUrl?: string;
+  height?: number;
+  weight?: number;
+  bmi?: number;
+};
+
+export type ClinicalFlags = {
+  highRisk: boolean;
+  fallRisk: boolean;
+  seizureHistory: boolean;
+  bleedingDisorder: boolean;
+  immunocompromised: boolean;
+  isolationPrecautions?: string;
+};
+
+export type PatientSafetyProfile = {
+  patientId: string;
+  name: string;
+  dob: string;
+  age: number;
+  sex: Patient["gender"];
+  bloodGroup: string;
+  height?: number;
+  weight?: number;
+  bmi?: number;
+  emergencyContact: string;
+  insuranceProvider?: string;
+  criticalMedicalInfo: string[];
+  drugAllergies: string[];
+  foodAllergies: string[];
+  otherAllergies: string[];
+  chronicDiseases: string[];
+  activeConditions: string[];
+  currentMedications: string[];
+  pregnancyStatus?: string;
+  transplantStatus?: string;
+  implantableDevices: string[];
+  codeStatus?: string;
+  clinicalFlags: ClinicalFlags;
+};
+
+export type VisitDraftState = {
+  chief: string;
+  duration: string;
+  severity: string;
+  bp: string;
+  hr: string;
+  temp: string;
+  spo2: string;
+  height: string;
+  weight: string;
+  diagnoses: { code: string; label: string }[];
+  labs: string[];
+  notes: string;
+};
+
+export type PriorLabMatch = {
+  test_name: string;
+  taken_on: string;
+  taken_on_iso: string;
+  results: string;
+  lab_order_id: string;
+};
+
+export type VisitRecordSection = {
+  title: string;
+  content: string;
 };
 
 export type StaffMember = {

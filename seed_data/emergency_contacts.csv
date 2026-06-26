@@ -1,0 +1,33 @@
+contact_id,patient_id,name,phone,relationship,email,address,is_primary,can_make_medical_decisions,notes
+EC0001,PAT001,John Contact,+254722500001,Spouse,john.1@example.com,"House 101, Nairobi",True,True,Primary emergency contact.
+EC0002,PAT001,Secondary Contact 1,+25473360001,Sibling,secondary1@example.com,"House 201, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0003,PAT002,Mary Contact,+254722500002,Spouse,mary.2@example.com,"House 102, Nairobi",True,True,Primary emergency contact.
+EC0004,PAT002,Secondary Contact 2,+25473360002,Friend,secondary2@example.com,"House 202, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0005,PAT003,Alice Contact,+254722500003,Daughter,alice.3@example.com,"House 103, Nairobi",True,True,Primary emergency contact.
+EC0006,PAT003,Secondary Contact 3,+25473360003,Sibling,secondary3@example.com,"House 203, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0007,PAT004,Peter Contact,+254722500004,Brother,peter.4@example.com,"House 104, Nairobi",True,True,Primary emergency contact.
+EC0008,PAT004,Secondary Contact 4,+25473360004,Friend,secondary4@example.com,"House 204, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0009,PAT005,Anne Contact,+254722500005,Mother,anne.5@example.com,"House 105, Nairobi",True,True,Primary emergency contact.
+EC0010,PAT005,Secondary Contact 5,+25473360005,Sibling,secondary5@example.com,"House 205, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0011,PAT006,Grace Contact,+254722500006,Wife,grace.6@example.com,"House 106, Nairobi",True,True,Primary emergency contact.
+EC0012,PAT006,Secondary Contact 6,+25473360006,Friend,secondary6@example.com,"House 206, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0013,PAT007,David Contact,+254722500007,Husband,david.7@example.com,"House 107, Nairobi",True,True,Primary emergency contact.
+EC0014,PAT007,Secondary Contact 7,+25473360007,Sibling,secondary7@example.com,"House 207, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0015,PAT008,Michael Contact,+254722500008,Father,michael.8@example.com,"House 108, Nairobi",True,True,Primary emergency contact.
+EC0016,PAT008,Secondary Contact 8,+25473360008,Friend,secondary8@example.com,"House 208, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0017,PAT009,Eric Contact,+254722500009,Husband,eric.9@example.com,"House 109, Nairobi",True,True,Primary emergency contact.
+EC0018,PAT009,Secondary Contact 9,+25473360009,Sibling,secondary9@example.com,"House 209, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0019,PAT010,Susan Contact,+254722500010,Wife,susan.10@example.com,"House 110, Nairobi",True,True,Primary emergency contact.
+EC0020,PAT010,Secondary Contact 10,+25473360010,Friend,secondary10@example.com,"House 210, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0021,PAT011,James Contact,+254722500011,Brother,james.11@example.com,"House 111, Nairobi",True,True,Primary emergency contact.
+EC0022,PAT011,Secondary Contact 11,+25473360011,Sibling,secondary11@example.com,"House 211, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0023,PAT012,Jane Contact,+254722500012,Wife,jane.12@example.com,"House 112, Nairobi",True,True,Primary emergency contact.
+EC0024,PAT012,Secondary Contact 12,+25473360012,Friend,secondary12@example.com,"House 212, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0025,PAT013,Grace Contact,+254722500013,Mother,grace.13@example.com,"House 113, Nairobi",True,True,Primary emergency contact.
+EC0026,PAT013,Secondary Contact 13,+25473360013,Sibling,secondary13@example.com,"House 213, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0027,PAT014,Grace Contact,+254722500014,Mother,grace.14@example.com,"House 114, Nairobi",True,True,Primary emergency contact.
+EC0028,PAT014,Secondary Contact 14,+25473360014,Friend,secondary14@example.com,"House 214, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0029,PAT015,Ann Contact,+254722500015,Daughter,ann.15@example.com,"House 115, Nairobi",True,True,Primary emergency contact.
+EC0030,PAT015,Secondary Contact 15,+25473360015,Sibling,secondary15@example.com,"House 215, Nairobi",False,False,Secondary contact if primary unavailable.
+EC0031,PAT016,Joseph Contact,+254722500016,Husband,joseph.16@example.com,"House 116, Nairobi",True,True,Primary emergency contact.
+EC0032,PAT016,Secondary Contact 16,+25473360016,Friend,secondary16@example.com,"House 216, Nairobi",False,False,Secondary contact if primary unavailable.
