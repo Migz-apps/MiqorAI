@@ -42,6 +42,13 @@ export const config = {
   auditArchiveDays: parseInt(process.env.AUDIT_ARCHIVE_DAYS ?? "365", 10),
   otpExpiresMinutes: parseInt(process.env.OTP_EXPIRES_MINUTES ?? "10", 10),
   baseUrl: process.env.BASE_URL ?? "http://localhost:3000",
-  aiServiceUrl: (process.env.AI_SERVICE_URL ?? "").replace(/\/$/, ""),
+  aiServiceUrl: (
+    process.env.AI_SERVICE_BASE_URL ??
+    process.env.AI_SERVICE_URL ??
+    ""
+  ).replace(/\/$/, ""),
+  aiServiceApiKey: process.env.AI_SERVICE_API_KEY ?? "",
+  aiServiceTimeoutSeconds: parseInt(process.env.AI_SERVICE_TIMEOUT_SECONDS ?? "60", 10),
+  aiServiceEnabled: process.env.AI_SERVICE_ENABLED !== "false",
   aiMock: process.env.MIQORAI_AI_MOCK === "true",
 };

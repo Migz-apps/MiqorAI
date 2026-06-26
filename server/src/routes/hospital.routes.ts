@@ -70,6 +70,12 @@ import {
   createReportSchedule,
   markAllNotificationsRead,
 } from "../services/portal-complete.service.js";
+import {
+  completeDoctorVisitDraft,
+  deleteDoctorVisitDraft,
+  getDoctorPatientWorkspace,
+  saveDoctorVisitDraft,
+} from "../services/doctor-workspace.service.js";
 
 const router = Router();
 
@@ -211,6 +217,52 @@ const staffInviteSchema = z.object({
 
 const staffRoleSchema = z.object({
   role: z.nativeEnum(HospitalStaffRole),
+});
+
+const visitDraftSchema = z.object({
+  chief: z.string().optional().default(""),
+  symptoms: z.string().optional().default(""),
+  assessment: z.string().optional().default(""),
+  duration: z.string().optional().default(""),
+  severity: z.string().optional().default(""),
+  bp: z.string().optional().default(""),
+  hr: z.string().optional().default(""),
+  temp: z.string().optional().default(""),
+  spo2: z.string().optional().default(""),
+  height: z.string().optional().default(""),
+  weight: z.string().optional().default(""),
+  diagnoses: z
+    .array(
+      z.object({
+        code: z.string().optional().default(""),
+        label: z.string().optional().default(""),
+      }),
+    )
+    .default([]),
+  labs: z.array(z.string()).default([]),
+  prescriptions: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        medication: z.string().min(1),
+        strength: z.string().min(1),
+        instructions: z.string().min(1),
+        frequency: z.string().min(1),
+        duration: z.string().min(1),
+        durationDays: z.number().int().positive(),
+        quantity: z.number().int().positive(),
+        pharmacyId: z.string().uuid().optional().nullable(),
+        pharmacyName: z.string().optional(),
+      }),
+    )
+    .default([]),
+  notes: z.string().optional().default(""),
+});
+
+const saveVisitDraftSchema = z.object({
+  draft_id: z.string().uuid().optional(),
+  visit_id: z.string().uuid().optional(),
+  draft: visitDraftSchema,
 });
 
 router.get("/dashboard", async (req, res, next) => {
@@ -936,11 +988,88 @@ router.get("/analytics/extended", async (req, res, next) => {
   }
 });
 
+router.get("/patient/:id/workspace", async (req, res, next) => {
+  try {
+    const { hospitalId, userId } = await requireHospitalContext(req.user!);
+    const patientId = param(req.params.id);
+
+    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+
+    res.json(await getDoctorPatientWorkspace(hospitalId, userId, patientId));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/patient/:id/visit-draft", validateBody(saveVisitDraftSchema), async (req, res, next) => {
+  try {
+    const { hospitalId, userId } = await requireHospitalContext(req.user!);
+    const patientId = param(req.params.id);
+
+    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+
+    res.json(
+      await saveDoctorVisitDraft({
+        hospitalId,
+        doctorId: userId,
+        patientId,
+        draftId: req.body.draft_id,
+        visitId: req.body.visit_id,
+        draft: req.body.draft,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/patient/:id/visit-draft/:draftId/complete", async (req, res, next) => {
+  try {
+    const { hospitalId, userId } = await requireHospitalContext(req.user!);
+    const patientId = param(req.params.id);
+    const draftId = param(req.params.draftId);
+
+    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+
+    res.json(
+      await completeDoctorVisitDraft({
+        hospitalId,
+        doctorId: userId,
+        patientId,
+        draftId,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/patient/:id/visit-draft/:draftId", async (req, res, next) => {
+  try {
+    const { hospitalId, userId } = await requireHospitalContext(req.user!);
+    const patientId = param(req.params.id);
+    const draftId = param(req.params.draftId);
+
+    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+
+    res.json(
+      await deleteDoctorVisitDraft({
+        hospitalId,
+        doctorId: userId,
+        patientId,
+        draftId,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/patients/census", async (req, res, next) => {
   try {
-    const { hospitalId } = await requireHospitalContext(req.user!);
+    const { hospitalId, userId } = await requireHospitalContext(req.user!);
     res.json(
-      await getPatientCensus(hospitalId, {
+      await getPatientCensus(hospitalId, userId, {
         diagnosis: req.query.diagnosis ? String(req.query.diagnosis) : undefined,
         medication: req.query.medication ? String(req.query.medication) : undefined,
         age_min: req.query.age_min ? parseInt(String(req.query.age_min), 10) : undefined,

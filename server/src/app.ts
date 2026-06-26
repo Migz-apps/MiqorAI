@@ -17,6 +17,7 @@ import syncRoutes from "./routes/sync.routes.js";
 import onboardingRoutes from "./routes/onboarding.routes.js";
 import referenceRoutes from "./routes/reference.routes.js";
 import clinicalSafetyRoutes from "./routes/clinical-safety.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
 
 export function createApp() {
   const app = express();
@@ -44,6 +45,7 @@ export function createApp() {
   app.use("/api/onboarding", onboardingRoutes);
   app.use("/api/reference", referenceRoutes);
   app.use("/api/v1/clinical-safety", clinicalSafetyRoutes);
+  app.use("/api/ai", aiRoutes);
 
   app.use(errorHandler);
 

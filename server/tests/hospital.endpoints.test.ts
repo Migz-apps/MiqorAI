@@ -138,17 +138,33 @@ describe("Hospital endpoints", () => {
       frequency: "once daily",
       duration_days: 30,
     });
-    expect([200, 201]).toContain(res.status);
-    newPrescriptionId = res.body.id ?? "";
+    expect([200, 201, 409]).toContain(res.status);
+    if (res.status === 409) {
+      expect(res.body).toMatchObject({
+        blocked: true,
+        message: expect.any(String),
+      });
+    } else {
+      newPrescriptionId = res.body.id ?? "";
+    }
   });
 
   it("POST /api/hospital/prescription/check-allergies", async () => {
     const c = getContext();
     const res = await authed("hospital").post("/api/hospital/prescription/check-allergies").send({
       patient_id: c.patientId,
-      drugs: ["Penicillin", "Amlodipine"],
+      drug_names: ["Penicillin", "Amlodipine"],
     });
     expect(res.status).toBe(200);
+    expect(res.body.safe).toBe(false);
+    expect(res.body.conflicts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          drug_name: "Penicillin",
+          allergy_name: "Penicillin",
+        }),
+      ]),
+    );
   });
 
   it("POST /api/hospital/lab-order", async () => {
@@ -159,8 +175,15 @@ describe("Hospital endpoints", () => {
       test_name: "Complete Blood Count",
       test_code: "57021-8",
     });
-    expect([200, 201]).toContain(res.status);
-    newLabOrderId = res.body.id ?? "";
+    expect([200, 201, 409]).toContain(res.status);
+    if (res.status === 409) {
+      expect(res.body).toMatchObject({
+        blocked: true,
+        message: expect.any(String),
+      });
+    } else {
+      newLabOrderId = res.body.id ?? "";
+    }
   });
 
   it("GET /api/hospital/prescriptions", async () => {

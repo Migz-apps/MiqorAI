@@ -1,4 +1,5 @@
 import { logger } from "../lib/logger.js";
+import { getAiServiceConfig } from "./ai-service.config.js";
 import type {
   AiHealthResponse,
   ClinicalSafetyRequest,
@@ -9,11 +10,11 @@ const TIMEOUT_MS = 15_000;
 const RETRYABLE_STATUS = new Set([502, 503, 504]);
 
 function isMockMode(): boolean {
-  return process.env.MIQORAI_AI_MOCK === "true";
+  return getAiServiceConfig().mock;
 }
 
 function serviceBaseUrl(): string | null {
-  const url = (process.env.AI_SERVICE_URL ?? "").trim().replace(/\/$/, "");
+  const url = getAiServiceConfig().baseUrl;
   return url || null;
 }
 
@@ -118,7 +119,9 @@ async function requestJson<T>(
 }
 
 export function isAiClinicalSafetyConfigured(): boolean {
-  return Boolean(serviceBaseUrl()) || isMockMode();
+  const cfg = getAiServiceConfig();
+  if (!cfg.enabled) return false;
+  return Boolean(cfg.baseUrl) || cfg.mock;
 }
 
 export async function checkAiServiceHealth(): Promise<AiHealthResponse | null> {

@@ -22,6 +22,7 @@ import { writeAuditLog } from "./audit.service.js";
 import { getOrgSettings, setOrgSettings } from "./hospital-ext.service.js";
 import { getRedis } from "../lib/redis.js";
 import { config } from "../config.js";
+import { getDoctorPatientCensusMeta } from "./doctor-workspace.service.js";
 
 const LOCKOUT_MAX = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
@@ -226,6 +227,13 @@ export async function listEnrichedAccessGrants(patientId: string) {
         const p = await prisma.pharmacy.findUnique({ where: { id: g.granteeId } });
         name = p?.name ?? name;
         org = p?.code ?? "";
+      } else if (g.granteeType === "doctor") {
+        const user = await prisma.user.findUnique({
+          where: { id: g.granteeId },
+          include: { hospitalStaff: { include: { hospital: true } } },
+        });
+        name = user?.displayName ?? user?.email ?? "Doctor";
+        org = user?.hospitalStaff?.hospital?.name ?? user?.hospitalStaff?.hospital?.code ?? "Clinician";
       }
       return {
         id: g.id,
@@ -362,6 +370,7 @@ export async function getHospitalDashboardKpis(hospitalId: string) {
 
 export async function getPatientCensus(
   hospitalId: string,
+  doctorId: string | undefined,
   filters: { diagnosis?: string; medication?: string; age_min?: number; age_max?: number; search?: string },
 ) {
   const visits = await prisma.visit.findMany({
@@ -406,7 +415,28 @@ export async function getPatientCensus(
       status: v.status,
     });
   }
-  return patients;
+
+  const meta = doctorId
+    ? await getDoctorPatientCensusMeta(hospitalId, doctorId, patients.map((patient) => patient.id))
+    : null;
+
+  return patients.map((patient) => {
+    const prescriptionMeta = meta?.prescriptionByPatientId.get(patient.id);
+    const draftMeta = meta?.draftByPatientId.get(patient.id);
+    const openVisitMeta = meta?.visitByPatientId.get(patient.id);
+
+    return {
+      ...patient,
+      my_prescriptions_count: prescriptionMeta?.count ?? 0,
+      my_prescription_medications: prescriptionMeta?.medications ?? [],
+      my_last_prescribed_at: prescriptionMeta?.prescribedAt ?? null,
+      has_active_draft: Boolean(draftMeta),
+      active_draft_id: draftMeta?.draft_id ?? null,
+      active_draft_updated_at: draftMeta?.updated_at ?? null,
+      open_visit_id: openVisitMeta?.id ?? null,
+      open_visit_status: openVisitMeta?.status ?? null,
+    };
+  });
 }
 
 export async function getHospitalPatientQr(hospitalId: string, patientId: string) {
@@ -441,10 +471,34 @@ export async function checkPrescriptionAllergies(patientId: string, drugNames: s
   const allergies = await prisma.medicalRecord.findMany({
     where: { patientId, recordType: "allergy", isActive: true },
   });
-  const allergyNames = allergies.map((a) => ((a.data as { name?: string }).name ?? "").toLowerCase());
-  const conflicts = drugNames.filter((d) =>
-    allergyNames.some((a) => a && (d.toLowerCase().includes(a) || a.includes(d.toLowerCase()))),
-  );
+  const allergyDetails = allergies
+    .map((record) => {
+      const data = (record.data as { name?: string; severity?: string; reaction?: string }) ?? {};
+      return {
+        name: (data.name ?? "").trim(),
+        severity: (data.severity ?? "moderate").trim().toLowerCase(),
+        reaction: (data.reaction ?? "").trim(),
+      };
+    })
+    .filter((allergy) => allergy.name && allergy.name.toLowerCase() !== "none known");
+
+  const conflicts = drugNames.flatMap((drugName) => {
+    const normalizedDrug = drugName.toLowerCase();
+    return allergyDetails
+      .filter((allergy) => {
+        const normalizedAllergy = allergy.name.toLowerCase();
+        return normalizedAllergy && (
+          normalizedDrug.includes(normalizedAllergy) || normalizedAllergy.includes(normalizedDrug)
+        );
+      })
+      .map((allergy) => ({
+        drug_name: drugName,
+        allergy_name: allergy.name,
+        severity: allergy.severity,
+        reaction: allergy.reaction,
+      }));
+  });
+
   return { safe: conflicts.length === 0, conflicts };
 }
 
