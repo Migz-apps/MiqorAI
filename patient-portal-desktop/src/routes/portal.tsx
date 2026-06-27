@@ -387,9 +387,13 @@ function ShareTab() {
   }, []);
 
   const revoke = async (id: string) => {
-    await patientApi.revokeAccessGrant(id).catch(() => undefined);
-    setGrants((p) => p.filter((x) => x.id !== id));
-    toast(MESSAGES.generic.revoked);
+    try {
+      await patientApi.revokeAccessGrant(id);
+      setGrants((p) => p.filter((x) => x.id !== id));
+      toast(MESSAGES.generic.revoked);
+    } catch {
+      toast("Could not revoke access. Please try again.", "error");
+    }
   };
 
   return (
@@ -408,7 +412,9 @@ function ShareTab() {
               <li key={g.id} className="py-3 flex items-center justify-between">
                 <div>
                   <div className="font-medium">{g.name}</div>
-                  <div className="text-xs text-muted-foreground">{g.org} · {g.scope} · expires {new Date(g.expires_at).toLocaleDateString()}</div>
+                  <div className="text-xs text-muted-foreground capitalize">
+                    {g.grantee_type ?? "provider"} · {g.org} · {g.scope} · expires {new Date(g.expires_at).toLocaleDateString()}
+                  </div>
                 </div>
                 <button onClick={() => void revoke(g.id)} className="rounded-lg border border-destructive/30 text-destructive px-3 py-1.5 text-sm hover:bg-destructive/10">
                   Revoke

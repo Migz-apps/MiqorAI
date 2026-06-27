@@ -15,6 +15,8 @@ import type {
   Visit,
   PatientSafetyProfile,
   VisitDraftState,
+  DraftVisitWorkspace,
+  DoctorPatientWorkspace,
   ClinicalFlags,
 } from "./types";
 
@@ -249,6 +251,16 @@ export function mapCensusPatient(row: Record<string, unknown>): Patient {
     labs: [],
     upcomingAppointments: [],
     lastVisit: row.last_visit ? fmtDate(row.last_visit as string) : undefined,
+    myPrescriptionsCount: Number(row.my_prescriptions_count ?? 0),
+    myPrescriptionMedications: Array.isArray(row.my_prescription_medications)
+      ? (row.my_prescription_medications as string[])
+      : [],
+    myLastPrescribedAt: row.my_last_prescribed_at ? fmtDate(row.my_last_prescribed_at as string) : undefined,
+    hasActiveDraft: Boolean(row.has_active_draft),
+    activeDraftId: row.active_draft_id ? String(row.active_draft_id) : undefined,
+    activeDraftUpdatedAt: row.active_draft_updated_at ? fmtDateTime(row.active_draft_updated_at as string) : undefined,
+    openVisitId: row.open_visit_id ? String(row.open_visit_id) : undefined,
+    openVisitStatus: row.open_visit_status ? String(row.open_visit_status) : undefined,
   };
 }
 
@@ -541,6 +553,8 @@ export function mapPatientSafetyProfile(
 export function visitDraftHasContent(draft: VisitDraftState): boolean {
   return Boolean(
     draft.chief.trim() ||
+      draft.symptoms.trim() ||
+      draft.assessment.trim() ||
       draft.notes.trim() ||
       draft.bp ||
       draft.hr ||
@@ -549,13 +563,25 @@ export function visitDraftHasContent(draft: VisitDraftState): boolean {
       draft.height ||
       draft.weight ||
       draft.diagnoses.length ||
-      draft.labs.length,
+      draft.labs.length ||
+      draft.prescriptions.length
+  );
+}
+
+export function visitDraftHasAnalyzableContent(draft: VisitDraftState): boolean {
+  return Boolean(
+    draft.chief.trim() ||
+      draft.symptoms.trim() ||
+      draft.assessment.trim() ||
+      draft.diagnoses.length,
   );
 }
 
 export function emptyVisitDraft(): VisitDraftState {
   return {
     chief: "",
+    symptoms: "",
+    assessment: "",
     duration: "3 days",
     severity: "Moderate",
     bp: "",
@@ -566,7 +592,68 @@ export function emptyVisitDraft(): VisitDraftState {
     weight: "",
     diagnoses: [],
     labs: [],
+    prescriptions: [],
     notes: "",
+  };
+}
+
+export function mapDoctorPatientWorkspace(raw: Record<string, unknown>): DoctorPatientWorkspace {
+  const activeDrafts = ((raw.active_drafts as Array<Record<string, unknown>>) ?? []).map((draft) =>
+    mapDraftVisitWorkspace(draft),
+  );
+
+  const doctorPrescriptions = ((raw.doctor_prescriptions as Array<Record<string, unknown>>) ?? []).map((row) => ({
+    id: String(row.id),
+    prescribedAt: String(row.prescribed_at ?? ""),
+    status: String(row.status ?? "pending"),
+    items: ((row.items as Array<Record<string, unknown>>) ?? []).map((item) => ({
+      id: String(item.id),
+      medication: String(item.medication ?? ""),
+      strength: String(item.strength ?? ""),
+      instructions: String(item.instructions ?? ""),
+      frequency: item.frequency ? String(item.frequency) : null,
+      durationDays: Number(item.duration_days ?? 0),
+    })),
+  }));
+
+  return {
+    openVisit: raw.open_visit ? mapOpenVisit(raw.open_visit as Record<string, unknown>) : null,
+    activeDrafts,
+    doctorPrescriptions,
+  };
+}
+
+export function mapDraftVisitWorkspace(raw: Record<string, unknown>): DraftVisitWorkspace {
+  return {
+    draftId: String(raw.draft_id),
+    patientId: String(raw.patient_id),
+    visitId: raw.visit_id ? String(raw.visit_id) : null,
+    createdAt: String(raw.created_at ?? ""),
+    updatedAt: String(raw.updated_at ?? ""),
+    draft: {
+      ...emptyVisitDraft(),
+      ...((raw.draft as VisitDraftState | undefined) ?? {}),
+      diagnoses: Array.isArray((raw.draft as VisitDraftState | undefined)?.diagnoses)
+        ? (raw.draft as VisitDraftState).diagnoses
+        : [],
+      labs: Array.isArray((raw.draft as VisitDraftState | undefined)?.labs)
+        ? (raw.draft as VisitDraftState).labs
+        : [],
+      prescriptions: Array.isArray((raw.draft as VisitDraftState | undefined)?.prescriptions)
+        ? (raw.draft as VisitDraftState).prescriptions
+        : [],
+    },
+    openVisit: raw.open_visit ? mapOpenVisit(raw.open_visit as Record<string, unknown>) : null,
+  };
+}
+
+function mapOpenVisit(raw: Record<string, unknown>): NonNullable<DraftVisitWorkspace["openVisit"]> {
+  return {
+    id: String(raw.id),
+    status: String(raw.status ?? "waiting") as NonNullable<DraftVisitWorkspace["openVisit"]>["status"],
+    checkedInAt: String(raw.checked_in_at ?? ""),
+    department: String(raw.department ?? "General Medicine"),
+    reason: raw.reason ? String(raw.reason) : null,
   };
 }
 

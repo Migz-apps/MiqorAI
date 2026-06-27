@@ -31,3 +31,8 @@ LAB0029,PAT015,VIS0029,HOSP002,TSH,3016-3,completed,"{""value"": 2.4, ""unit"": 
 LAB0030,PAT015,VIS0030,HOSP002,Urinalysis,5804-0,ordered,,USR019,2026-06-23T10:00:00,,Sample pending collection.
 LAB0031,PAT016,VIS0031,HOSP001,Urinalysis,5804-0,completed,"{""protein"": ""negative"", ""glucose"": ""negative""}",USR017,2026-06-04T10:00:00,2026-06-04T14:00:00,Results reviewed by clinician.
 LAB0032,PAT016,VIS0032,HOSP001,Troponin I,10839-9,ordered,,USR017,2026-06-20T10:00:00,,Sample pending collection.
+LAB0033,PAT002,,HOSP001,Fasting Glucose,1558-6,completed,"{""value"": 118, ""unit"": ""mg/dL"", ""ref_low"": 70, ""ref_high"": 99}",USR018,2026-05-28T09:15:00,2026-05-28T12:00:00,Historical result seeded for AI relevance checks.
+LAB0034,PAT003,,HOSP002,Ferritin,2276-4,completed,"{""value"": 14, ""unit"": ""ng/mL"", ""ref_low"": 15, ""ref_high"": 150}",USR019,2026-05-25T08:40:00,2026-05-25T11:30:00,Historical result seeded for AI relevance checks.
+LAB0035,PAT004,,HOSP001,C-Reactive Protein,1988-5,completed,"{""value"": 18, ""unit"": ""mg/L"", ""ref_low"": 0, ""ref_high"": 10}",USR017,2026-05-22T14:10:00,2026-05-22T16:45:00,Historical result seeded for AI relevance checks.
+LAB0036,PAT005,,HOSP002,eGFR,33914-3,completed,"{""value"": 58, ""unit"": ""mL/min/1.73m2"", ""ref_low"": 90, ""ref_high"": 120}",USR018,2026-05-18T10:20:00,2026-05-18T13:05:00,Historical result seeded for AI relevance checks.
+LAB0037,PAT006,,HOSP001,Liver Function Panel,24325-3,completed,"{""alt"": 64, ""ast"": 52, ""unit"": ""U/L"", ""ref_low"": 0, ""ref_high"": 40}",USR019,2026-05-14T11:05:00,2026-05-14T15:00:00,Historical result seeded for AI relevance checks.

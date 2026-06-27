@@ -74,6 +74,14 @@ export type Patient = {
   height?: number;
   weight?: number;
   bmi?: number;
+  myPrescriptionsCount?: number;
+  myPrescriptionMedications?: string[];
+  myLastPrescribedAt?: string;
+  hasActiveDraft?: boolean;
+  activeDraftId?: string;
+  activeDraftUpdatedAt?: string;
+  openVisitId?: string;
+  openVisitStatus?: string;
 };
 
 export type ClinicalFlags = {
@@ -111,8 +119,23 @@ export type PatientSafetyProfile = {
   clinicalFlags: ClinicalFlags;
 };
 
+export type VisitDraftPrescription = {
+  id: string;
+  medication: string;
+  strength: string;
+  instructions: string;
+  frequency: string;
+  duration: string;
+  durationDays: number;
+  quantity: number;
+  pharmacyId?: string | null;
+  pharmacyName?: string;
+};
+
 export type VisitDraftState = {
   chief: string;
+  symptoms: string;
+  assessment: string;
   duration: string;
   severity: string;
   bp: string;
@@ -123,7 +146,44 @@ export type VisitDraftState = {
   weight: string;
   diagnoses: { code: string; label: string }[];
   labs: string[];
+  prescriptions: VisitDraftPrescription[];
   notes: string;
+};
+
+export type DraftVisitWorkspace = {
+  draftId: string;
+  patientId: string;
+  visitId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  draft: VisitDraftState;
+  openVisit?: {
+    id: string;
+    status: "waiting" | "with_nurse" | "with_doctor" | "completed" | "no_show";
+    checkedInAt: string;
+    department: string;
+    reason?: string | null;
+  } | null;
+};
+
+export type DoctorPrescriptionWorkspace = {
+  id: string;
+  prescribedAt: string;
+  status: string;
+  items: Array<{
+    id: string;
+    medication: string;
+    strength: string;
+    instructions: string;
+    frequency?: string | null;
+    durationDays: number;
+  }>;
+};
+
+export type DoctorPatientWorkspace = {
+  openVisit?: DraftVisitWorkspace["openVisit"];
+  activeDrafts: DraftVisitWorkspace[];
+  doctorPrescriptions: DoctorPrescriptionWorkspace[];
 };
 
 export type PriorLabMatch = {

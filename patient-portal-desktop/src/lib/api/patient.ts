@@ -53,6 +53,7 @@ export type AccessGrant = {
   org: string;
   scope: string;
   expires_at: string;
+  grantee_type?: string;
 };
 
 export type AccessLogItem = {

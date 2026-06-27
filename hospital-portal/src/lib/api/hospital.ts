@@ -1,5 +1,15 @@
 import { api } from "./client";
 
+export type PrescriptionAllergyCheckResponse = {
+  safe: boolean;
+  conflicts: Array<{
+    drug_name: string;
+    allergy_name: string;
+    severity?: string;
+    reaction?: string;
+  }>;
+};
+
 export const hospitalApi = {
   dashboard: () => api<Record<string, unknown>>("/api/hospital/dashboard"),
   patients: (params?: Record<string, string>) => {
@@ -12,11 +22,26 @@ export const hospitalApi = {
   },
   patientsSearch: (q: string) => api<unknown>(`/api/hospital/patients/search?q=${encodeURIComponent(q)}`),
   patient: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}`),
+  patientWorkspace: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}/workspace`),
   patientSummary: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}/summary`),
   labPrior: (patientId: string, testName: string) =>
     api<{ found: boolean; prior: Record<string, unknown> | null }>(
       `/api/hospital/patient/${patientId}/lab-prior?test_name=${encodeURIComponent(testName)}`,
     ),
+  saveVisitDraft: (patientId: string, body: Record<string, unknown>) =>
+    api(`/api/hospital/patient/${patientId}/visit-draft`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  completeVisitDraft: (patientId: string, draftId: string) =>
+    api(`/api/hospital/patient/${patientId}/visit-draft/${draftId}/complete`, {
+      method: "POST",
+      body: "{}",
+    }),
+  deleteVisitDraft: (patientId: string, draftId: string) =>
+    api(`/api/hospital/patient/${patientId}/visit-draft/${draftId}`, {
+      method: "DELETE",
+    }),
   visitRecord: (patientId: string, draft: Record<string, unknown>) =>
     api(`/api/hospital/patient/${patientId}/visit-record`, {
       method: "POST",
@@ -43,7 +68,7 @@ export const hospitalApi = {
   prescription: (body: Record<string, unknown>) =>
     api("/api/hospital/prescription", { method: "POST", body: JSON.stringify(body) }),
   checkAllergies: (patient_id: string, drug_names: string[]) =>
-    api("/api/hospital/prescription/check-allergies", {
+    api<PrescriptionAllergyCheckResponse>("/api/hospital/prescription/check-allergies", {
       method: "POST",
       body: JSON.stringify({ patient_id, drug_names }),
     }),
@@ -99,7 +124,7 @@ export const referenceApi = {
   drugs: (q?: string) => api<unknown[]>(`/api/reference/drugs${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   interactions: (drugs: string[]) =>
     api("/api/reference/drug-interactions", { method: "POST", body: JSON.stringify({ drugs }) }),
-  pharmacies: () => api<unknown[]>("/api/reference/pharmacies"),
+  pharmacies: () => api<Array<{ id: string; name: string; code: string; city?: string }>>("/api/reference/pharmacies"),
 };
 
 export const syncApi = {

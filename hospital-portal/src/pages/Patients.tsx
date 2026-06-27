@@ -51,8 +51,6 @@ export default function Patients() {
     queryFn: async () => (await referenceApi.drugs()).map(r => mapDrug(r as Record<string, unknown>)),
   });
 
-  const calcAge = (dob: string) => dob ? Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 86400 * 1000)) : null;
-
   return (
     <div className="space-y-lg max-w-[1400px] mx-auto">
       <div className="flex items-end justify-between gap-md">
@@ -85,7 +83,7 @@ export default function Patients() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="any">Any</SelectItem>
-                        {icdCodes.map(c => <SelectItem key={c.code} value={c.label}>{c.code} — {c.label}</SelectItem>)}
+                        {icdCodes.map(c => <SelectItem key={c.code} value={c.label}>{c.code} - {c.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -105,9 +103,9 @@ export default function Patients() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="any">Any</SelectItem>
-                        <SelectItem value="0-17">0–17</SelectItem>
-                        <SelectItem value="18-40">18–40</SelectItem>
-                        <SelectItem value="41-65">41–65</SelectItem>
+                        <SelectItem value="0-17">0-17</SelectItem>
+                        <SelectItem value="18-40">18-40</SelectItem>
+                        <SelectItem value="41-65">41-65</SelectItem>
                         <SelectItem value="65+">65+</SelectItem>
                       </SelectContent>
                     </Select>
@@ -138,7 +136,7 @@ export default function Patients() {
               <button key={p.id} onClick={() => nav(`/patients/${p.id}`)} className="w-full text-left flex md:grid md:grid-cols-12 md:items-center gap-sm px-md py-sm hover:bg-primary-light/40 transition-colors">
                 <div className="md:col-span-4 flex items-center gap-sm min-w-0 flex-1">
                   <div className="h-9 w-9 rounded-full bg-primary-light text-primary flex items-center justify-center text-xs font-semibold shrink-0">
-                    {p.name.split(" ").map(n => n[0]).slice(0,2).join("")}
+                    {p.name.split(" ").map(n => n[0]).slice(0, 2).join("")}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="font-medium truncate">{p.name}</div>
@@ -147,7 +145,15 @@ export default function Patients() {
                 </div>
                 <div className="hidden md:block md:col-span-2 font-mono text-xs">{p.id.slice(0, 8)}…</div>
                 <div className="hidden md:block md:col-span-2 text-sm">{p.bloodType}</div>
-                <div className="hidden md:block md:col-span-3 text-sm text-text-secondary truncate">—</div>
+                <div className="hidden md:block md:col-span-3 text-sm text-text-secondary truncate">
+                  {p.hasActiveDraft
+                    ? "Unfinished visit draft"
+                    : p.myPrescriptionMedications?.length
+                      ? `My Rx: ${p.myPrescriptionMedications.join(", ")}`
+                      : p.openVisitStatus
+                        ? `Open visit: ${p.openVisitStatus.replace("_", " ")}`
+                        : "—"}
+                </div>
                 <div className="hidden md:block md:col-span-1 text-right text-xs text-text-secondary">{p.lastVisit || "—"}</div>
               </button>
             ))}

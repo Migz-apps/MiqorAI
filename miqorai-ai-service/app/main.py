@@ -9,6 +9,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.model_loader import get_runtime, is_model_loaded, load_inference_runtime
+from app.ai_visit import (
+    CheckActionRequest,
+    CheckActionResponse,
+    RelevantHistoryRequest,
+    RelevantHistoryResponse,
+    build_check_action,
+    build_relevant_history,
+)
 from app.schemas import (
     ClinicalSafetyAlertResponse,
     ClinicalSafetyCheckRequest,
@@ -111,6 +119,16 @@ async def clinical_safety_check_mock(
         ],
         intervention_required=True,
     )
+
+
+@app.post("/ai/relevant-history", response_model=RelevantHistoryResponse)
+async def ai_relevant_history(request: RelevantHistoryRequest) -> RelevantHistoryResponse:
+    return build_relevant_history(request)
+
+
+@app.post("/ai/check-action", response_model=CheckActionResponse)
+async def ai_check_action(request: CheckActionRequest) -> CheckActionResponse:
+    return build_check_action(request)
 
 
 if __name__ == "__main__":
