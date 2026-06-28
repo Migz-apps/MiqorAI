@@ -236,6 +236,7 @@ export function mapInvoice(inv: {
 }): Invoice {
   return {
     id: inv.id.slice(0, 12).toUpperCase(),
+    sourceId: inv.id,
     period: inv.period,
     grossSavings: inv.gross_savings,
     fee: inv.fee,
@@ -379,4 +380,5 @@ export const insurerApi = {
   exportFraud: () => api<{ download_url: string }>("/api/insurer/fraud/export", { method: "POST", body: "{}" }),
   exportMembers: () => api<{ download_url: string }>("/api/insurer/members/export"),
   contractPdf: () => api<{ download_url: string }>("/api/insurer/contract/pdf"),
+  invoicePdf: (id: string) => api<{ download_url: string }>(`/api/insurer/invoices/${id}/pdf`),
 };

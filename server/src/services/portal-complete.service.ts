@@ -928,6 +928,22 @@ export async function getInsurerContractPdf(insurerId: string, userId: string) {
   return { download_url: url };
 }
 
+export async function getInsurerInvoicePdf(insurerId: string, invoiceId: string, userId: string) {
+  const invoice = await prisma.insurerInvoice.findFirst({
+    where: { id: invoiceId, insurerId },
+  });
+  if (!invoice) throw notFound("Invoice not found");
+  const pdf = await generatePdfReport(`Insurer invoice ${invoice.period}`, {
+    amount: Number(invoice.fee),
+    gross_savings: Number(invoice.grossSavings),
+    status: invoice.status,
+    due_date: invoice.dueDate,
+    created_at: invoice.createdAt,
+  });
+  const url = await saveExportFile(userId, `insurer-invoice-${invoice.id}.pdf`, pdf, "application/pdf");
+  return { download_url: url };
+}
+
 export async function requestContractAmendment(insurerId: string, notes: string) {
   await prisma.activityFeedEntry.create({
     data: { kind: "contract", text: `Amendment requested: ${notes}`, actor: insurerId },

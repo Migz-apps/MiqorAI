@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/miqorai/PageHeader";
 import { KpiCard } from "@/components/miqorai/KpiCard";
 import { ScanLine, Users, Activity, ClipboardList } from "lucide-react";
 import { hospitalApi } from "@/lib/api/hospital";
-import { useAuth } from "@/store/auth";
+import { can, useAuth } from "@/store/auth";
 import { Link } from "react-router-dom";
 
 function displayName(value: unknown, fallback = "Patient") {
@@ -20,6 +20,7 @@ function initials(name: string) {
 
 export default function Dashboard() {
   const session = useAuth(s => s.session)!;
+  const canScan = can(session.role, "scan");
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
   const { data: dash, isLoading } = useQuery({
@@ -47,17 +48,19 @@ export default function Dashboard() {
         <KpiCard icon={ScanLine} label="QR scans today" value={isLoading ? "…" : String(dash?.qr_scans_today ?? 0)} accent="primary" hint="Patient check-ins" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-        <Card>
-          <CardHeader className="pb-sm">
-            <CardTitle className="h3 flex items-center gap-sm">
-              <ScanLine className="h-5 w-5 text-primary" /> Scan Patient QR
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <QRScanner />
-          </CardContent>
-        </Card>
+      <div className={`grid grid-cols-1 ${canScan ? "lg:grid-cols-2" : ""} gap-lg`}>
+        {canScan && (
+          <Card>
+            <CardHeader className="pb-sm">
+              <CardTitle className="h3 flex items-center gap-sm">
+                <ScanLine className="h-5 w-5 text-primary" /> Scan Patient QR
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <QRScanner />
+            </CardContent>
+          </Card>
+        )}
         <CheckInList />
       </div>
 

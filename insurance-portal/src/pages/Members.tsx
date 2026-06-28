@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, Search, Download } from "lucide-react";
 import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { KpiCard } from "@/components/MiqorAI/KpiCard";
+import { downloadFile } from "@/lib/api/client";
 import { initials, fmtNum } from "@/lib/format";
 import { insurerApi, insurerKeys } from "@/lib/api/insurer";
 import { toast } from "@/lib/notify";
@@ -29,7 +30,7 @@ export default function Members() {
   const exportData = async () => {
     try {
       const { download_url } = await insurerApi.exportMembers();
-      window.open(download_url, "_blank");
+      await downloadFile(download_url, "insurer-members.csv");
       toast.success("Export ready");
     } catch {
       toast.error("Export failed");

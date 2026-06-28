@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Download } from "lucide-react";
+import { downloadFile } from "@/lib/api/client";
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapAuditEntry } from "@/lib/mappers";
 import { toast } from "@/lib/notify";
@@ -33,7 +34,10 @@ export default function AuditLog() {
   const exportCsv = async () => {
     try {
       const res = await hospitalApi.exportAudit();
-      toast.success(`Export ready: ${(res as { download_url?: string }).download_url ?? "audit-log.csv"}`);
+      const url = (res as { download_url?: string }).download_url;
+      if (!url) throw new Error("Missing download URL");
+      await downloadFile(url, "hospital-audit-log.csv");
+      toast.success("Audit log downloaded");
     } catch {
       toast.error("Export failed");
     }

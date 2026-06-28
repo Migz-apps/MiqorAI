@@ -50,6 +50,7 @@ import {
   getEnrichedUtilization,
   getFraudClaimDetail,
   getInsurerContractPdf,
+  getInsurerInvoicePdf,
   getInsurerMemberStats,
   getInsurerReportById,
   markInsurerAlertRead,
@@ -205,6 +206,14 @@ router.get("/invoices", async (req, res, next) => {
 router.post("/invoices/:id/pay", async (req, res, next) => {
   try {
     res.json(await payInsurerInvoice(insurerIdFrom(req.user!), param(req.params.id)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/invoices/:id/pdf", async (req, res, next) => {
+  try {
+    res.json(await getInsurerInvoicePdf(insurerIdFrom(req.user!), param(req.params.id), req.user!.sub));
   } catch (err) {
     next(err);
   }

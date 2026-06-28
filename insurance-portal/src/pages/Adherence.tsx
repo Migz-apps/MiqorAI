@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { AdherenceGauge } from "@/components/MiqorAI/AdherenceGauge";
 import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
 import { KpiCard } from "@/components/MiqorAI/KpiCard";
+import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapMedication, mapNonAdherent } from "@/lib/api/insurer";
 import { fmtKsh, fmtNum, fmtPct } from "@/lib/format";
 import { toast } from "@/lib/notify";
@@ -31,7 +32,7 @@ export default function Adherence() {
   const exportData = async () => {
     try {
       const { download_url } = await insurerApi.exportAdherence();
-      window.open(download_url, "_blank");
+      await downloadFile(download_url, "insurer-adherence.csv");
       toast.success("Export ready");
     } catch {
       toast.error("Export failed");

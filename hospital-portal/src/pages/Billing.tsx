@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Download } from "lucide-react";
+import { downloadFile } from "@/lib/api/client";
 import { hospitalApi } from "@/lib/api/hospital";
 import { toast } from "@/lib/notify";
 import { useAuth } from "@/store/auth";
@@ -17,6 +18,15 @@ export default function Billing() {
 
   const b = billing as Record<string, unknown> | undefined;
   const invoices = (b?.invoices as Array<Record<string, unknown>>) ?? [];
+  const downloadInvoicePdf = async (invoiceId: string) => {
+    try {
+      const { download_url } = await hospitalApi.invoicePdf(invoiceId);
+      await downloadFile(download_url, `hospital-invoice-${invoiceId}.pdf`);
+      toast.success("Invoice downloaded");
+    } catch {
+      toast.error("Invoice download failed");
+    }
+  };
   const plan = String(b?.plan ?? "Enterprise");
   const scriptsUsed = Number(b?.scripts_used ?? 0);
   const scriptsLimit = Number(b?.scripts_limit ?? 5000);
@@ -71,7 +81,7 @@ export default function Billing() {
                 </div>
                 <div className="text-sm font-medium">${Number(i.amount ?? 0).toFixed(2)}</div>
                 <Badge variant="outline" className="border-success/30 text-success bg-success/10 capitalize">{String(i.status ?? "paid")}</Badge>
-                <Button size="sm" variant="outline" onClick={() => toast.success("Invoice PDF downloaded")}>
+                <Button size="sm" variant="outline" onClick={() => void downloadInvoicePdf(String(i.id))}>
                   <Download className="h-3 w-3 mr-1" /> PDF
                 </Button>
               </div>

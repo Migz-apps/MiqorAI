@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileBarChart2, Download, FileText, FileSpreadsheet, Calendar, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys } from "@/lib/api/insurer";
 import { toast } from "@/lib/notify";
 
@@ -40,8 +41,8 @@ export default function Reports() {
       metrics: Object.entries(metrics).filter(([, v]) => v).map(([k]) => k),
       format,
     }),
-    onSuccess: (res) => {
-      window.open(res.report_url, "_blank");
+    onSuccess: async (res) => {
+      await downloadFile(res.report_url, `insurer-report.${format === "excel" ? "xlsx" : format}`);
       toast.success("Report generated", { description: "Your download should start shortly." });
       void queryClient.invalidateQueries({ queryKey: insurerKeys.reports });
     },
@@ -200,7 +201,7 @@ export default function Reports() {
                         size="sm"
                         variant="ghost"
                         className="h-7 text-xs gap-1 text-insurer"
-                        onClick={() => window.open(r.downloadUrl, "_blank")}
+                        onClick={() => void downloadFile(r.downloadUrl, `${r.title}.${String(r.format).toLowerCase()}`)}
                       >
                         <Download className="h-3 w-3" /> Download
                       </Button>

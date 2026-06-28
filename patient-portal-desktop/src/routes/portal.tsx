@@ -6,6 +6,7 @@ import {
   FiActivity, FiDownload, FiEye, FiX, FiChevronRight, FiClock, FiShield,
 } from "react-icons/fi";
 import { useAuth } from "@/lib/auth";
+import { downloadFile } from "@/lib/api/client";
 import { patientApi, type AccessGrant, type AccessLogItem, type AccessRequest, type FamilyMember, type MedicalRecord, type PatientDashboard, type PatientSettings, type EmergencyContact } from "@/lib/api/patient";
 import { Modal } from "@/components/Modal";
 import { useToast } from "@/components/Toast";
@@ -526,7 +527,11 @@ function ProfileTab() {
 
   const exportData = async () => {
     const res = await patientApi.exportData().catch(() => null);
-    if (res?.download_url) window.open(res.download_url, "_blank");
+    if (!res?.download_url) {
+      toast("Could not export your data right now. Please try again.", "error");
+      return;
+    }
+    await downloadFile(res.download_url, "patient-data-export.json");
     toast(MESSAGES.generic.exported);
   };
 

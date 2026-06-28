@@ -8,6 +8,7 @@ import { FileText, Download, MessageSquare, CheckCircle2, AlertCircle } from "lu
 import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
 import { StatusPill } from "@/components/MiqorAI/StatusPill";
+import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapInvoice } from "@/lib/api/insurer";
 import { fmtKsh } from "@/lib/format";
 import { toast } from "@/lib/notify";
@@ -38,9 +39,19 @@ export default function Contract() {
   const downloadPdf = async () => {
     try {
       const { download_url } = await insurerApi.contractPdf();
-      window.open(download_url, "_blank");
+      await downloadFile(download_url, "insurer-contract.pdf");
     } catch {
       toast.error("Could not download contract PDF");
+    }
+  };
+
+  const downloadInvoicePdf = async (invoiceId: string) => {
+    try {
+      const { download_url } = await insurerApi.invoicePdf(invoiceId);
+      await downloadFile(download_url, `insurer-invoice-${invoiceId}.pdf`);
+      toast.success("Invoice downloaded");
+    } catch {
+      toast.error("Could not download invoice PDF");
     }
   };
 
@@ -138,7 +149,9 @@ export default function Contract() {
                       {inv.paidDate && <div className="text-success">Paid {inv.paidDate}</div>}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0"><Download className="h-3.5 w-3.5" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => void downloadInvoicePdf(inv.sourceId)}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

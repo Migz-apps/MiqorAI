@@ -16,12 +16,18 @@ import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { AnomalyAlert } from "@/components/MiqorAI/AnomalyAlert";
 import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
 import { useAuth } from "@/store/auth";
+import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapAlert, mapMedication } from "@/lib/api/insurer";
 import { fmtKshShort, fmtNum, fmtPct } from "@/lib/format";
+import { toast } from "@/lib/notify";
 
 export default function Dashboard() {
   const session = useAuth(s => s.session)!;
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const reportStart = new Date();
+  reportStart.setDate(1);
+  const reportFrom = reportStart.toISOString().slice(0, 10);
+  const reportTo = new Date().toISOString().slice(0, 10);
 
   const { data: dashboard, isLoading: dashLoading } = useQuery({
     queryKey: insurerKeys.dashboard,
@@ -46,6 +52,30 @@ export default function Dashboard() {
     count: t.count,
   }));
   const maxHospitalFlagged = Math.max(1, ...(dashboard?.top_hospitals ?? []).map(h => h.flagged));
+
+  const downloadSavingsSnapshot = async () => {
+    try {
+      const { download_url } = await insurerApi.exportSavings("csv");
+      await downloadFile(download_url, "insurer-savings.csv");
+      toast.success("Savings export downloaded");
+    } catch {
+      toast.error("Could not export savings");
+    }
+  };
+
+  const exportAllData = async () => {
+    try {
+      const { report_url } = await insurerApi.generateReport({
+        date_range: { start: reportFrom, end: reportTo },
+        metrics: ["savings", "adherence", "fraud", "members", "contract"],
+        format: "excel",
+      });
+      await downloadFile(report_url, "insurer-report.xlsx");
+      toast.success("Board report downloaded");
+    } catch {
+      toast.error("Could not export insurer data");
+    }
+  };
 
   if (dashLoading) {
     return (
@@ -90,7 +120,7 @@ export default function Dashboard() {
               <p className="text-xs text-text-secondary mt-1">Verified savings (KSh thousands) grouped by test category.</p>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-8"><Download className="h-3.5 w-3.5" /></Button>
+              <Button variant="ghost" size="sm" className="h-8" onClick={() => void downloadSavingsSnapshot()}><Download className="h-3.5 w-3.5" /></Button>
               <Button variant="ghost" size="sm" className="h-8"><Share2 className="h-3.5 w-3.5" /></Button>
             </div>
           </CardHeader>
@@ -203,7 +233,7 @@ export default function Dashboard() {
             <Button asChild variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
               <Link to="/reports">Generate monthly report</Link>
             </Button>
-            <Button variant="outline" className="bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+            <Button variant="outline" className="bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => void exportAllData()}>
               Export all data
             </Button>
             <Button variant="outline" className="bg-transparent border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">

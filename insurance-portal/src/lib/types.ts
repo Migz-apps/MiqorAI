@@ -74,6 +74,7 @@ export type Provider = {
 
 export type Invoice = {
   id: string;
+  sourceId: string;
   period: string;
   grossSavings: number;
   fee: number;

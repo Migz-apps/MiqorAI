@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, ScanLine, Keyboard, CheckCircle2, X } from "lucide-react";
+import { Scanner, type IDetectedBarcode, type IScannerError } from "@yudiel/react-qr-scanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +15,36 @@ function firstName(name: unknown) {
   return safeName.split(" ")[0];
 }
 
+function parseQrPayload(rawValue: string): { patientId: string; hash?: string } | null {
+  const value = rawValue.trim();
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    if (url.protocol === "miqorai:" && url.hostname === "patient") {
+      const patientId = url.pathname.replace(/^\/+/, "");
+      const hash = url.searchParams.get("v") ?? undefined;
+      if (patientId) return { patientId, hash };
+    }
+  } catch {
+    // Fall through to non-URL payloads.
+  }
+
+  try {
+    const parsed = JSON.parse(value) as { patient_id?: string; p?: string; hash?: string };
+    const patientId = parsed.patient_id ?? parsed.p;
+    if (patientId) return { patientId, hash: parsed.hash };
+  } catch {
+    // Not JSON.
+  }
+
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+    return { patientId: value };
+  }
+
+  return null;
+}
+
 export const QRScanner = ({ onScanned }: Props) => {
   const [scanning, setScanning] = useState(false);
   const [manual, setManual] = useState(false);
@@ -21,6 +52,7 @@ export const QRScanner = ({ onScanned }: Props) => {
   const [detected, setDetected] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const nav = useNavigate();
 
   const { data: census = [] } = useQuery({
@@ -41,11 +73,13 @@ export const QRScanner = ({ onScanned }: Props) => {
     throw new Error("timeout");
   };
 
-  const handlePatient = async (patientId: string) => {
+  const handlePatient = async (patientId: string, hash?: string) => {
     try {
+      setSearching(true);
       setPendingMessage(null);
-      const qr = await hospitalApi.patientQr(patientId);
-      const request = await scanApi.requestAccess(patientId, qr.hash);
+      setCameraError(null);
+      const resolvedHash = hash ?? (await hospitalApi.patientQr(patientId)).hash;
+      const request = await scanApi.requestAccess(patientId, resolvedHash);
       setDetected(patientId);
       if (navigator.vibrate) navigator.vibrate(120);
       setPendingMessage("Approval request sent. Waiting for the patient to approve access...");
@@ -54,7 +88,7 @@ export const QRScanner = ({ onScanned }: Props) => {
       setPendingMessage(null);
       toast.success("Patient approved access.");
       onScanned?.(patientId);
-      nav(`/patients/${patientId}`);
+      if (!onScanned) nav(`/patients/${patientId}`);
     } catch (err) {
       const message = err instanceof Error && err.message === "denied"
         ? "Patient denied access."
@@ -64,8 +98,42 @@ export const QRScanner = ({ onScanned }: Props) => {
       setPendingMessage(null);
       setDetected(null);
       toast.error(message);
+    } finally {
+      setSearching(false);
     }
   };
+
+  const handleDetectedCodes = async (codes: IDetectedBarcode[]) => {
+    if (searching || pendingMessage) return;
+    const parsed = codes
+      .map((code) => parseQrPayload(code.rawValue))
+      .find((result): result is { patientId: string; hash?: string } => Boolean(result));
+
+    if (!parsed) {
+      toast.error("That QR code is not a valid MiqorAI patient code.");
+      return;
+    }
+
+    await handlePatient(parsed.patientId, parsed.hash);
+  };
+
+  const scannerError = (error: IScannerError) => {
+    const message =
+      error.kind === "permission-denied"
+        ? "Camera access was blocked. Allow camera access and try again."
+        : error.kind === "insecure-context"
+          ? "Camera scanning needs HTTPS or localhost."
+          : error.kind === "unsupported"
+            ? "This browser cannot scan QR codes from the camera."
+            : "Unable to start the camera scanner right now.";
+    setCameraError(message);
+    toast.error(message);
+  };
+
+  const scannerPaused = useMemo(
+    () => !scanning || searching || Boolean(pendingMessage),
+    [pendingMessage, scanning, searching],
+  );
 
   const submitManual = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +145,7 @@ export const QRScanner = ({ onScanned }: Props) => {
       if (results.length > 0) {
         const id = results[0].patient_id;
         onScanned?.(id);
-        nav(`/patients/${id}`);
+        if (!onScanned) nav(`/patients/${id}`);
       } else {
         toast.error("Patient not found in this hospital's records.");
       }
@@ -98,12 +166,33 @@ export const QRScanner = ({ onScanned }: Props) => {
           {!scanning ? (
             <div className="text-center text-background space-y-md">
               <Camera className="h-12 w-12 mx-auto opacity-60" />
-              <Button onClick={() => setScanning(true)} className="bg-primary hover:bg-primary/90">
+              <Button onClick={() => { setDetected(null); setPendingMessage(null); setCameraError(null); setScanning(true); }} className="bg-primary hover:bg-primary/90">
                 <Camera className="h-4 w-4 mr-2" /> Start camera
               </Button>
             </div>
           ) : (
             <>
+              <Scanner
+                onScan={(codes) => {
+                  void handleDetectedCodes(codes);
+                }}
+                onError={scannerError}
+                paused={scannerPaused}
+                formats={["qr_code"]}
+                constraints={{
+                  facingMode: "environment",
+                  aspectRatio: 4 / 3,
+                  width: { ideal: 1920 },
+                  height: { ideal: 1080 },
+                }}
+                retryDelay={100}
+                sound={false}
+                components={{ finder: false, onOff: false, torch: true, zoom: true }}
+                classNames={{
+                  container: "absolute inset-0",
+                  video: "h-full w-full object-cover",
+                }}
+              />
               <div className={`absolute inset-0 flex items-center justify-center`}>
                 <div className={`w-56 h-56 rounded-lg border-4 ${detected ? "border-success animate-pulse-ring" : "border-success/70"} relative`}>
                   <ScanLine className="absolute inset-x-0 mx-auto top-1/2 -translate-y-1/2 h-1 w-full text-success animate-pulse" />
@@ -117,7 +206,7 @@ export const QRScanner = ({ onScanned }: Props) => {
               <div className="absolute bottom-3 inset-x-0 text-center text-background/80 text-xs">
                 Align the QR code inside the frame
               </div>
-              <button onClick={() => setScanning(false)} className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/20 text-background flex items-center justify-center hover:bg-background/30">
+              <button onClick={() => { setScanning(false); setPendingMessage(null); setDetected(null); setCameraError(null); }} className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/20 text-background flex items-center justify-center hover:bg-background/30">
                 <X className="h-4 w-4" />
               </button>
             </>
@@ -127,6 +216,11 @@ export const QRScanner = ({ onScanned }: Props) => {
 
       {scanning && (
         <div className="space-y-xs">
+          {cameraError && (
+            <div className="rounded-md border border-error/30 bg-error/10 px-sm py-xs text-xs text-foreground">
+              {cameraError}
+            </div>
+          )}
           <div className="text-xs text-text-secondary">Tap a patient to simulate a QR scan and request access</div>
           {pendingMessage && (
             <div className="rounded-md border border-secondary/30 bg-secondary/10 px-sm py-xs text-xs text-foreground">

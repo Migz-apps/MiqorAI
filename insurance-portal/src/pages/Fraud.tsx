@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { KpiCard } from "@/components/MiqorAI/KpiCard";
 import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
 import { StatusPill } from "@/components/MiqorAI/StatusPill";
+import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapFlaggedClaim, mapProvider } from "@/lib/api/insurer";
 import { fmtKsh, fmtNum } from "@/lib/format";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,7 @@ export default function Fraud() {
   const exportData = async () => {
     try {
       const { download_url } = await insurerApi.exportFraud();
-      window.open(download_url, "_blank");
+      await downloadFile(download_url, "insurer-fraud.csv");
       toast.success("Export ready");
     } catch {
       toast.error("Export failed");

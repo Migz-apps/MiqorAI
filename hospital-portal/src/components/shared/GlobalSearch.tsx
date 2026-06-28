@@ -9,6 +9,7 @@ import {
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapSearchPatient } from "@/lib/mappers";
 import { useNavigate } from "react-router-dom";
+import { can, useAuth } from "@/store/auth";
 
 type Ctx = { open: boolean; setOpen: (v: boolean) => void };
 const SearchCtx = createContext<Ctx>({ open: false, setOpen: () => {} });
@@ -17,6 +18,7 @@ export const GlobalSearchProvider = ({ children }: { children: React.ReactNode }
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const nav = useNavigate();
+  const role = useAuth(s => s.session?.role);
 
   const { data: patients = [] } = useQuery({
     queryKey: ["hospital", "patients", "search", query],
@@ -66,7 +68,7 @@ export const GlobalSearchProvider = ({ children }: { children: React.ReactNode }
             <CommandItem onSelect={() => go("/dashboard")}>Dashboard</CommandItem>
             <CommandItem onSelect={() => go("/patients")}>Patients</CommandItem>
             <CommandItem onSelect={() => go("/waitlist")}>Waitlist</CommandItem>
-            <CommandItem onSelect={() => go("/checkin")}>Check-in</CommandItem>
+            {role && can(role, "checkIn") && <CommandItem onSelect={() => go("/checkin")}>Check-in</CommandItem>}
             <CommandItem onSelect={() => go("/settings")}>Settings</CommandItem>
           </CommandGroup>
         </CommandList>

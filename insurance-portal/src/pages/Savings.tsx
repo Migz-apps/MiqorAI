@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { PageHeader } from "@/components/MiqorAI/PageHeader";
 import { KpiCard } from "@/components/MiqorAI/KpiCard";
+import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapSavingsRecord } from "@/lib/api/insurer";
 import { fmtKsh, fmtKshShort, fmtNum } from "@/lib/format";
 import { toast } from "@/lib/notify";
@@ -59,7 +60,7 @@ export default function Savings() {
   const exportFile = async (format: "csv" | "pdf") => {
     try {
       const { download_url } = await insurerApi.exportSavings(format);
-      window.open(download_url, "_blank");
+      await downloadFile(download_url, `insurer-savings.${format}`);
       toast.success("Export ready", { description: "Your download should start shortly." });
     } catch {
       toast.error("Export failed");

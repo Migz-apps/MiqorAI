@@ -108,23 +108,33 @@ export default function LoginPage() {
 
           <h1 className="text-2xl font-bold">{mode === "login" ? "Welcome back" : "Create your account"}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "login" ? "Email format: name@example.com" : "Use a valid email address like name@example.com"}
+            {mode === "login" ? "Use your email address and password to sign in." : "Use a valid email address like name@example.com"}
           </p>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <form onSubmit={onSubmit} autoComplete="off" className="mt-6 space-y-4">
             {mode === "signup" && (
               <>
-                <Field label="Full name" value={name} onChange={setName} disabled={isLoggedIn && wantsSignup} />
-                <Field label="Phone" value={phone} onChange={setPhone} placeholder="+254 712 345 678" disabled={isLoggedIn && wantsSignup} />
+                <Field label="Full name" value={name} onChange={setName} disabled={isLoggedIn && wantsSignup} autoComplete="off" />
+                <Field label="Phone" value={phone} onChange={setPhone} placeholder="+254 712 345 678" disabled={isLoggedIn && wantsSignup} autoComplete="off" />
               </>
             )}
-            <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="name@example.com" disabled={isLoggedIn && wantsSignup} />
+            <Field
+              label="Email"
+              value={email}
+              onChange={setEmail}
+              type="email"
+              placeholder="name@example.com"
+              disabled={isLoggedIn && wantsSignup}
+              autoComplete="off"
+            />
             <Field
               label="Password"
               value={password}
               onChange={setPassword}
               type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
               disabled={isLoggedIn && wantsSignup}
+              autoComplete="off"
               rightElement={
                 <button
                   type="button"
@@ -158,6 +168,8 @@ function Field({
   type = "text",
   placeholder,
   disabled = false,
+  autoComplete,
+  helperText,
   rightElement,
 }: {
   label: string;
@@ -166,6 +178,8 @@ function Field({
   type?: string;
   placeholder?: string;
   disabled?: boolean;
+  autoComplete?: string;
+  helperText?: string;
   rightElement?: React.ReactNode;
 }) {
   return (
@@ -178,10 +192,15 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
+          autoComplete={autoComplete}
+          autoCapitalize={type === "email" ? "none" : undefined}
+          autoCorrect={type === "email" ? "off" : undefined}
+          spellCheck={type === "email" ? false : undefined}
           className={`w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${rightElement ? "pr-10" : ""}`}
         />
         {rightElement}
       </div>
+      {helperText ? <span className="mt-1 block text-xs text-muted-foreground">{helperText}</span> : null}
     </label>
   );
 }
