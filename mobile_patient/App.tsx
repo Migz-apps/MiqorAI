@@ -97,7 +97,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ToastProvider>
-        <StatusBar style="dark" translucent />
+        <StatusBar style="dark" />
         <MiqorAIApp />
       </ToastProvider>
     </SafeAreaProvider>
