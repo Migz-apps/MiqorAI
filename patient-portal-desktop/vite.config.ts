@@ -3,8 +3,9 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "url";
 
-// GitHub Pages project site: https://<user>.github.io/<repo>/
-const repoBase = process.env.VITE_BASE ?? "/MiqorAI/";
+// Default to root-hosted deployments like Vercel.
+// Set VITE_BASE=/MiqorAI/ explicitly when building for GitHub Pages.
+const repoBase = process.env.VITE_BASE ?? "/";
 
 export default defineConfig(({ mode }) => ({
   base: mode === "production" ? repoBase : "/",
