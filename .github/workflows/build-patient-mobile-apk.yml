@@ -47,6 +47,17 @@ jobs:
       - name: Generate Android native project
         run: npx expo prebuild --platform android --non-interactive --no-install
 
+      - name: Configure Android SDK path
+        run: |
+          SDK_PATH="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          if [ -z "$SDK_PATH" ]; then
+            echo "Android SDK path was not configured by setup-android." >&2
+            exit 1
+          fi
+          echo "ANDROID_HOME=$SDK_PATH" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_PATH" >> "$GITHUB_ENV"
+          printf "sdk.dir=%s\n" "$SDK_PATH" > android/local.properties
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
         working-directory: mobile_patient/android
