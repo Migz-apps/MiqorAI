@@ -176,12 +176,18 @@ async function ensureBucketExists() {
     }),
   });
 
-  if (response.ok || response.status === 409) {
+  const details = await response.text().catch(() => "");
+
+  if (
+    response.ok ||
+    response.status === 409 ||
+    details.includes('"error":"Duplicate"') ||
+    details.includes('"message":"The resource already exists"')
+  ) {
     log(`Supabase bucket ready: ${SUPABASE_STORAGE_BUCKET}`);
     return;
   }
 
-  const details = await response.text().catch(() => "");
   throw new Error(`Bucket creation failed: ${response.status} ${details}`.trim());
 }
 
