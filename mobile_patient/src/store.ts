@@ -2,6 +2,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
+import {
+  ApiError,
+  type AuthTokens,
+  type EmergencyContactResponse,
+  type PatientAccessGrantResponse,
+  type PatientAccessLogResponse,
+  type PatientDashboardResponse,
+  type PatientFamilyResponse,
+  type PatientLabResponse,
+  type PatientPrescriptionResponse,
+  type PatientProfileResponse,
+  type PatientRecordResponse,
+  type PatientSettingsResponse,
+  type QrCodeResponse,
+  mobileApi,
+  setSessionTokens,
+} from './lib/api'
+
 export interface PatientProfile {
   id: string
   firstName: string
@@ -139,6 +157,17 @@ export interface HealthInsight {
   date: string
 }
 
+type LanguageCode = 'en' | 'rw' | 'fr'
+type ThemeMode = 'light' | 'dark' | 'system'
+
+type FamilyMemberDraft = {
+  relationship: FamilyMember['relationship']
+  firstName: string
+  lastName: string
+  dateOfBirth?: string
+  phoneNumber?: string
+}
+
 interface PatientStore {
   isAuthenticated: boolean
   hasCompletedOnboarding: boolean
@@ -165,6 +194,10 @@ interface PatientStore {
   lastSyncTime: string | null
   qrValue: string
   qrExpiresAt: number
+  language: LanguageCode
+  theme: ThemeMode
+  recoveryPhrase: string | null
+  authTokens: AuthTokens | null
   setAuthenticated: (value: boolean) => void
   setOnboardingComplete: (value: boolean) => void
   setBiometricsEnabled: (value: boolean) => void
@@ -172,54 +205,39 @@ interface PatientStore {
   setProfile: (value: PatientProfile) => void
   setActiveFamilyMember: (value: string | null) => void
   setOnlineStatus: (value: boolean) => void
+  setLanguage: (value: LanguageCode) => void
   regenerateQR: () => void
   refreshDerivedState: () => void
-  addGrant: (value: AccessGrant) => void
-  revokeGrant: (grantId: string) => void
-  addFamilyMember: (value: FamilyMember) => void
-  removeFamilyMember: (id: string) => void
-  addActivityLog: (value: ActivityLogEntry) => void
+  login: (credentials: { email: string; password: string }) => Promise<void>
+  logout: () => Promise<void>
+  syncRemoteData: () => Promise<void>
+  updateProfile: (input: {
+    firstName?: string
+    lastName?: string
+    phoneNumber?: string
+    email?: string
+  }) => Promise<void>
+  grantAccess: (providerQuery: string, accessDuration: string) => Promise<void>
+  revokeGrant: (grantId: string) => Promise<void>
+  addFamilyMember: (value: FamilyMemberDraft) => Promise<void>
+  removeFamilyMember: (id: string) => Promise<void>
+  addEmergencyContact: (value: Omit<EmergencyContact, 'id'>) => Promise<void>
+  removeEmergencyContact: (id: string) => Promise<void>
+  requestExportData: () => Promise<string>
+  deleteAccount: () => Promise<void>
   clearAllData: () => void
-  loadMockData: () => void
 }
 
-const createId = (prefix: string) =>
-  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+const resolveDurationDate = (value: string) => {
+  const durationMs =
+    {
+      '24h': 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000,
+      '1y': 365 * 24 * 60 * 60 * 1000,
+    }[value] ?? 7 * 24 * 60 * 60 * 1000
 
-const generateQRValue = (publicKey: string) => {
-  const timestamp = Date.now()
-  const nonce = Math.random().toString(36).slice(2, 14)
-
-  return JSON.stringify({
-    pk: publicKey,
-    ts: timestamp,
-    n: nonce,
-    v: 1,
-  })
-}
-
-const resolveActivePatient = (state: Pick<PatientStore, 'profile' | 'familyMembers' | 'activeFamilyMemberId'>) => {
-  if (!state.activeFamilyMemberId) {
-    return state.profile
-  }
-
-  return state.familyMembers.find((member) => member.id === state.activeFamilyMemberId)?.profile ?? state.profile
-}
-
-const createQrState = (profile: PatientProfile | null) => {
-  if (!profile) {
-    return {
-      activePatient: null,
-      qrValue: '',
-      qrExpiresAt: 0,
-    }
-  }
-
-  return {
-    activePatient: profile,
-    qrValue: generateQRValue(profile.publicKey),
-    qrExpiresAt: Date.now() + 60_000,
-  }
+  return new Date(Date.now() + durationMs).toISOString().slice(0, 10)
 }
 
 const initialState = {
@@ -229,18 +247,18 @@ const initialState = {
   lastUnlockTime: null,
   profile: null,
   activePatient: null,
-  conditions: [],
-  medications: [],
-  allergies: [],
-  labResults: [],
-  immunizations: [],
-  procedures: [],
-  appointments: [],
-  grants: [],
-  activityLog: [],
-  familyMembers: [],
-  emergencyContacts: [],
-  healthInsights: [],
+  conditions: [] as MedicalCondition[],
+  medications: [] as Medication[],
+  allergies: [] as Allergy[],
+  labResults: [] as LabResult[],
+  immunizations: [] as Immunization[],
+  procedures: [] as Procedure[],
+  appointments: [] as Appointment[],
+  grants: [] as AccessGrant[],
+  activityLog: [] as ActivityLogEntry[],
+  familyMembers: [] as FamilyMember[],
+  emergencyContacts: [] as EmergencyContact[],
+  healthInsights: [] as HealthInsight[],
   activeFamilyMemberId: null,
   isLoading: false,
   isOnline: true,
@@ -248,6 +266,437 @@ const initialState = {
   lastSyncTime: null,
   qrValue: '',
   qrExpiresAt: 0,
+  language: 'en' as LanguageCode,
+  theme: 'system' as ThemeMode,
+  recoveryPhrase: null,
+  authTokens: null as AuthTokens | null,
+}
+
+function normalizeConditionStatus(value: unknown): MedicalCondition['status'] {
+  const normalized = String(value ?? '').toLowerCase()
+  if (normalized === 'resolved') return 'resolved'
+  if (normalized === 'chronic') return 'chronic'
+  return 'active'
+}
+
+function normalizeMedicationStatus(value: string): Medication['status'] {
+  if (['dispensed', 'picked_up', 'completed', 'expired'].includes(value)) {
+    return 'completed'
+  }
+  if (['held', 'rejected'].includes(value)) {
+    return 'discontinued'
+  }
+  return 'current'
+}
+
+function normalizeSeverity(value: unknown): Allergy['severity'] {
+  const normalized = String(value ?? '').toLowerCase()
+  if (normalized === 'mild') return 'mild'
+  if (normalized === 'severe') return 'severe'
+  return 'moderate'
+}
+
+function normalizeAllergyType(value: unknown): Allergy['type'] {
+  const normalized = String(value ?? '').toLowerCase()
+  if (normalized === 'food') return 'food'
+  if (normalized === 'environmental') return 'environmental'
+  if (normalized === 'other') return 'other'
+  return 'drug'
+}
+
+function normalizeLabStatus(input: { flag?: unknown; status?: unknown; refHigh?: unknown; resultValue?: unknown }): LabResult['status'] {
+  const flag = String(input.flag ?? '').toLowerCase()
+  const status = String(input.status ?? '').toLowerCase()
+  if (flag === 'critical' || status === 'critical') return 'critical'
+  if (flag === 'high' || flag === 'low' || status === 'abnormal') return 'abnormal'
+
+  const resultValue = typeof input.resultValue === 'number' ? input.resultValue : Number(input.resultValue)
+  const refHigh = typeof input.refHigh === 'number' ? input.refHigh : Number(input.refHigh)
+  if (Number.isFinite(resultValue) && Number.isFinite(refHigh) && resultValue > refHigh) {
+    return 'abnormal'
+  }
+
+  return 'normal'
+}
+
+function normalizeProcedureStatus(value: unknown): Procedure['status'] {
+  const normalized = String(value ?? '').toLowerCase()
+  if (normalized === 'scheduled') return 'scheduled'
+  if (normalized === 'cancelled') return 'cancelled'
+  return 'completed'
+}
+
+function normalizeAppointmentStatus(value: string): Appointment['status'] {
+  if (value === 'completed') return 'completed'
+  if (value === 'cancelled' || value === 'no_show') return 'cancelled'
+  return 'upcoming'
+}
+
+function normalizeGrantAccessLevel(scope: string): AccessGrant['accessLevel'] {
+  if (scope === 'full') return 'full'
+  if (scope === 'emergency_only') return 'emergency'
+  return 'partial'
+}
+
+function normalizeFamilyAccessLevel(value: string): FamilyMember['accessLevel'] {
+  if (value === 'full') return 'full'
+  if (value === 'caregiver_only') return 'caregiver'
+  return 'view-only'
+}
+
+function createPatientProfile(input: PatientProfileResponse): PatientProfile {
+  return {
+    id: input.id,
+    firstName: input.first_name,
+    lastName: input.last_name,
+    dateOfBirth: input.date_of_birth,
+    nationalId: input.national_id ?? undefined,
+    insuranceId: input.insurance_id ?? undefined,
+    phoneNumber: input.phone ?? '',
+    email: input.email ?? undefined,
+    publicKey: input.id,
+    createdAt: input.created_at ?? new Date().toISOString(),
+  }
+}
+
+function mapRecordCollections(records: PatientRecordResponse[]) {
+  const conditions: MedicalCondition[] = []
+  const allergies: Allergy[] = []
+  const immunizations: Immunization[] = []
+  const procedures: Procedure[] = []
+  const recordLabs: LabResult[] = []
+  const recordMeds: Medication[] = []
+
+  for (const record of records) {
+    const data = record.data ?? {}
+
+    if (record.recordType === 'diagnosis') {
+      conditions.push({
+        id: record.id,
+        name: String(data.name ?? data.assessment ?? data.code ?? 'Diagnosis'),
+        diagnosedDate: String(data.since ?? record.recordedAt),
+        status: normalizeConditionStatus(data.status),
+        notes: typeof data.notes === 'string' ? data.notes : typeof data.assessment === 'string' ? data.assessment : undefined,
+      })
+      continue
+    }
+
+    if (record.recordType === 'allergy') {
+      allergies.push({
+        id: record.id,
+        name: String(data.name ?? data.allergen ?? 'Unknown allergy'),
+        severity: normalizeSeverity(data.severity),
+        type: normalizeAllergyType(data.type),
+        reaction: typeof data.reaction === 'string' ? data.reaction : undefined,
+        diagnosedDate: String(data.since ?? record.recordedAt),
+      })
+      continue
+    }
+
+    if (record.recordType === 'immunization') {
+      immunizations.push({
+        id: record.id,
+        vaccineName: String(data.name ?? data.vaccine_name ?? 'Immunization'),
+        dateAdministered: String(data.date ?? record.recordedAt),
+        facility: String(data.provider ?? data.facility ?? 'Recorded in MiqorAI'),
+        administeredBy: typeof data.administered_by === 'string' ? data.administered_by : undefined,
+        lotNumber: typeof data.lot_number === 'string' ? data.lot_number : undefined,
+        nextDoseDate: typeof data.next_dose_date === 'string' ? data.next_dose_date : undefined,
+      })
+      continue
+    }
+
+    if (record.recordType === 'procedure') {
+      procedures.push({
+        id: record.id,
+        name: String(data.name ?? 'Procedure'),
+        date: String(data.date ?? record.recordedAt),
+        facility: String(data.provider ?? data.facility ?? 'Recorded in MiqorAI'),
+        surgeon: typeof data.surgeon === 'string' ? data.surgeon : undefined,
+        notes: typeof data.notes === 'string' ? data.notes : undefined,
+        status: normalizeProcedureStatus(data.status),
+      })
+      continue
+    }
+
+    if (record.recordType === 'lab_result') {
+      const resultValue = data.result ?? data.value ?? 'Pending'
+      const unit = typeof data.unit === 'string' ? data.unit : undefined
+      const refLow = data.ref_low
+      const refHigh = data.ref_high
+      recordLabs.push({
+        id: record.id,
+        testName: String(data.test ?? data.name ?? 'Lab result'),
+        result: String(resultValue),
+        unit,
+        referenceRange:
+          refLow != null || refHigh != null
+            ? `${refLow ?? '?'} - ${refHigh ?? '?'}${unit ? ` ${unit}` : ''}`
+            : undefined,
+        date: String(data.date ?? record.recordedAt),
+        orderedBy: 'Care team',
+        facility: String(data.provider ?? data.facility ?? 'Recorded in MiqorAI'),
+        status: normalizeLabStatus({
+          flag: data.flag,
+          resultValue,
+          refHigh,
+        }),
+      })
+      continue
+    }
+
+    if (record.recordType === 'medication') {
+      recordMeds.push({
+        id: record.id,
+        name: String(data.name ?? 'Medication'),
+        dosage: String(data.dose ?? data.dosage ?? 'As directed'),
+        frequency: String(data.freq ?? data.frequency ?? 'As directed'),
+        prescribedDate: String(data.since ?? record.recordedAt),
+        prescribedBy: 'Care team',
+        status: normalizeMedicationStatus(String(data.status ?? 'active')),
+        instructions: typeof data.instructions === 'string' ? data.instructions : undefined,
+      })
+    }
+  }
+
+  return { conditions, allergies, immunizations, procedures, recordLabs, recordMeds }
+}
+
+function mapPrescriptions(prescriptions: PatientPrescriptionResponse[]) {
+  return prescriptions.flatMap((prescription) =>
+    prescription.items.map((item) => ({
+      id: item.id,
+      name: item.drugName,
+      dosage: item.strength,
+      frequency: item.frequency ?? 'As directed',
+      prescribedDate: prescription.prescribedAt,
+      prescribedBy: prescription.hospital?.name ?? 'Care team',
+      status: normalizeMedicationStatus(prescription.status),
+      endDate: item.durationDays ? new Date(new Date(prescription.prescribedAt).getTime() + item.durationDays * 86400000).toISOString() : undefined,
+      instructions: item.dose,
+    })),
+  )
+}
+
+function readLabResultValue(results: Record<string, unknown> | null | undefined) {
+  if (!results) return { result: 'Pending', unit: undefined as string | undefined }
+
+  if (results.value != null) {
+    return {
+      result: String(results.value),
+      unit: typeof results.unit === 'string' ? results.unit : undefined,
+    }
+  }
+
+  const meaningfulEntries = Object.entries(results).filter(([key]) => !['unit', 'ref_low', 'ref_high'].includes(key))
+  if (!meaningfulEntries.length) {
+    return { result: 'Pending', unit: typeof results.unit === 'string' ? results.unit : undefined }
+  }
+
+  const [firstKey, firstValue] = meaningfulEntries[0]
+  return {
+    result: `${firstKey}: ${String(firstValue)}`,
+    unit: typeof results.unit === 'string' ? results.unit : undefined,
+  }
+}
+
+function mapLabs(labs: PatientLabResponse[]) {
+  return labs.map((lab) => {
+    const { result, unit } = readLabResultValue(lab.results)
+    const refLow = lab.results?.ref_low
+    const refHigh = lab.results?.ref_high
+    return {
+      id: lab.id,
+      testName: lab.testName ?? 'Lab result',
+      result,
+      unit,
+      referenceRange:
+        refLow != null || refHigh != null
+          ? `${refLow ?? '?'} - ${refHigh ?? '?'}${unit ? ` ${unit}` : ''}`
+          : undefined,
+      date: lab.resultsAvailableAt ?? lab.orderedAt ?? new Date().toISOString(),
+      orderedBy: 'Care team',
+      facility: lab.hospital?.name ?? 'Lab',
+      status: normalizeLabStatus({
+        status: lab.status,
+        resultValue: lab.results?.value,
+        refHigh,
+      }),
+    } satisfies LabResult
+  })
+}
+
+function mapAppointments(dashboard: PatientDashboardResponse) {
+  return dashboard.upcoming_appointments.map((appointment) => ({
+    id: appointment.id,
+    title: appointment.department || appointment.provider || 'Appointment',
+    doctorName: appointment.provider || 'Care team',
+    facility: appointment.hospital || appointment.city || 'Hospital',
+    dateTime: appointment.scheduled_at,
+    type: 'checkup' as const,
+    status: normalizeAppointmentStatus(appointment.status),
+  }))
+}
+
+function mapHealthInsights(dashboard: PatientDashboardResponse) {
+  const summary = dashboard.health_insights?.summary?.trim()
+  if (!summary) return []
+
+  return [
+    {
+      id: 'insight-summary',
+      type: 'reminder' as const,
+      title: 'Health Insight',
+      description: summary,
+      date: new Date().toISOString(),
+    },
+  ]
+}
+
+function mapAccessGrants(grants: PatientAccessGrantResponse[]) {
+  return grants.map((grant) => ({
+    id: grant.id,
+    providerName: grant.name,
+    providerType: grant.grantee_type,
+    grantedAt: grant.granted_at,
+    expiresAt: grant.expires_at,
+    lastUsed: grant.last_accessed_at ?? undefined,
+    accessLevel: normalizeGrantAccessLevel(grant.scope),
+    recordsAccessed:
+      grant.scope === 'lab_results'
+        ? ['labs']
+        : grant.scope === 'medications'
+        ? ['medications']
+        : undefined,
+  }))
+}
+
+function mapAccessLogs(logs: PatientAccessLogResponse[]) {
+  return logs.map((entry) => ({
+    id: entry.id,
+    timestamp: entry.createdAt,
+    action:
+      entry.action === 'view_records' || entry.action === 'view_lab' || entry.action === 'view_prescription'
+        ? 'viewed'
+        : entry.action === 'add_record'
+        ? 'updated'
+        : entry.action === 'scan_qr'
+        ? 'shared'
+        : 'downloaded',
+    provider: entry.accessor.email,
+    details: entry.action.replace(/_/g, ' '),
+    recordType: entry.accessor.role,
+  } satisfies ActivityLogEntry))
+}
+
+function mapFamilyMembers(members: PatientFamilyResponse[]) {
+  return members.map((member) => ({
+    id: member.id,
+    relationship: member.relationship as FamilyMember['relationship'],
+    accessLevel: normalizeFamilyAccessLevel(member.accessLevel),
+    addedAt: new Date().toISOString(),
+    profile: {
+      id: member.dependentPatient.id,
+      firstName: member.dependentPatient.firstName,
+      lastName: member.dependentPatient.lastName,
+      dateOfBirth: member.dependentPatient.dateOfBirth,
+      phoneNumber: member.dependentPatient.user?.phone ?? '',
+      email: member.dependentPatient.user?.email ?? undefined,
+      publicKey: member.dependentPatient.id,
+      createdAt: new Date().toISOString(),
+    },
+  }))
+}
+
+function mapEmergencyContacts(contacts: EmergencyContactResponse[]) {
+  return contacts.map((contact) => ({
+    id: contact.id,
+    name: contact.name,
+    relationship: contact.relationship,
+    phoneNumber: contact.phone,
+    email: contact.email ?? undefined,
+    isPrimary: Boolean(contact.isPrimary),
+  }))
+}
+
+function buildQrPayload(qr: QrCodeResponse) {
+  return `miqorai://patient/${qr.patient_id}?v=${qr.hash}`
+}
+
+function resolveActivePatient(state: Pick<PatientStore, 'profile' | 'familyMembers' | 'activeFamilyMemberId'>) {
+  if (!state.activeFamilyMemberId) {
+    return state.profile
+  }
+
+  return state.familyMembers.find((member) => member.id === state.activeFamilyMemberId)?.profile ?? state.profile
+}
+
+function toApiMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return error.message
+  }
+
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return 'Something went wrong'
+}
+
+async function syncAllRemoteData() {
+  const [profile, dashboard, records, prescriptions, labs, accessGrants, accessLogs, family, settings, emergencyContacts, qr, recovery] =
+    await Promise.all([
+      mobileApi.profile(),
+      mobileApi.dashboard(),
+      mobileApi.records(),
+      mobileApi.prescriptions(),
+      mobileApi.labs(),
+      mobileApi.accessGrants(),
+      mobileApi.accessLogs(),
+      mobileApi.family(),
+      mobileApi.settings(),
+      mobileApi.emergencyContacts(),
+      mobileApi.qrCode(),
+      mobileApi.recoveryPhrase().catch(() => ({ recovery_phrase: undefined, phrase: undefined })),
+    ])
+
+  const recordCollections = mapRecordCollections(records.items)
+  const prescriptionMedications = mapPrescriptions(prescriptions)
+  const labResults = [...mapLabs(labs), ...recordCollections.recordLabs].reduce<LabResult[]>((acc, item) => {
+    if (!acc.some((entry) => entry.id === item.id)) {
+      acc.push(item)
+    }
+    return acc
+  }, [])
+  const medications = [...prescriptionMedications, ...recordCollections.recordMeds].reduce<Medication[]>((acc, item) => {
+    if (!acc.some((entry) => entry.id === item.id || (entry.name === item.name && entry.prescribedDate === item.prescribedDate))) {
+      acc.push(item)
+    }
+    return acc
+  }, [])
+
+  return {
+    profile: createPatientProfile(profile),
+    conditions: recordCollections.conditions,
+    medications,
+    allergies: recordCollections.allergies,
+    labResults,
+    immunizations: recordCollections.immunizations,
+    procedures: recordCollections.procedures,
+    appointments: mapAppointments(dashboard),
+    grants: mapAccessGrants(accessGrants),
+    activityLog: mapAccessLogs(accessLogs.items),
+    familyMembers: mapFamilyMembers(family),
+    emergencyContacts: mapEmergencyContacts(emergencyContacts),
+    healthInsights: mapHealthInsights(dashboard),
+    biometricsEnabled: settings.biometric_enabled,
+    language: (settings.language as LanguageCode) || 'en',
+    theme: (settings.theme as ThemeMode) || 'system',
+    recoveryPhrase: recovery.recovery_phrase ?? recovery.phrase ?? null,
+    qrValue: buildQrPayload(qr),
+    qrExpiresAt: new Date(qr.generated_at).getTime() + 60_000,
+    lastSyncTime: new Date().toISOString(),
+  }
 }
 
 export const usePatientStore = create<PatientStore>()(
@@ -256,459 +705,202 @@ export const usePatientStore = create<PatientStore>()(
       ...initialState,
       setAuthenticated: (value) => set({ isAuthenticated: value }),
       setOnboardingComplete: (value) => set({ hasCompletedOnboarding: value }),
-      setBiometricsEnabled: (value) => set({ biometricsEnabled: value }),
+      setBiometricsEnabled: (value) => {
+        set({ biometricsEnabled: value })
+        if (get().isAuthenticated) {
+          void mobileApi.updateSettings({ biometric_enabled: value }).catch(() => undefined)
+        }
+      },
       setLastUnlockTime: (value) => set({ lastUnlockTime: value }),
       setProfile: (value) =>
         set((state) => ({
           profile: value,
-          ...createQrState(state.activeFamilyMemberId ? state.activePatient : value),
+          activePatient: state.activeFamilyMemberId
+            ? state.familyMembers.find((member) => member.id === state.activeFamilyMemberId)?.profile ?? value
+            : value,
         })),
       setActiveFamilyMember: (value) =>
         set((state) => ({
           activeFamilyMemberId: value,
-          ...createQrState(
-            value ? state.familyMembers.find((member) => member.id === value)?.profile ?? state.profile : state.profile,
-          ),
+          activePatient: value
+            ? state.familyMembers.find((member) => member.id === value)?.profile ?? state.profile
+            : state.profile,
+          qrValue: value ? '' : state.qrValue,
+          qrExpiresAt: value ? 0 : state.qrExpiresAt,
         })),
       setOnlineStatus: (value) => set({ isOnline: value }),
-      regenerateQR: () =>
-        set((state) => {
-          const profile = resolveActivePatient(state)
-          if (!profile) {
-            return state
-          }
+      setLanguage: (value) => {
+        set({ language: value })
+        if (get().isAuthenticated) {
+          void mobileApi.updateSettings({ language: value }).catch(() => undefined)
+        }
+      },
+      regenerateQR: () => {
+        if (get().activeFamilyMemberId) {
+          return
+        }
 
-          return {
-            qrValue: generateQRValue(profile.publicKey),
-            qrExpiresAt: Date.now() + 60_000,
-          }
-        }),
+        void mobileApi.qrCode()
+          .then((qr) => {
+            set({
+              qrValue: buildQrPayload(qr),
+              qrExpiresAt: new Date(qr.generated_at).getTime() + 60_000,
+            })
+          })
+          .catch(() => undefined)
+      },
       refreshDerivedState: () =>
         set((state) => ({
-          ...createQrState(resolveActivePatient(state)),
+          activePatient: resolveActivePatient(state),
         })),
-      addGrant: (value) =>
-        set((state) => ({
-          grants: [...state.grants, value],
-          activityLog: [
-            ...state.activityLog,
-            {
-              id: createId('log'),
-              timestamp: new Date().toISOString(),
-              action: 'shared',
-              provider: value.providerName,
-              details: `Access granted to ${value.providerName}`,
-            },
-          ],
-        })),
-      revokeGrant: (grantId) =>
-        set((state) => {
-          const grant = state.grants.find((entry) => entry.id === grantId)
+      async login(credentials) {
+        set({ isLoading: true })
+        try {
+          const tokens = await mobileApi.login(credentials.email, credentials.password)
+          const remote = await syncAllRemoteData()
+          set({
+            ...remote,
+            authTokens: tokens,
+            isAuthenticated: true,
+            hasCompletedOnboarding: true,
+            activeFamilyMemberId: null,
+            activePatient: remote.profile,
+            isLoading: false,
+            isOnline: true,
+          })
+        } catch (error) {
+          set({ isLoading: false, isAuthenticated: false })
+          throw new Error(toApiMessage(error))
+        }
+      },
+      async logout() {
+        await mobileApi.logout()
+        setSessionTokens(null)
+        set({
+          ...initialState,
+          hasCompletedOnboarding: get().hasCompletedOnboarding,
+          language: get().language,
+          theme: get().theme,
+          biometricsEnabled: get().biometricsEnabled,
+        })
+      },
+      async syncRemoteData() {
+        if (!get().isAuthenticated) {
+          return
+        }
 
-          return {
-            grants: state.grants.filter((entry) => entry.id !== grantId),
-            activityLog: grant
-              ? [
-                ...state.activityLog,
-                {
-                  id: createId('log'),
-                  timestamp: new Date().toISOString(),
-                  action: 'updated',
-                  provider: grant.providerName,
-                  details: `Access revoked from ${grant.providerName}`,
-                },
-              ]
-              : state.activityLog,
-          }
-        }),
-      addFamilyMember: (value) =>
+        set({ isLoading: true })
+        try {
+          const remote = await syncAllRemoteData()
+          set((state) => ({
+            ...remote,
+            profile: remote.profile,
+            activePatient: state.activeFamilyMemberId
+              ? remote.familyMembers.find((member) => member.id === state.activeFamilyMemberId)?.profile ?? remote.profile
+              : remote.profile,
+            isLoading: false,
+            isOnline: true,
+          }))
+        } catch (error) {
+          set({ isLoading: false, isOnline: false })
+          throw new Error(toApiMessage(error))
+        }
+      },
+      async updateProfile(input) {
+        const response = await mobileApi.updateProfile({
+          ...(input.firstName ? { first_name: input.firstName } : {}),
+          ...(input.lastName ? { last_name: input.lastName } : {}),
+          ...(input.phoneNumber ? { phone: input.phoneNumber } : {}),
+          ...(input.email ? { email: input.email } : {}),
+        })
+
+        const updated = createPatientProfile(response)
         set((state) => ({
-          familyMembers: [...state.familyMembers, value],
-        })),
-      removeFamilyMember: (id) =>
+          profile: updated,
+          activePatient: state.activeFamilyMemberId ? state.activePatient : updated,
+        }))
+      },
+      async grantAccess(providerQuery, accessDuration) {
+        const providers = await mobileApi.searchProviders(providerQuery)
+        const provider = providers.find((entry) => entry.name.toLowerCase() === providerQuery.trim().toLowerCase()) ?? providers[0]
+        if (!provider) {
+          throw new Error('No matching provider found')
+        }
+
+        await mobileApi.createAccessGrant({
+          grantee_type: provider.grantee_type,
+          grantee_id: provider.grantee_id,
+          expires_at: resolveDurationDate(accessDuration),
+        })
+
+        const grants = await mobileApi.accessGrants()
+        set({ grants: mapAccessGrants(grants) })
+      },
+      async revokeGrant(grantId) {
+        await mobileApi.revokeAccessGrant(grantId)
+        set((state) => ({
+          grants: state.grants.filter((entry) => entry.id !== grantId),
+        }))
+      },
+      async addFamilyMember(value) {
+        await mobileApi.createFamilyDependent({
+          name: `${value.firstName} ${value.lastName}`.trim(),
+          date_of_birth: value.dateOfBirth || '2000-01-01',
+          relationship: value.relationship,
+          access_level: value.relationship === 'child' ? 'full' : 'caregiver_only',
+        })
+
+        const family = await mobileApi.family()
+        set({ familyMembers: mapFamilyMembers(family) })
+      },
+      async removeFamilyMember(id) {
+        await mobileApi.removeFamilyMember(id)
         set((state) => {
           const familyMembers = state.familyMembers.filter((member) => member.id !== id)
           const activeFamilyMemberId = state.activeFamilyMemberId === id ? null : state.activeFamilyMemberId
-          const activePatient = activeFamilyMemberId
-            ? familyMembers.find((member) => member.id === activeFamilyMemberId)?.profile ?? state.profile
-            : state.profile
-
           return {
             familyMembers,
             activeFamilyMemberId,
-            ...createQrState(activePatient),
+            activePatient: activeFamilyMemberId
+              ? familyMembers.find((member) => member.id === activeFamilyMemberId)?.profile ?? state.profile
+              : state.profile,
           }
-        }),
-      addActivityLog: (value) =>
-        set((state) => ({
-          activityLog: [...state.activityLog, value],
-        })),
-      clearAllData: () => set({ ...initialState }),
-      loadMockData: () => {
-        const profile: PatientProfile = {
-          id: 'patient-001',
-          firstName: 'Jean',
-          lastName: 'Mugisha',
-          dateOfBirth: '1988-05-15',
-          nationalId: 'NID-1234567890',
-          insuranceId: 'INS-2024-001',
-          phoneNumber: '+250788123456',
-          email: 'jean.mugisha@email.com',
-          bloodType: 'O+',
-          publicKey: 'ed25519:abc123def456ghi789jkl012mno345pqr678stu901vwx234yz',
-          createdAt: '2024-01-15T10:00:00Z',
-        }
-
-        const conditions: MedicalCondition[] = [
-          {
-            id: 'cond-001',
-            name: 'Type 2 Diabetes',
-            diagnosedDate: '2022-03-10',
-            status: 'chronic',
-            notes: 'Well controlled with medication and diet',
-            treatingDoctor: 'Dr. A. Nkurunziza',
-          },
-          {
-            id: 'cond-002',
-            name: 'Hypertension',
-            diagnosedDate: '2023-01-20',
-            status: 'active',
-            notes: 'Monitoring blood pressure daily',
-            treatingDoctor: 'Dr. A. Nkurunziza',
-          },
-          {
-            id: 'cond-003',
-            name: 'Malaria (uncomplicated)',
-            diagnosedDate: '2026-01-15',
-            status: 'resolved',
-            notes: 'Treated successfully',
-            treatingDoctor: 'Dr. M. Uwimana',
-          },
-        ]
-
-        const medications: Medication[] = [
-          {
-            id: 'med-001',
-            name: 'Metformin',
-            dosage: '500mg',
-            frequency: 'Twice daily',
-            prescribedDate: '2022-03-15',
-            prescribedBy: 'Dr. A. Nkurunziza',
-            status: 'current',
-            instructions: 'Take with meals',
-          },
-          {
-            id: 'med-002',
-            name: 'Lisinopril',
-            dosage: '10mg',
-            frequency: 'Once daily',
-            prescribedDate: '2023-01-25',
-            prescribedBy: 'Dr. A. Nkurunziza',
-            status: 'current',
-            instructions: 'Take in the morning',
-          },
-          {
-            id: 'med-003',
-            name: 'Artemether-Lumefantrine',
-            dosage: '80/480mg',
-            frequency: 'Twice daily for 3 days',
-            prescribedDate: '2026-01-15',
-            prescribedBy: 'Dr. M. Uwimana',
-            status: 'completed',
-            endDate: '2026-01-18',
-            instructions: 'Complete full course',
-          },
-        ]
-
-        const allergies: Allergy[] = [
-          {
-            id: 'allergy-001',
-            name: 'Penicillin',
-            severity: 'severe',
-            type: 'drug',
-            reaction: 'Anaphylaxis, severe rash',
-            diagnosedDate: '2010-06-01',
-          },
-          {
-            id: 'allergy-002',
-            name: 'Peanuts',
-            severity: 'severe',
-            type: 'food',
-            reaction: 'Anaphylaxis',
-            diagnosedDate: '2005-01-01',
-          },
-          {
-            id: 'allergy-003',
-            name: 'Sulfa Drugs',
-            severity: 'moderate',
-            type: 'drug',
-            reaction: 'Skin rash, itching',
-            diagnosedDate: '2015-08-20',
-          },
-        ]
-
-        const labResults: LabResult[] = [
-          {
-            id: 'lab-001',
-            testName: 'HbA1c',
-            result: '6.8',
-            unit: '%',
-            referenceRange: '< 5.7 (normal), 5.7-6.4 (prediabetes), >= 6.5 (diabetes)',
-            date: '2026-01-10',
-            orderedBy: 'Dr. A. Nkurunziza',
-            facility: 'King Faisal Hospital',
-            status: 'abnormal',
-          },
-          {
-            id: 'lab-002',
-            testName: 'Fasting Blood Glucose',
-            result: '128',
-            unit: 'mg/dL',
-            referenceRange: '70-100 mg/dL',
-            date: '2026-01-10',
-            orderedBy: 'Dr. A. Nkurunziza',
-            facility: 'King Faisal Hospital',
-            status: 'abnormal',
-          },
-          {
-            id: 'lab-003',
-            testName: 'Complete Blood Count',
-            result: 'Normal',
-            date: '2026-01-15',
-            orderedBy: 'Dr. M. Uwimana',
-            facility: 'KNH',
-            status: 'normal',
-          },
-          {
-            id: 'lab-004',
-            testName: 'Malaria RDT',
-            result: 'Positive',
-            date: '2026-01-15',
-            orderedBy: 'Dr. M. Uwimana',
-            facility: 'KNH',
-            status: 'abnormal',
-          },
-        ]
-
-        const immunizations: Immunization[] = [
-          {
-            id: 'imm-001',
-            vaccineName: 'COVID-19 (Pfizer-BioNTech)',
-            dateAdministered: '2021-06-15',
-            facility: 'Kigali Convention Center',
-            administeredBy: 'Ministry of Health',
-            lotNumber: 'EL9269',
-          },
-          {
-            id: 'imm-002',
-            vaccineName: 'COVID-19 Booster (Pfizer)',
-            dateAdministered: '2022-01-20',
-            facility: 'King Faisal Hospital',
-            lotNumber: 'FM3345',
-          },
-          {
-            id: 'imm-003',
-            vaccineName: 'Tetanus-Diphtheria (Td)',
-            dateAdministered: '2023-05-10',
-            facility: 'MediClinic Hospital',
-            nextDoseDate: '2033-05-10',
-          },
-          {
-            id: 'imm-004',
-            vaccineName: 'Influenza (Seasonal)',
-            dateAdministered: '2025-10-15',
-            facility: 'MediClinic Hospital',
-            nextDoseDate: '2026-10-15',
-          },
-        ]
-
-        const procedures: Procedure[] = [
-          {
-            id: 'proc-001',
-            name: 'Appendectomy',
-            date: '2018-08-22',
-            facility: 'King Faisal Hospital',
-            surgeon: 'Dr. P. Habimana',
-            status: 'completed',
-            notes: 'Laparoscopic, no complications',
-          },
-          {
-            id: 'proc-002',
-            name: 'Annual Physical Examination',
-            date: '2026-01-27',
-            facility: 'MediClinic Hospital',
-            status: 'scheduled',
-          },
-        ]
-
-        const appointments: Appointment[] = [
-          {
-            id: 'apt-001',
-            title: 'General Checkup',
-            doctorName: 'Dr. A. Nkurunziza',
-            facility: 'MediClinic Hospital',
-            dateTime: '2026-01-27T10:30:00Z',
-            type: 'checkup',
-            status: 'upcoming',
-          },
-          {
-            id: 'apt-002',
-            title: 'Diabetes Follow-up',
-            doctorName: 'Dr. A. Nkurunziza',
-            facility: 'MediClinic Hospital',
-            dateTime: '2026-02-15T14:00:00Z',
-            type: 'followup',
-            status: 'upcoming',
-          },
-        ]
-
-        const grants: AccessGrant[] = [
-          {
-            id: 'grant-001',
-            providerName: 'MediClinic Hospital',
-            providerType: 'hospital',
-            grantedAt: '2026-01-01T09:00:00Z',
-            expiresAt: '2026-07-01T09:00:00Z',
-            lastUsed: '2026-01-26T10:32:00Z',
-            accessLevel: 'full',
-          },
-          {
-            id: 'grant-002',
-            providerName: 'GoodLife Pharmacy',
-            providerType: 'pharmacy',
-            grantedAt: '2026-01-10T11:00:00Z',
-            expiresAt: '2026-06-15T11:00:00Z',
-            lastUsed: '2026-01-15T14:20:00Z',
-            accessLevel: 'partial',
-            recordsAccessed: ['medications'],
-          },
-        ]
-
-        const activityLog: ActivityLogEntry[] = [
-          {
-            id: 'log-001',
-            timestamp: '2026-01-26T14:15:00Z',
-            action: 'viewed',
-            provider: 'KNH',
-            details: 'Diagnosis: Malaria (uncomplicated)',
-            recordType: 'conditions',
-          },
-          {
-            id: 'log-002',
-            timestamp: '2026-01-26T14:20:00Z',
-            action: 'viewed',
-            provider: 'GoodLife Pharmacy',
-            details: 'Dispensed: Artemether-Lumefantrine',
-            recordType: 'medications',
-          },
-          {
-            id: 'log-003',
-            timestamp: '2026-01-25T09:30:00Z',
-            action: 'viewed',
-            provider: 'MediClinic Hospital',
-            details: 'Viewed lab results',
-            recordType: 'labResults',
-          },
-        ]
-
-        const familyMembers: FamilyMember[] = [
-          {
-            id: 'fam-001',
-            relationship: 'child',
-            profile: {
-              id: 'patient-002',
-              firstName: 'Grace',
-              lastName: 'Mugisha',
-              dateOfBirth: '2018-03-20',
-              phoneNumber: '+250788123456',
-              publicKey: 'ed25519:child123def456ghi789jkl012mno345pqr678stu901vwx234yz',
-              createdAt: '2024-01-15T10:00:00Z',
-            },
-            accessLevel: 'full',
-            addedAt: '2024-01-15T10:00:00Z',
-          },
-          {
-            id: 'fam-002',
-            relationship: 'parent',
-            profile: {
-              id: 'patient-003',
-              firstName: 'John',
-              lastName: 'Mugisha',
-              dateOfBirth: '1958-11-05',
-              phoneNumber: '+250788654321',
-              bloodType: 'A+',
-              publicKey: 'ed25519:parent123def456ghi789jkl012mno345pqr678stu901vwx234yz',
-              createdAt: '2024-02-01T10:00:00Z',
-            },
-            accessLevel: 'caregiver',
-            addedAt: '2024-02-01T10:00:00Z',
-          },
-        ]
-
-        const emergencyContacts: EmergencyContact[] = [
-          {
-            id: 'ec-001',
-            name: 'Marie Mugisha',
-            relationship: 'Spouse',
-            phoneNumber: '+250788111222',
-            email: 'marie.mugisha@email.com',
-            isPrimary: true,
-          },
-          {
-            id: 'ec-002',
-            name: 'Peter Mugisha',
-            relationship: 'Brother',
-            phoneNumber: '+250788333444',
-            isPrimary: false,
-          },
-        ]
-
-        const healthInsights: HealthInsight[] = [
-          {
-            id: 'insight-001',
-            type: 'improvement',
-            title: 'HbA1c Improving',
-            description: 'Your HbA1c has improved from 7.2% to 6.8%',
-            metric: 'HbA1c',
-            previousValue: '7.2%',
-            currentValue: '6.8%',
-            date: '2026-01-10',
-          },
-          {
-            id: 'insight-002',
-            type: 'reminder',
-            title: 'Flu Shot Due',
-            description: 'Your annual flu vaccination is due in October',
-            date: '2026-01-01',
-          },
-          {
-            id: 'insight-003',
-            type: 'milestone',
-            title: '1 Year on MiqorAI',
-            description: 'You have been using MiqorAI for 1 year!',
-            date: '2025-01-15',
-          },
-        ]
-
-        set({
-          isAuthenticated: true,
-          hasCompletedOnboarding: true,
-          profile,
-          conditions,
-          medications,
-          allergies,
-          labResults,
-          immunizations,
-          procedures,
-          appointments,
-          grants,
-          activityLog,
-          familyMembers,
-          emergencyContacts,
-          healthInsights,
-          lastSyncTime: new Date().toISOString(),
-          ...createQrState(profile),
         })
+      },
+      async addEmergencyContact(value) {
+        await mobileApi.createEmergencyContact({
+          name: value.name,
+          phone: value.phoneNumber,
+          relationship: value.relationship,
+          email: value.email,
+          isPrimary: value.isPrimary,
+        })
+
+        const emergencyContacts = await mobileApi.emergencyContacts()
+        set({ emergencyContacts: mapEmergencyContacts(emergencyContacts) })
+      },
+      async removeEmergencyContact(id) {
+        await mobileApi.deleteEmergencyContact(id)
+        set((state) => ({
+          emergencyContacts: state.emergencyContacts.filter((contact) => contact.id !== id),
+        }))
+      },
+      async requestExportData() {
+        const result = await mobileApi.exportData()
+        return result.download_url
+      },
+      async deleteAccount() {
+        await mobileApi.deleteAccount()
+        await mobileApi.logout().catch(() => undefined)
+        setSessionTokens(null)
+        set({
+          ...initialState,
+          hasCompletedOnboarding: false,
+        })
+      },
+      clearAllData: () => {
+        setSessionTokens(null)
+        set({ ...initialState })
       },
     }),
     {
@@ -734,9 +926,20 @@ export const usePatientStore = create<PatientStore>()(
         healthInsights: state.healthInsights,
         activeFamilyMemberId: state.activeFamilyMemberId,
         lastSyncTime: state.lastSyncTime,
+        qrValue: state.qrValue,
+        qrExpiresAt: state.qrExpiresAt,
+        language: state.language,
+        theme: state.theme,
+        recoveryPhrase: state.recoveryPhrase,
+        authTokens: state.authTokens,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.refreshDerivedState()
+        if (!state) {
+          return
+        }
+
+        setSessionTokens(state.authTokens ?? null)
+        state.refreshDerivedState()
       },
     },
   ),

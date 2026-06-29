@@ -28,6 +28,7 @@ import {
   SearchInput,
   SegmentedControl,
   SectionHeader,
+  useAppToast,
 } from '../components/ui'
 import { useResponsive } from '../responsive'
 import { AccessGrant, usePatientStore } from '../store'
@@ -46,8 +47,9 @@ const providerIcons = {
 }
 
 export function ShareScreen() {
-  const { grants, activityLog, revokeGrant, addGrant } = usePatientStore()
+  const { grants, activityLog, revokeGrant, grantAccess } = usePatientStore()
   const { isCompact } = useResponsive()
+  const { showToast } = useAppToast()
 
   const [viewMode, setViewMode] = useState<ViewMode>('grants')
   const [showNewGrantSheet, setShowNewGrantSheet] = useState(false)
@@ -80,28 +82,17 @@ export function ShareScreen() {
     }
 
     setIsGranting(true)
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-
-    const durationMs = {
-      '24h': 24 * 60 * 60 * 1000,
-      '7d': 7 * 24 * 60 * 60 * 1000,
-      '30d': 30 * 24 * 60 * 60 * 1000,
-      '1y': 365 * 24 * 60 * 60 * 1000,
-    }[accessDuration] ?? 7 * 24 * 60 * 60 * 1000
-
-    addGrant({
-      id: `grant-${Date.now()}`,
-      providerName: providerId.trim(),
-      providerType: 'hospital',
-      grantedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + durationMs).toISOString(),
-      accessLevel: 'full',
-    })
-
-    setIsGranting(false)
-    setShowNewGrantSheet(false)
-    setProviderId('')
-    setAccessDuration('7d')
+    try {
+      await grantAccess(providerId.trim(), accessDuration)
+      setShowNewGrantSheet(false)
+      setProviderId('')
+      setAccessDuration('7d')
+      showToast('Access granted successfully.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to grant access.', 'error')
+    } finally {
+      setIsGranting(false)
+    }
   }
 
   const handleRevoke = async () => {
@@ -110,11 +101,16 @@ export function ShareScreen() {
     }
 
     setIsRevoking(true)
-    await new Promise((resolve) => setTimeout(resolve, 900))
-    revokeGrant(grantToRevoke.id)
-    setIsRevoking(false)
-    setShowRevokeConfirm(false)
-    setGrantToRevoke(null)
+    try {
+      await revokeGrant(grantToRevoke.id)
+      setShowRevokeConfirm(false)
+      setGrantToRevoke(null)
+      showToast('Access revoked.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to revoke access.', 'error')
+    } finally {
+      setIsRevoking(false)
+    }
   }
 
   return (

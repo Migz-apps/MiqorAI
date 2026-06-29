@@ -23,6 +23,7 @@ import {
   ScreenContainer,
   SectionHeader,
   SecondaryButton,
+  useAppToast,
 } from '../components/ui'
 import { useResponsive } from '../responsive'
 import { FamilyMember, usePatientStore } from '../store'
@@ -41,6 +42,7 @@ export function FamilyScreen() {
   const { profile, familyMembers, activeFamilyMemberId, setActiveFamilyMember, addFamilyMember, removeFamilyMember } =
     usePatientStore()
   const { isCompact, isLargePhone, stackedActions } = useResponsive()
+  const { showToast } = useAppToast()
 
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [showMemberDetail, setShowMemberDetail] = useState(false)
@@ -78,27 +80,22 @@ export function FamilyScreen() {
     }
 
     setIsAdding(true)
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-
-    addFamilyMember({
-      id: `fam-${Date.now()}`,
-      relationship,
-      accessLevel: relationship === 'child' ? 'full' : 'caregiver',
-      addedAt: new Date().toISOString(),
-      profile: {
-        id: `patient-${Date.now()}`,
+    try {
+      await addFamilyMember({
+        relationship,
         firstName,
         lastName,
         dateOfBirth: dateOfBirth || '2000-01-01',
         phoneNumber: phoneNumber || profile?.phoneNumber || '',
-        publicKey: `ed25519:${Math.random().toString(36).slice(2)}`,
-        createdAt: new Date().toISOString(),
-      },
-    })
-
-    setIsAdding(false)
-    setShowAddSheet(false)
-    resetForm()
+      })
+      setShowAddSheet(false)
+      resetForm()
+      showToast('Family member added.', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to add family member.', 'error')
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   const getAge = (value: string) => {
@@ -345,13 +342,20 @@ export function FamilyScreen() {
       <ConfirmSheet
         isOpen={showRemoveConfirm}
         onClose={() => setShowRemoveConfirm(false)}
-        onConfirm={() => {
-          if (selectedMember) {
-            removeFamilyMember(selectedMember.id)
+        onConfirm={async () => {
+          if (!selectedMember) {
+            return
           }
-          setShowRemoveConfirm(false)
-          setShowMemberDetail(false)
-          setSelectedMember(null)
+
+          try {
+            await removeFamilyMember(selectedMember.id)
+            setShowRemoveConfirm(false)
+            setShowMemberDetail(false)
+            setSelectedMember(null)
+            showToast('Family member removed.', 'success')
+          } catch (error) {
+            showToast(error instanceof Error ? error.message : 'Unable to remove family member.', 'error')
+          }
         }}
         title="Remove Family Member?"
         message={`${selectedMember?.profile.firstName} will be removed from your family account. Their medical records will remain in their own profile.`}

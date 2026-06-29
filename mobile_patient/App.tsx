@@ -8,6 +8,7 @@ import { usePatientStore } from './src/store'
 import { colors } from './src/theme'
 import { FamilyScreen } from './src/screens/FamilyScreen'
 import { HomeScreen } from './src/screens/HomeScreen'
+import { LoginScreen } from './src/screens/LoginScreen'
 import { OnboardingScreen } from './src/screens/OnboardingScreen'
 import { ProfileScreen } from './src/screens/ProfileScreen'
 import { RecordsScreen } from './src/screens/RecordsScreen'
@@ -21,8 +22,8 @@ function MiqorAIApp() {
     offlineQueueCount,
     lastSyncTime,
     activePatient,
-    loadMockData,
     refreshDerivedState,
+    syncRemoteData,
   } = usePatientStore()
 
   const [activeTab, setActiveTab] = useState<TabId>('home')
@@ -49,10 +50,12 @@ function MiqorAIApp() {
   }, [])
 
   useEffect(() => {
-    if (isHydrated && isAuthenticated && !activePatient) {
-      loadMockData()
+    if (!isHydrated || !isAuthenticated) {
+      return
     }
-  }, [activePatient, isAuthenticated, isHydrated, loadMockData])
+
+    void syncRemoteData().catch(() => undefined)
+  }, [isAuthenticated, isHydrated, syncRemoteData])
 
   if (!isHydrated) {
     return <LoadingOverlay fullScreen message="Loading MiqorAI..." />
@@ -62,8 +65,12 @@ function MiqorAIApp() {
     return <SplashScreen />
   }
 
-  if (!hasCompletedOnboarding || !isAuthenticated) {
+  if (!hasCompletedOnboarding) {
     return <OnboardingScreen />
+  }
+
+  if (!isAuthenticated) {
+    return <LoginScreen />
   }
 
   return (

@@ -74,3 +74,7 @@ export const shadows = {
     default: {},
   }),
 }
+
+export function useThemeColors() {
+  return colors
+}

@@ -17,6 +17,7 @@ export interface ButtonProps {
   leftIcon?: ReactNode
   rightIcon?: ReactNode
   size?: 'sm' | 'md' | 'lg'
+  className?: string
 }
 
 export function PrimaryButton({

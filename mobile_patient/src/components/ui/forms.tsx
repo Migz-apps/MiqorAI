@@ -15,6 +15,8 @@ export function InputField({
   secureTextEntry,
   multiline = false,
   error,
+  leftIcon,
+  autoCapitalize,
 }: {
   label?: string
   value: string
@@ -24,20 +26,30 @@ export function InputField({
   secureTextEntry?: boolean
   multiline?: boolean
   error?: string
+  leftIcon?: React.ReactNode
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
 }) {
   return (
     <View style={styles.fieldGroup}>
       {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.mutedForeground}
-        keyboardType={keyboardType}
-        secureTextEntry={secureTextEntry}
-        multiline={multiline}
-        style={[styles.input, multiline ? styles.inputMultiline : null, error ? styles.inputError : null]}
-      />
+      <View style={[styles.inputWrap, error ? styles.inputWrapError : null, multiline ? styles.inputWrapMultiline : null]}>
+        {leftIcon ? <View style={styles.inputIcon}>{leftIcon}</View> : null}
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.mutedForeground}
+          keyboardType={keyboardType}
+          secureTextEntry={secureTextEntry}
+          multiline={multiline}
+          autoCapitalize={autoCapitalize}
+          style={[
+            styles.input,
+            leftIcon ? styles.inputWithIcon : null,
+            multiline ? styles.inputMultiline : null,
+          ]}
+        />
+      </View>
       {error ? <Text style={styles.fieldError}>{error}</Text> : null}
     </View>
   )
@@ -226,21 +238,36 @@ const styles = StyleSheet.create({
   },
   input: {
     minHeight: 50,
-    borderWidth: 1,
-    borderColor: colors.input,
-    backgroundColor: colors.card,
     color: colors.textPrimary,
-    borderRadius: radius.md,
+    flex: 1,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     fontSize: 15,
   },
+  inputWrap: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderColor: colors.input,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputWrapError: {
+    borderColor: colors.error,
+  },
+  inputWrapMultiline: {
+    alignItems: 'flex-start',
+  },
+  inputIcon: {
+    paddingLeft: spacing.lg,
+  },
+  inputWithIcon: {
+    paddingLeft: spacing.sm,
+  },
   inputMultiline: {
     minHeight: 110,
     textAlignVertical: 'top',
-  },
-  inputError: {
-    borderColor: colors.error,
   },
   fieldError: {
     color: colors.error,

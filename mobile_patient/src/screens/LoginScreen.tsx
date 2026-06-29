@@ -30,7 +30,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 interface LoginScreenProps {
-    onNavigateToSignup: () => void
+    onNavigateToSignup?: () => void
 }
 
 export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
@@ -52,24 +52,17 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
         setIsLoading(true)
         setError('')
 
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-
         try {
-            // In a real app, you'd validate credentials against a backend here
-            login({ email, password })
+            await login({ email, password })
         } catch (err) {
-            setError('Invalid credentials. Please try again.')
+            setError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.')
         } finally {
             setIsLoading(false)
         }
     }
 
     const handleBiometricLogin = async () => {
-        setIsLoading(true)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        login()
-        setIsLoading(false)
+        setError('Please sign in with your email and password first on this device.')
     }
 
     return (
@@ -178,14 +171,16 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
                                 </View>
                             </View>
 
-                            <View className="flex-row justify-center items-center mt-md">
-                                <Text className="text-text-secondary text-[15px]">
-                                    Don't have an account?{' '}
-                                </Text>
-                                <TextButton onPress={onNavigateToSignup}>
-                                    Sign Up
-                                </TextButton>
-                            </View>
+                            {onNavigateToSignup ? (
+                                <View className="flex-row justify-center items-center mt-md">
+                                    <Text className="text-text-secondary text-[15px]">
+                                        Don't have an account?{' '}
+                                    </Text>
+                                    <TextButton onPress={onNavigateToSignup}>
+                                        Sign Up
+                                    </TextButton>
+                                </View>
+                            ) : null}
                         </View>
                     </View>
                 </ScrollView>

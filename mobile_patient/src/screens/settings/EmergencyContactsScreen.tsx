@@ -16,7 +16,6 @@ export function EmergencyContactsScreen({ onBack }: { onBack: () => void }) {
     const handleAdd = () => {
         if (!newName || !newPhone) return
         addEmergencyContact({
-            id: `ec-${Date.now()}`,
             name: newName,
             phoneNumber: newPhone,
             relationship: newRelation || 'Other',

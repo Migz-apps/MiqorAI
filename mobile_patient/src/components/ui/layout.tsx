@@ -13,9 +13,10 @@ export type TabId = 'home' | 'records' | 'share' | 'family' | 'profile'
 interface ScreenContainerProps {
   children: ReactNode
   noPadding?: boolean
+  header?: ReactNode
 }
 
-export function ScreenContainer({ children, noPadding = false }: ScreenContainerProps) {
+export function ScreenContainer({ children, noPadding = false, header }: ScreenContainerProps) {
   const { contentMaxWidth, horizontalPadding, isTablet } = useResponsive()
 
   return (
@@ -33,7 +34,17 @@ export function ScreenContainer({ children, noPadding = false }: ScreenContainer
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {noPadding ? children : <View style={[styles.screenInner, { maxWidth: contentMaxWidth }]}>{children}</View>}
+        {noPadding ? (
+          <>
+            {header}
+            {children}
+          </>
+        ) : (
+          <View style={[styles.screenInner, { maxWidth: contentMaxWidth }]}>
+            {header}
+            {children}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   )
@@ -45,9 +56,10 @@ interface HeaderProps {
   avatar?: ReactNode
   actions?: ReactNode
   showLogo?: boolean
+  leftAction?: ReactNode
 }
 
-export function Header({ title, subtitle, avatar, actions, showLogo = false }: HeaderProps) {
+export function Header({ title, subtitle, avatar, actions, showLogo = false, leftAction }: HeaderProps) {
   const { isSmallPhone } = useResponsive()
 
   return (
@@ -64,10 +76,13 @@ export function Header({ title, subtitle, avatar, actions, showLogo = false }: H
             </View>
           </>
         ) : (
-          <View>
-            {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
-            {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
-          </View>
+          <>
+            {leftAction}
+            <View>
+              {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
+              {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
+            </View>
+          </>
         )}
       </View>
 

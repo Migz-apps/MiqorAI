@@ -1,11 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Text, View, Pressable } from 'react-native'
 import { ArrowLeft } from 'lucide-react-native'
-import { Header, ScreenContainer, PrimaryButton } from '../../components/ui'
+import { Linking } from 'react-native'
+import { Header, ScreenContainer, PrimaryButton, useAppToast } from '../../components/ui'
 import { useTranslation } from '../../i18n'
+import { usePatientStore } from '../../store'
 
 export function ExportDataScreen({ onBack }: { onBack: () => void }) {
     const { t } = useTranslation()
+    const { requestExportData } = usePatientStore()
+    const { showToast } = useAppToast()
+    const [isLoading, setIsLoading] = useState(false)
 
     return (
         <ScreenContainer
@@ -25,7 +30,24 @@ export function ExportDataScreen({ onBack }: { onBack: () => void }) {
                     You can download a full archive of your health records. This file will be encrypted and can be imported back into MiqorAI or viewed with a compatible reader.
                 </Text>
                 <View className="mt-6">
-                    <PrimaryButton fullWidth>Prepare Export Archive</PrimaryButton>
+                    <PrimaryButton
+                        fullWidth
+                        isLoading={isLoading}
+                        onPress={async () => {
+                            setIsLoading(true)
+                            try {
+                                const downloadUrl = await requestExportData()
+                                await Linking.openURL(downloadUrl)
+                                showToast('Your export is ready to download.', 'success')
+                            } catch (error) {
+                                showToast(error instanceof Error ? error.message : 'Unable to prepare export.', 'error')
+                            } finally {
+                                setIsLoading(false)
+                            }
+                        }}
+                    >
+                        Prepare Export Archive
+                    </PrimaryButton>
                 </View>
             </View>
         </ScreenContainer>

@@ -71,7 +71,7 @@ const recoveryWords = [
 ]
 
 export function OnboardingScreen() {
-  const { setAuthenticated, setBiometricsEnabled, setOnboardingComplete, loadMockData } = usePatientStore()
+  const { setBiometricsEnabled, setOnboardingComplete } = usePatientStore()
   const { isCompact, isLargePhone, isTablet, recoveryColumns, stackedActions, horizontalPadding, contentMaxWidth } = useResponsive()
   const shellPadding = horizontalPadding + (isTablet ? spacing.xl : spacing.md)
   const stepMaxWidth = Math.min(contentMaxWidth, 560)
@@ -146,16 +146,13 @@ export function OnboardingScreen() {
 
   const handleComplete = async () => {
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1200))
-    loadMockData()
+    await new Promise((resolve) => setTimeout(resolve, 600))
     setOnboardingComplete(true)
-    setAuthenticated(true)
+    setIsLoading(false)
   }
 
   const handleRestore = () => {
-    loadMockData()
     setOnboardingComplete(true)
-    setAuthenticated(true)
   }
 
   if (isGeneratingKeys) {
@@ -239,7 +236,7 @@ export function OnboardingScreen() {
         <View style={[styles.stepShell, { paddingHorizontal: shellPadding, maxWidth: stepMaxWidth }]}>
           <BackLink label="Back" onPress={() => setStep('features')} />
           <Text style={styles.stepTitle}>Create Your Profile</Text>
-          <Text style={styles.stepSubtitle}>This information will be stored securely on your device.</Text>
+          <Text style={styles.stepSubtitle}>This setup prepares the device. You will sign in with your patient account afterwards.</Text>
 
           <View style={[styles.formGrid, !isLargePhone ? styles.formGridStacked : null]}>
             <View style={styles.formHalf}>

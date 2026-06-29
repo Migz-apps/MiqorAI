@@ -41,30 +41,17 @@ import { usePatientStore } from '../store'
 import { colors, radius, shadows, spacing } from '../theme'
 import { formatDate } from '../utils'
 
-const recoveryPhrase = [
-  'apple',
-  'banana',
-  'cherry',
-  'diamond',
-  'eagle',
-  'forest',
-  'garden',
-  'harbor',
-  'island',
-  'jungle',
-  'kingdom',
-  'lighthouse',
-]
-
 export function ProfileScreen() {
   const {
     activePatient,
     biometricsEnabled,
     emergencyContacts,
     setBiometricsEnabled,
-    clearAllData,
-    setAuthenticated,
-    setOnboardingComplete,
+    recoveryPhrase,
+    logout,
+    requestExportData,
+    deleteAccount,
+    updateProfile,
   } = usePatientStore()
 
   const { showToast } = useAppToast()
@@ -81,17 +68,16 @@ export function ProfileScreen() {
   const [editEmail, setEditEmail] = useState(activePatient?.email || '')
   const { isCompact, isLargePhone, recoveryColumns, stackedActions } = useResponsive()
   const recoveryCellWidth = recoveryColumns === 4 ? '23.5%' : recoveryColumns === 3 ? '31.4%' : '48.2%'
+  const recoveryWords = (recoveryPhrase ?? '').split(/\s+/).filter(Boolean)
 
-  const handleLogout = () => {
-    setAuthenticated(false)
+  const handleLogout = async () => {
+    await logout()
     setShowLogoutConfirm(false)
     showToast("You've been signed out.", 'info')
   }
 
-  const handleDelete = () => {
-    clearAllData()
-    setAuthenticated(false)
-    setOnboardingComplete(false)
+  const handleDelete = async () => {
+    await deleteAccount()
     setShowDeleteConfirm(false)
   }
 
@@ -240,6 +226,15 @@ export function ProfileScreen() {
             icon={<Download color={colors.textSecondary} size={18} />}
             label="Export My Data"
             description="Download all your health records"
+            onPress={async () => {
+              try {
+                const downloadUrl = await requestExportData()
+                await Linking.openURL(downloadUrl)
+                showToast('Your export is ready to download.', 'success')
+              } catch (error) {
+                showToast(error instanceof Error ? error.message : 'Unable to prepare export.', 'error')
+              }
+            }}
           />
           <SettingRow
             icon={<Trash2 color={colors.error} size={18} />}
@@ -292,7 +287,23 @@ export function ProfileScreen() {
             <SecondaryButton fullWidth onPress={() => setShowEditProfile(false)}>
               Cancel
             </SecondaryButton>
-            <PrimaryButton fullWidth onPress={() => { setShowEditProfile(false); showToast('Profile updated.', 'success') }}>
+            <PrimaryButton
+              fullWidth
+              onPress={async () => {
+                try {
+                  await updateProfile({
+                    firstName: editFirstName,
+                    lastName: editLastName,
+                    phoneNumber: editPhone,
+                    email: editEmail,
+                  })
+                  setShowEditProfile(false)
+                  showToast('Profile updated.', 'success')
+                } catch (error) {
+                  showToast(error instanceof Error ? error.message : 'Unable to update profile.', 'error')
+                }
+              }}
+            >
               Save Changes
             </PrimaryButton>
           </View>
@@ -352,7 +363,7 @@ export function ProfileScreen() {
           </View>
 
           <View style={styles.recoveryGrid}>
-            {recoveryPhrase.map((word, index) => (
+            {recoveryWords.map((word, index) => (
               <View key={word} style={[styles.recoveryCell, { width: recoveryCellWidth }]}>
                 <Text style={styles.recoveryIndex}>{index + 1}.</Text>
                 <Text style={styles.recoveryWord}>{word}</Text>
@@ -365,9 +376,10 @@ export function ProfileScreen() {
             variant="ghost"
             leftIcon={<Copy color={colors.textPrimary} size={16} />}
             onPress={() => {
-              Clipboard.setStringAsync(recoveryPhrase.join(' '))
+              Clipboard.setStringAsync(recoveryWords.join(' '))
               showToast('Recovery phrase copied.', 'success')
             }}
+            disabled={!recoveryWords.length}
           >
             Copy to Clipboard
           </PrimaryButton>

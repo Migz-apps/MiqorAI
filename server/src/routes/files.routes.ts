@@ -1,10 +1,9 @@
-import fs from "fs/promises";
 import { Router } from "express";
 import multer from "multer";
 import { authenticate, optionalAuth } from "../middleware/auth.js";
 import { notFound } from "../utils/errors.js";
 import { param } from "../utils/param.js";
-import { assertFileAccess, saveUploadedFile } from "../services/file.service.js";
+import { assertFileAccess, readFileAssetContent, saveUploadedFile } from "../services/file.service.js";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -36,7 +35,7 @@ router.get("/:id", optionalAuth, async (req, res, next) => {
     const signedToken = typeof req.query.token === "string" ? req.query.token : undefined;
     const asset = await assertFileAccess(param(req.params.id), req.user?.sub, signedToken);
     if (!asset) throw notFound("File not found");
-    const content = await fs.readFile(asset.storagePath);
+    const content = await readFileAssetContent(asset.storagePath);
     res.setHeader("Content-Type", asset.mimeType);
     res.setHeader("Content-Disposition", `attachment; filename="${asset.filename}"`);
     res.send(content);
