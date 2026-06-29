@@ -55,9 +55,11 @@ Install a CUDA-enabled PyTorch build if needed:
 
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cu121
+pip install -r requirements-gpu.txt
 ```
 
-Without CUDA, the service still runs on CPU but logs a warning and inference is slow.
+Without CUDA, the service still runs on CPU but logs a warning and inference is slow. `requirements.txt`
+is intentionally CPU-safe; GPU hosts should additionally install `requirements-gpu.txt`.
 
 ## Run locally
 
@@ -199,6 +201,13 @@ docker run --gpus all -p 8000:8000 miqorai-ai-service
 ```
 
 Copy the adapter into `model/miqorai-qwen1.5-0.5b-lora-json-v3/` before building.
+
+For GPU-enabled Docker images, install the optional GPU requirements during build:
+
+```bash
+docker build -t miqorai-ai-service .
+docker run --gpus all -e USE_4BIT=true -p 8000:8000 miqorai-ai-service
+```
 
 ---
 
