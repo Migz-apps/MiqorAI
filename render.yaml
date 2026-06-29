@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: miqorai-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run start:render
+    autoDeploy: true
