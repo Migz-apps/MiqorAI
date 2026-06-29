@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   build-apk:
+    timeout-minutes: 25
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -59,7 +60,7 @@ jobs:
           printf "sdk.dir=%s\n" "$SDK_PATH" > android/local.properties
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --no-daemon --stacktrace --console=plain
         working-directory: mobile_patient/android
 
       - name: Upload APK artifact
