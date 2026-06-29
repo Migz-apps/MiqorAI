@@ -1,0 +1,176 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * MiqorAI MANAGEMENT — Cockpit Design System
+ * Dark-first, premium "command center" aesthetic.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-glow: var(--primary-glow);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-purple: var(--purple);
+  --color-pink: var(--pink);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-mono: "Fira Code", ui-monospace, monospace;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.75rem;
+  /* Dark mode is default — cockpit aesthetic */
+  --background: oklch(0.16 0.012 250);
+  --foreground: oklch(0.98 0.005 250);
+  --card: oklch(0.21 0.014 250);
+  --card-foreground: oklch(0.98 0.005 250);
+  --popover: oklch(0.21 0.014 250);
+  --popover-foreground: oklch(0.98 0.005 250);
+  --primary: oklch(0.62 0.11 200);
+  --primary-foreground: oklch(0.12 0.01 250);
+  --primary-glow: oklch(0.72 0.14 195);
+  --secondary: oklch(0.27 0.018 250);
+  --secondary-foreground: oklch(0.98 0.005 250);
+  --muted: oklch(0.25 0.014 250);
+  --muted-foreground: oklch(0.68 0.02 250);
+  --accent: oklch(0.3 0.04 200);
+  --accent-foreground: oklch(0.98 0.005 250);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0.005 250);
+  --success: oklch(0.7 0.17 155);
+  --success-foreground: oklch(0.12 0.01 250);
+  --warning: oklch(0.78 0.16 75);
+  --warning-foreground: oklch(0.12 0.01 250);
+  --info: oklch(0.65 0.17 250);
+  --info-foreground: oklch(0.98 0.005 250);
+  --purple: oklch(0.65 0.2 295);
+  --pink: oklch(0.7 0.22 350);
+  --border: oklch(0.3 0.015 250);
+  --input: oklch(0.27 0.018 250);
+  --ring: oklch(0.62 0.11 200);
+  --sidebar: oklch(0.13 0.01 250);
+  --sidebar-foreground: oklch(0.92 0.01 250);
+  --sidebar-primary: oklch(0.62 0.11 200);
+  --sidebar-primary-foreground: oklch(0.12 0.01 250);
+  --sidebar-accent: oklch(0.22 0.018 250);
+  --sidebar-accent-foreground: oklch(0.98 0.005 250);
+  --sidebar-border: oklch(0.25 0.014 250);
+  --sidebar-ring: oklch(0.62 0.11 200);
+
+  --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
+  --gradient-cockpit: radial-gradient(ellipse at top, oklch(0.22 0.04 200 / 0.4), transparent 60%),
+    radial-gradient(ellipse at bottom right, oklch(0.22 0.06 295 / 0.25), transparent 60%);
+  --gradient-card: linear-gradient(180deg, oklch(0.23 0.016 250), oklch(0.19 0.012 250));
+  --shadow-glow: 0 0 24px oklch(0.62 0.11 200 / 0.35);
+  --shadow-glow-success: 0 0 18px oklch(0.7 0.17 155 / 0.45);
+  --shadow-glow-pink: 0 0 18px oklch(0.7 0.22 350 / 0.4);
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 8px 24px oklch(0 0 0 / 0.4);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  body {
+    background-image: var(--gradient-cockpit);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .font-mono { font-family: var(--font-mono); }
+}
+
+@layer utilities {
+  .glow-primary { box-shadow: var(--shadow-glow); }
+  .glow-success { box-shadow: var(--shadow-glow-success); }
+  .glow-pink { box-shadow: var(--shadow-glow-pink); }
+  .bg-cockpit { background-image: var(--gradient-cockpit); }
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-card-gradient { background-image: var(--gradient-card); }
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .grid-bg {
+    background-image:
+      linear-gradient(oklch(0.62 0.11 200 / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.62 0.11 200 / 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--color-border); border-radius: 3px;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+  50% { opacity: 0.6; box-shadow: 0 0 0 6px transparent; }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes ping-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.ping-ring { animation: ping-ring 2s cubic-bezier(0,0,0.2,1) infinite; }
+
+@keyframes ticker {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
