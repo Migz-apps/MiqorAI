@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +24,18 @@ class Settings(BaseSettings):
 
     debug_raw_model_output: bool = False
     cors_origins: str = "*"
+
+    @field_validator("base_model_id", "adapter_path", "cors_origins", mode="before")
+    @classmethod
+    def strip_inline_env_assignment(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+
+        cleaned = value.strip()
+        for prefix in ("BASE_MODEL_ID=", "ADAPTER_PATH=", "CORS_ORIGINS="):
+            if cleaned.startswith(prefix):
+                return cleaned[len(prefix) :].strip()
+        return cleaned
 
     @property
     def adapter_dir(self) -> Path:

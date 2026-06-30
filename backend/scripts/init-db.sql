@@ -1,5 +1,0 @@
-CREATE SCHEMA IF NOT EXISTS auth_schema;
-CREATE SCHEMA IF NOT EXISTS patient_schema;
-CREATE SCHEMA IF NOT EXISTS medical_schema;
-CREATE SCHEMA IF NOT EXISTS audit_schema;
-CREATE SCHEMA IF NOT EXISTS notification_schema;

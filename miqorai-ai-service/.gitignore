@@ -1,7 +1,15 @@
-# MiqorAI weights (do not commit adapters)
+# MiqorAI runtime adapter bundle for Hugging Face Spaces
 model/**/*
-!model/**/.gitkeep
-!model/**/README*
+!model/
+!model/miqorai-qwen1.5-0.5b-lora-json-v3/
+!model/miqorai-qwen1.5-0.5b-lora-json-v3/.gitkeep
+!model/miqorai-qwen1.5-0.5b-lora-json-v3/README*
+!model/miqorai-qwen1.5-0.5b-lora-json-v3/adapter_config.json
+!model/miqorai-qwen1.5-0.5b-lora-json-v3/adapter_model.safetensors
+!model/miqorai-qwen1.5-0.5b-lora-json-v3/chat_template.jinja
+model/miqorai-qwen1.5-0.5b-lora-json-v3/checkpoint-*/
+model/miqorai-qwen1.5-0.5b-lora-json-v3/training_args.bin
+model/miqorai-qwen1.5-0.5b-lora-json-v3/training_meta.json
 
 .env
 .venv/

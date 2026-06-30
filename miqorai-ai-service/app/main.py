@@ -56,6 +56,17 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+async def root() -> dict[str, object]:
+    return {
+        "service": settings.app_name,
+        "status": "ok",
+        "model_loaded": is_model_loaded(),
+        "health_url": "/health",
+        "docs_url": "/docs",
+    }
+
+
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse(status="ok", model_loaded=is_model_loaded())

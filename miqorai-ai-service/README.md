@@ -1,3 +1,12 @@
+---
+title: MiqorAI Clinical Safety AI Service
+emoji: 🏥
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+---
+
 # MiqorAI Clinical Safety AI Service
 
 FastAPI microservice that serves the fine-tuned **Qwen/Qwen1.5-0.5B-Chat** LoRA adapter for MiqorAI clinical safety checks.

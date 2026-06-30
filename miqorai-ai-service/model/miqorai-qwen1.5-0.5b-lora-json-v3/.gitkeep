@@ -1,0 +1,12 @@
+# Place your trained LoRA adapter files here:
+# - adapter_config.json
+# - adapter_model.safetensors (or adapter_model.bin)
+# - tokenizer_config.json
+# - tokenizer.json
+# - special_tokens_map.json (if present)
+#
+# Expected folder name:
+#   model/miqorai-qwen1.5-0.5b-lora-json-v3/
+#
+# Copy from your Colab/Kaggle output, e.g.:
+#   miqorai-qwen15-json-adapter/  ->  model/miqorai-qwen1.5-0.5b-lora-json-v3/
