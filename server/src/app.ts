@@ -54,7 +54,7 @@ export function createApp() {
         }
 
         if (allowedOrigins.has(origin) || isTrustedHostedOrigin(origin)) {
-          callback(null, true);
+          callback(null, origin);
           return;
         }
 

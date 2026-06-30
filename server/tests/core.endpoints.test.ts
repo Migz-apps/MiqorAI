@@ -13,6 +13,28 @@ describe("Health", () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("ok");
   });
+
+  it("reflects allowed browser origins for CORS preflight and requests", async () => {
+    const origin = "https://portal-check.vercel.app";
+
+    const preflight = await request(app)
+      .options("/api/auth/login")
+      .set("Origin", origin)
+      .set("Access-Control-Request-Method", "POST")
+      .set("Access-Control-Request-Headers", "content-type");
+
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers["access-control-allow-origin"]).toBe(origin);
+    expect(preflight.headers["access-control-allow-credentials"]).toBe("true");
+
+    const res = await request(app)
+      .get("/health")
+      .set("Origin", origin);
+
+    expect(res.status).toBe(200);
+    expect(res.headers["access-control-allow-origin"]).toBe(origin);
+    expect(res.headers["access-control-allow-credentials"]).toBe("true");
+  });
 });
 
 describe("Auth endpoints", () => {
