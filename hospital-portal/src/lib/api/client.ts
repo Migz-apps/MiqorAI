@@ -1,4 +1,11 @@
-const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "" : "http://localhost:3000");
+const PROD_API_FALLBACK = "https://miqorai.onrender.com";
+const rawApiUrl = import.meta.env.VITE_API_URL?.trim();
+const API_URL =
+  import.meta.env.DEV
+    ? rawApiUrl ?? ""
+    : !rawApiUrl || /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(rawApiUrl)
+      ? PROD_API_FALLBACK
+      : rawApiUrl;
 const TOKEN_KEY = "miqorai-hospital-tokens-v2";
 const LEGACY_TOKEN_KEYS = ["miqorai-hospital-tokens"];
 

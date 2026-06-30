@@ -21,10 +21,48 @@ import aiRoutes from "./routes/ai.routes.js";
 
 export function createApp() {
   const app = express();
+  const allowedOrigins = new Set(config.corsOrigins.filter(Boolean));
+
+  const isTrustedHostedOrigin = (origin: string): boolean => {
+    try {
+      const url = new URL(origin);
+      const host = url.hostname.toLowerCase();
+      if (url.protocol !== "https:" && host !== "localhost" && host !== "127.0.0.1") {
+        return false;
+      }
+
+      return (
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host.endsWith(".vercel.app") ||
+        host.endsWith(".onrender.com") ||
+        host.endsWith(".hf.space")
+      );
+    } catch {
+      return false;
+    }
+  };
 
   app.set("trust proxy", 1);
   app.use(helmet());
-  app.use(cors({ origin: config.corsOrigins, credentials: true }));
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        if (allowedOrigins.has(origin) || isTrustedHostedOrigin(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`CORS blocked for origin ${origin}`));
+      },
+      credentials: true,
+    }),
+  );
   app.use(express.json({ limit: "2mb" }));
   app.use(apiRateLimiter);
   app.use(auditMiddleware);
