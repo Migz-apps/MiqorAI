@@ -125,7 +125,7 @@ export function isAiClinicalSafetyConfigured(): boolean {
 }
 
 export async function checkAiServiceHealth(): Promise<AiHealthResponse | null> {
-  if (isMockMode() && !serviceBaseUrl()) {
+  if (isMockMode()) {
     return { status: "ok", model_loaded: false };
   }
 
@@ -143,11 +143,10 @@ export async function checkAiServiceHealth(): Promise<AiHealthResponse | null> {
 export async function checkClinicalSafety(
   request: ClinicalSafetyRequest,
 ): Promise<ClinicalSafetyResponse> {
-  if (isMockMode() && !serviceBaseUrl()) {
+  if (isMockMode()) {
     return localMockResponse(request);
   }
-
-  const path = isMockMode() ? "/clinical-safety/check/mock" : "/clinical-safety/check";
+  const path = "/clinical-safety/check";
 
   try {
     const response = await requestJson<ClinicalSafetyResponse>(
