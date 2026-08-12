@@ -62,6 +62,8 @@ export const pharmacyApi = {
     return api<{ items: unknown[]; total: number }>(`/api/pharmacy/audit-logs${q}`);
   },
   staff: () => api<unknown[]>("/api/pharmacy/staff"),
+  inviteStaff: (body: { email: string; role: string }) =>
+    api("/api/pharmacy/staff/invite", { method: "POST", body: JSON.stringify(body) }),
   settings: () => api<Record<string, unknown>>("/api/pharmacy/settings"),
   updateSettings: (body: Record<string, unknown>) =>
     api("/api/pharmacy/settings", { method: "PUT", body: JSON.stringify(body) }),

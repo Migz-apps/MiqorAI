@@ -13,9 +13,9 @@ export default function Login() {
   const session = useAuth(s => s.session);
   const login = useAuth(s => s.login);
   const nav = useNavigate();
-  const [code, setCode] = useState("JUBILEE_001");
-  const [email, setEmail] = useState("wanjiku@jubilee.co.ke");
-  const [password, setPassword] = useState("MiqorAI123!");
+  const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,7 +54,7 @@ export default function Login() {
           <Label htmlFor="code">Insurer code</Label>
           <div className="relative">
             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-            <Input id="code" className="pl-9 h-11 font-mono" value={code} onChange={e => setCode(e.target.value)} placeholder="JUBILEE_001" autoComplete="off" />
+            <Input id="code" className="pl-9 h-11 font-mono" value={code} onChange={e => setCode(e.target.value)} placeholder="Insurer code" autoComplete="off" />
           </div>
         </div>
         <div className="space-y-xs">
@@ -71,7 +71,7 @@ export default function Login() {
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className="pl-9 pr-10 h-11" />
+            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className="pl-9 pr-10 h-11" placeholder="Enter your password" />
             <button type="button" onClick={() => setShowPw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -88,9 +88,7 @@ export default function Login() {
       </form>
 
       <div className="mt-lg p-sm rounded-md bg-insurer-light border border-insurer/15 text-[11px] text-insurer leading-relaxed">
-        <strong>Demo access:</strong> insurer code <code className="font-mono">JUBILEE_001</code> + staff email + password <code className="font-mono">MiqorAI123!</code>.<br />
-        Try <code>wanjiku@jubilee.co.ke</code> (analyst), <code>brian@jubilee.co.ke</code> (fraud),
-        <code> grace@jubilee.co.ke</code> (contracts), <code>daniel@jubilee.co.ke</code> (executive).
+        Use your assigned insurer code, work email, and password to access the portal.
       </div>
 
       <div className="mt-md text-center text-xs text-text-secondary">

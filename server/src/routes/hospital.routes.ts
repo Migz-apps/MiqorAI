@@ -22,6 +22,7 @@ import { badRequest, forbidden, notFound } from "../utils/errors.js";
 import { param } from "../utils/param.js";
 import type { TokenPayload } from "../utils/crypto.js";
 import { listAuditLogs } from "../services/audit.service.js";
+import { buildPortalUrl } from "../services/portal-url.service.js";
 import {
   assignVisitStaff,
   createDepartment,
@@ -818,7 +819,7 @@ router.post("/staff/invite", validateBody(staffInviteSchema), async (req, res, n
       },
     });
 
-    const inviteUrl = `${config.corsOrigins[0]}/invite?token=${token}`;
+    const inviteUrl = buildPortalUrl("hospital", `/login?invite_token=${token}`);
     await sendInvitationEmail(body.email, inviteUrl);
 
     res.status(201).json({

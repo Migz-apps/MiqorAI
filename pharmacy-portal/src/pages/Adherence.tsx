@@ -16,7 +16,14 @@ export default function Adherence() {
     queryKey: pharmacyKeys.patients(),
     queryFn: async () => {
       const rows = await pharmacyApi.patients();
-      return (rows as Array<{ id: string; name: string; phone?: string | null }>).map(mapPatientListItem);
+      return (rows as Array<{
+        id: string;
+        name: string;
+        phone?: string | null;
+        allergies?: unknown[];
+        conditions?: unknown[];
+        adherence?: number;
+      }>).map(mapPatientListItem);
     },
   });
 

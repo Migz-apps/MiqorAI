@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,10 @@ import { Activity, AlertTriangle, Phone, Download, MessageSquare } from "lucide-
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
-import { AdherenceGauge } from "@/components/MiqorAI/AdherenceGauge";
-import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
-import { KpiCard } from "@/components/MiqorAI/KpiCard";
+import { PageHeader } from "@/components/miqorai/PageHeader";
+import { AdherenceGauge } from "@/components/miqorai/AdherenceGauge";
+import { ProgressBar } from "@/components/miqorai/ProgressBar";
+import { KpiCard } from "@/components/miqorai/KpiCard";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapMedication, mapNonAdherent } from "@/lib/api/insurer";
 import { fmtKsh, fmtNum, fmtPct } from "@/lib/format";
@@ -28,6 +28,18 @@ export default function Adherence() {
   const medAdherence = (data?.by_medication ?? []).map(mapMedication);
   const nonAdherent = (data?.non_adherent_patients ?? []).map(mapNonAdherent);
   const colorFor = (rate: number) => rate >= 85 ? "hsl(var(--success))" : rate >= 75 ? "hsl(var(--secondary))" : "hsl(var(--error))";
+
+  const remindMutation = useMutation({
+    mutationFn: (memberIds: string[]) => insurerApi.remindAdherence(memberIds),
+    onSuccess: (result) => {
+      toast.success("Reminder sent", {
+        description: `${result.sent} member reminder(s) queued.`,
+      });
+    },
+    onError: () => {
+      toast.error("Reminder could not be sent");
+    },
+  });
 
   const exportData = async () => {
     try {
@@ -56,12 +68,12 @@ export default function Adherence() {
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
       <PageHeader
         title="Adherence dashboard"
-        subtitle="Track medication adherence to prevent the costliest outcome — hospitalisation."
-        right={
+        subtitle="Track medication adherence to prevent the costliest outcome â€” hospitalisation."
+        right={(
           <Button size="sm" variant="outline" className="gap-sm" onClick={() => void exportData()}>
             <Download className="h-4 w-4" /> Export
           </Button>
-        }
+        )}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-md">
@@ -110,7 +122,7 @@ export default function Adherence() {
                 { k: "Non-adherent patients", v: nonAdherent.length, c: "bg-error" },
                 { k: "Medications tracked", v: medAdherence.length, c: "bg-insurer" },
                 { k: "Overall rate", v: data?.overall_rate ?? 0, c: "bg-primary" },
-              ].map(s => (
+              ].map((s) => (
                 <div key={s.k}>
                   <div className="flex justify-between text-xs mb-1">
                     <span>{s.k}</span><span className="num font-medium">{s.k === "Overall rate" ? `${s.v}%` : fmtNum(s.v)}</span>
@@ -140,7 +152,7 @@ export default function Adherence() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {medAdherence.map(m => (
+              {medAdherence.map((m) => (
                 <TableRow key={m.medication}>
                   <TableCell className="font-medium">{m.medication}</TableCell>
                   <TableCell className="num">{fmtNum(m.patients)}</TableCell>
@@ -156,7 +168,7 @@ export default function Adherence() {
                       : <Badge variant="outline" className="bg-success/10 text-success border-success/30">On track</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" className="h-7 text-xs text-insurer">View →</Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs text-insurer">View â†’</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -186,8 +198,8 @@ export default function Adherence() {
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-sm text-text-secondary py-8">No non-adherent patients found.</TableCell>
                 </TableRow>
-              ) : nonAdherent.map(p => (
-                <TableRow key={p.patientId}>
+              ) : nonAdherent.map((p) => (
+                <TableRow key={p.memberId}>
                   <TableCell>
                     <div className="font-medium text-sm">{p.name}</div>
                     <div className="font-mono text-[11px] text-text-secondary">{p.patientId}</div>
@@ -201,8 +213,24 @@ export default function Adherence() {
                   <TableCell className="font-mono text-xs">{p.phone}</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><MessageSquare className="h-3 w-3" /> SMS</Button>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><Phone className="h-3 w-3" /> Call</Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs gap-1"
+                        disabled={remindMutation.isPending}
+                        onClick={() => remindMutation.mutate([p.memberId])}
+                      >
+                        <MessageSquare className="h-3 w-3" /> SMS
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs gap-1"
+                        disabled={!p.phone || p.phone === "â€”"}
+                        onClick={() => { window.location.href = `tel:${p.phone}`; }}
+                      >
+                        <Phone className="h-3 w-3" /> Call
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

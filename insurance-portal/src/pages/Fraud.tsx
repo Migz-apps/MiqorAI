@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,10 +9,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ShieldAlert, Search, FileSearch, FlaskConical, Building, Download } from "lucide-react";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
-import { KpiCard } from "@/components/MiqorAI/KpiCard";
-import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
-import { StatusPill } from "@/components/MiqorAI/StatusPill";
+import { PageHeader } from "@/components/miqorai/PageHeader";
+import { KpiCard } from "@/components/miqorai/KpiCard";
+import { ProgressBar } from "@/components/miqorai/ProgressBar";
+import { StatusPill } from "@/components/miqorai/StatusPill";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapFlaggedClaim, mapProvider } from "@/lib/api/insurer";
 import { fmtKsh, fmtNum } from "@/lib/format";
@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/notify";
 
 export default function Fraud() {
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string[]>([]);
   const [q, setQ] = useState("");
 
@@ -41,18 +42,45 @@ export default function Fraud() {
   const totalFlagged = flaggedClaims.length;
   const totalClaims = high + med + low;
 
-  const filtered = flaggedClaims.filter(c =>
+  const filtered = flaggedClaims.filter((c) =>
     !q ||
     c.id.toLowerCase().includes(q.toLowerCase()) ||
     c.patientName.toLowerCase().includes(q.toLowerCase()) ||
-    c.provider.toLowerCase().includes(q.toLowerCase())
+    c.provider.toLowerCase().includes(q.toLowerCase()),
   );
 
-  const toggle = (id: string) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  const toggle = (id: string) => setSelected((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
 
-  const scoreBand = (s: number) => s >= 90 ? { label: "High",   cls: "bg-error/10 text-error border-error/30" }
-                                  : s >= 70 ? { label: "Medium", cls: "bg-secondary/15 text-secondary border-secondary/30" }
-                                  :           { label: "Low",    cls: "bg-info/10 text-info border-info/30" };
+  const bulkStatusMutation = useMutation({
+    mutationFn: (status: string) => insurerApi.bulkUpdateFraudClaims(selected, status),
+    onSuccess: (result, status) => {
+      toast.success("Claims updated", {
+        description: `${result.updated} claim(s) moved to ${status}.`,
+      });
+      setSelected([]);
+      void queryClient.invalidateQueries({ queryKey: insurerKeys.fraud(7) });
+      void queryClient.invalidateQueries({ queryKey: insurerKeys.providers });
+    },
+    onError: () => {
+      toast.error("Bulk update failed");
+    },
+  });
+
+  const investigateProviderMutation = useMutation({
+    mutationFn: (providerName: string) => insurerApi.investigateProvider(providerName),
+    onSuccess: (result) => {
+      toast.success("Provider investigation ready", {
+        description: `${result.provider}: ${result.claims.length} recent claim(s), risk score ${result.risk_score}.`,
+      });
+    },
+    onError: () => {
+      toast.error("Provider investigation failed");
+    },
+  });
+
+  const scoreBand = (s: number) => s >= 90 ? { label: "High", cls: "bg-error/10 text-error border-error/30" }
+    : s >= 70 ? { label: "Medium", cls: "bg-secondary/15 text-secondary border-secondary/30" }
+      : { label: "Low", cls: "bg-info/10 text-info border-info/30" };
 
   const exportData = async () => {
     try {
@@ -80,11 +108,11 @@ export default function Fraud() {
       <PageHeader
         title="Fraud detection"
         subtitle="Anomaly-scored claims requiring investigation. Last 7 days."
-        right={
+        right={(
           <Button size="sm" variant="outline" className="gap-sm" onClick={() => void exportData()}>
             <Download className="h-4 w-4" /> Export
           </Button>
-        }
+        )}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
@@ -103,7 +131,7 @@ export default function Fraud() {
             { band: "High Risk (Score > 90)", count: high, color: "bg-error", pct: totalClaims ? (high / totalClaims) * 100 : 0 },
             { band: "Medium Risk (70-90)", count: med, color: "bg-secondary", pct: totalClaims ? (med / totalClaims) * 100 : 0 },
             { band: "Low Risk (< 70)", count: low, color: "bg-info", pct: totalClaims ? (low / totalClaims) * 100 : 0 },
-          ].map(b => (
+          ].map((b) => (
             <div key={b.band}>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <div className="font-medium">{b.band}</div>
@@ -119,7 +147,7 @@ export default function Fraud() {
         <CardHeader className="pb-sm flex flex-row items-center justify-between gap-sm">
           <div>
             <CardTitle className="h3">Flagged claims</CardTitle>
-            <p className="text-xs text-text-secondary">Click any claim to view full audit detail.</p>
+            <p className="text-xs text-text-secondary">Use bulk actions to move suspicious claims through investigation.</p>
           </div>
           <div className="flex items-center gap-sm">
             <div className="relative">
@@ -129,9 +157,9 @@ export default function Fraud() {
             {selected.length > 0 && (
               <div className="flex items-center gap-1 text-xs">
                 <span className="text-text-secondary">{selected.length} selected</span>
-                <Button size="sm" variant="outline" className="h-8">Assign investigator</Button>
-                <Button size="sm" variant="outline" className="h-8">Mark false-positive</Button>
-                <Button size="sm" variant="outline" className="h-8 border-error/30 text-error">Export to legal</Button>
+                <Button size="sm" variant="outline" className="h-8" disabled={bulkStatusMutation.isPending} onClick={() => bulkStatusMutation.mutate("investigating")}>Assign investigator</Button>
+                <Button size="sm" variant="outline" className="h-8" disabled={bulkStatusMutation.isPending} onClick={() => bulkStatusMutation.mutate("cleared")}>Mark false-positive</Button>
+                <Button size="sm" variant="outline" className="h-8 border-error/30 text-error" onClick={() => void exportData()}>Export to legal</Button>
               </div>
             )}
           </div>
@@ -155,11 +183,11 @@ export default function Fraud() {
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-sm text-text-secondary py-8">No flagged claims in the last 7 days.</TableCell>
                 </TableRow>
-              ) : filtered.map(c => {
+              ) : filtered.map((c) => {
                 const sb = scoreBand(c.score);
                 return (
-                  <TableRow key={c.id} className="cursor-pointer">
-                    <TableCell><Checkbox checked={selected.includes(c.id)} onCheckedChange={() => toggle(c.id)} /></TableCell>
+                  <TableRow key={c.sourceId} className="cursor-pointer">
+                    <TableCell><Checkbox checked={selected.includes(c.sourceId)} onCheckedChange={() => toggle(c.sourceId)} /></TableCell>
                     <TableCell className="font-mono text-xs font-medium">{c.id}</TableCell>
                     <TableCell>
                       <div className="text-sm">{c.patientName}</div>
@@ -199,7 +227,7 @@ export default function Fraud() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {providers.map(p => {
+              {providers.map((p) => {
                 const sb = scoreBand(p.anomalyScore);
                 return (
                   <TableRow key={p.name}>
@@ -213,8 +241,8 @@ export default function Fraud() {
                     </TableCell>
                     <TableCell className="num text-right">{p.flagged}</TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="h-7 text-xs text-insurer">
-                        {p.anomalyScore >= 70 ? "Investigate" : "Monitor"} →
+                      <Button size="sm" variant="ghost" className="h-7 text-xs text-insurer" disabled={investigateProviderMutation.isPending} onClick={() => investigateProviderMutation.mutate(p.name)}>
+                        {p.anomalyScore >= 70 ? "Investigate" : "Monitor"} â†’
                       </Button>
                     </TableCell>
                   </TableRow>

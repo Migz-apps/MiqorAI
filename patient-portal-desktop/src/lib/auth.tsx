@@ -1,5 +1,16 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { ApiError, loadTokens, loginApi, logoutApi, saveTokens } from "./api/client";
+import {
+  ApiError,
+  completePatientSignupApi,
+  loadTokens,
+  loginApi,
+  logoutApi,
+  requestForgotPasswordApi,
+  resendForgotPasswordOtpApi,
+  resetPasswordApi,
+  saveTokens,
+  verifyForgotPasswordOtpApi,
+} from "./api/client";
 import { patientApi, profileToUser, type ProfileResponse } from "./api/patient";
 
 export type User = {
@@ -17,7 +28,19 @@ type AuthCtx = {
   isLoggedIn: boolean;
   authReady: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (data: { name: string; email: string; phone: string; password: string }) => Promise<boolean>;
+  signup: (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    dateOfBirth: string;
+  }) => Promise<{ verificationRequired: boolean; email: string } | null>;
+  verifySignupOtp: (email: string, otp: string) => Promise<boolean>;
+  resendSignupOtp: (email: string) => Promise<boolean>;
+  requestPasswordReset: (email: string) => Promise<boolean>;
+  resendPasswordResetOtp: (email: string) => Promise<boolean>;
+  verifyPasswordResetOtp: (email: string, otp: string) => Promise<string | null>;
+  resetPassword: (token: string, newPassword: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (patch: Partial<User>) => Promise<void>;
 };
@@ -76,19 +99,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (data: { name: string; email: string; phone: string; password: string }) => {
-    if (!data.name.trim() || !data.email.includes("@") || !data.password) return false;
+  const signup = async (data: { name: string; email: string; phone: string; password: string; dateOfBirth: string }) => {
+    if (!data.name.trim() || !data.email.includes("@") || !data.phone.trim() || !data.password || !data.dateOfBirth) {
+      return null;
+    }
     try {
       await patientApi.register({
-        phone: data.phone.trim() || "+254700000000",
+        phone: data.phone.trim(),
         password: data.password,
         full_name: data.name.trim(),
-        date_of_birth: "1990-01-01",
+        date_of_birth: data.dateOfBirth,
         email: data.email.trim(),
       });
-      return login(data.email, data.password);
+      return { verificationRequired: true, email: data.email.trim().toLowerCase() };
     } catch (err) {
-      if (err instanceof ApiError && err.status === 400) return false;
+      if (err instanceof ApiError && err.status === 400) return null;
+      return null;
+    }
+  };
+
+  const verifySignupOtp = async (email: string, otp: string) => {
+    try {
+      await completePatientSignupApi(email.trim(), otp.trim());
+      const profile = await patientApi.profile();
+      persist(toUser(profile));
+      return true;
+    } catch {
+      saveTokens(null);
+      return false;
+    }
+  };
+
+  const resendSignupOtp = async (email: string) => {
+    try {
+      await patientApi.resendRegistrationOtp(email.trim());
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    try {
+      await requestForgotPasswordApi(email.trim());
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const resendPasswordResetOtp = async (email: string) => {
+    try {
+      await resendForgotPasswordOtpApi(email.trim());
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const verifyPasswordResetOtp = async (email: string, otp: string) => {
+    try {
+      const result = await verifyForgotPasswordOtpApi(email.trim(), otp.trim());
+      return result.reset_token;
+    } catch {
+      return null;
+    }
+  };
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    try {
+      await resetPasswordApi(token, newPassword);
+      return true;
+    } catch {
       return false;
     }
   };
@@ -116,7 +198,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, isLoggedIn: !!user, authReady, login, signup, logout, updateUser }}>
+    <Ctx.Provider
+      value={{
+        user,
+        isLoggedIn: !!user,
+        authReady,
+        login,
+        signup,
+        verifySignupOtp,
+        resendSignupOtp,
+        requestPasswordReset,
+        resendPasswordResetOtp,
+        verifyPasswordResetOtp,
+        resetPassword,
+        logout,
+        updateUser,
+      }}
+    >
       {children}
     </Ctx.Provider>
   );

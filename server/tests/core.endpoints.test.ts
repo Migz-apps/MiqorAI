@@ -6,6 +6,7 @@ import {
   authed,
   getContext,
 } from "./helpers/context.js";
+import { getTestSixDigitCode } from "../src/utils/one-time-code.js";
 
 describe("Health", () => {
   it("GET /health", async () => {
@@ -40,8 +41,10 @@ describe("Health", () => {
 describe("Auth endpoints", () => {
   let refreshToken = "";
   let newPatientRefresh = "";
+  let pendingPatientEmail = "";
+  let passwordResetToken = "";
 
-  it("POST /api/auth/login — admin", async () => {
+  it("POST /api/auth/login - admin", async () => {
     const res = await request(app).post("/api/auth/login").send({
       email: "admin@miqorai.com",
       password: PASSWORD,
@@ -51,7 +54,7 @@ describe("Auth endpoints", () => {
     expect(res.body.access_token).toBeTruthy();
   });
 
-  it("POST /api/auth/login — patient", async () => {
+  it("POST /api/auth/login - patient", async () => {
     const res = await request(app).post("/api/auth/login").send({
       email: "grace.muthoni@example.com",
       password: PASSWORD,
@@ -60,7 +63,7 @@ describe("Auth endpoints", () => {
     expect(res.body.user.role).toBe("patient");
   });
 
-  it("POST /api/auth/login — hospital with org", async () => {
+  it("POST /api/auth/login - hospital with org", async () => {
     const res = await request(app).post("/api/auth/login").send({
       email: "dr.kimani@example.com",
       password: PASSWORD,
@@ -69,7 +72,7 @@ describe("Auth endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("POST /api/auth/login — pharmacy with org", async () => {
+  it("POST /api/auth/login - pharmacy with org", async () => {
     const res = await request(app).post("/api/auth/login").send({
       email: "pharm.kevin@example.com",
       password: PASSWORD,
@@ -78,7 +81,7 @@ describe("Auth endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("POST /api/auth/login — insurer with org", async () => {
+  it("POST /api/auth/login - insurer with org", async () => {
     const res = await request(app).post("/api/auth/login").send({
       email: "claims.reviewer@nhidemo.demo",
       password: PASSWORD,
@@ -87,7 +90,7 @@ describe("Auth endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("POST /api/auth/login — rejects bad password", async () => {
+  it("POST /api/auth/login - rejects bad password", async () => {
     const res = await request(app).post("/api/auth/login").send({
       email: "admin@miqorai.com",
       password: "wrong-password",
@@ -112,7 +115,7 @@ describe("Auth endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("POST /api/auth/verify-otp — invalid code", async () => {
+  it("POST /api/auth/verify-otp - invalid code", async () => {
     const res = await request(app)
       .post("/api/auth/verify-otp")
       .send({ phone: "+254799000001", otp: "000000" });
@@ -126,30 +129,59 @@ describe("Auth endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("POST /api/auth/reset-password — invalid token", async () => {
+  it("POST /api/auth/forgot-password/verify-otp", async () => {
+    const res = await request(app)
+      .post("/api/auth/forgot-password/verify-otp")
+      .send({ email: "grace.muthoni@example.com", otp: getTestSixDigitCode() });
+    expect(res.status).toBe(200);
+    expect(res.body.reset_token).toBeTruthy();
+    passwordResetToken = res.body.reset_token;
+  });
+
+  it("POST /api/auth/reset-password - invalid token", async () => {
     const res = await request(app)
       .post("/api/auth/reset-password")
       .send({ token: "invalid-token", new_password: "NewPassword123!" });
     expect([400, 401, 404]).toContain(res.status);
   });
 
-  it("POST /api/auth/register — new patient", async () => {
+  it("POST /api/auth/reset-password - verified token", async () => {
+    const res = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token: passwordResetToken, new_password: "RecoveredPass123!" });
+    expect(res.status).toBe(200);
+  });
+
+  it("POST /api/auth/register - new patient", async () => {
     const suffix = Date.now().toString().slice(-8);
     const res = await request(app).post("/api/auth/register").send({
       phone: `+2547${suffix}`,
-      password: PASSWORD,
+      password: "SecurePass123!",
       full_name: "Test Patient",
       date_of_birth: "1990-01-15",
       email: `test.patient.${suffix}@example.com`,
     });
     expect(res.status).toBe(201);
+    expect(res.body.verification_required).toBe(true);
+    expect(res.body.otp_sent).toBe(true);
+    pendingPatientEmail = res.body.email;
+  });
+
+  it("POST /api/auth/register/verify-otp - new patient", async () => {
+    const res = await request(app).post("/api/auth/register/verify-otp").send({
+      email: pendingPatientEmail,
+      otp: getTestSixDigitCode(),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.access_token).toBeTruthy();
+    expect(res.body.refresh_token).toBeTruthy();
     newPatientRefresh = res.body.refresh_token;
   });
 
-  it("POST /api/auth/hospital-signup — duplicate email fails", async () => {
+  it("POST /api/auth/hospital-signup - duplicate email fails", async () => {
     const res = await request(app).post("/api/auth/hospital-signup").send({
       email: "dr.kimani@example.com",
-      password: PASSWORD,
+      password: "SecurePass123!",
       hospital_code: "KMC001",
       role: "doctor",
       department: "General Medicine",
@@ -163,14 +195,14 @@ describe("Auth endpoints", () => {
     expect(res.body.secret || res.body.otpauth_url).toBeTruthy();
   });
 
-  it("POST /api/auth/change-password — wrong current password", async () => {
+  it("POST /api/auth/change-password - wrong current password", async () => {
     const res = await authed("patient")
       .post("/api/auth/change-password")
       .send({ current_password: "wrong", new_password: "AnotherPass123!" });
     expect([400, 401]).toContain(res.status);
   });
 
-  it("POST /api/auth/logout — new patient session", async () => {
+  it("POST /api/auth/logout - new patient session", async () => {
     if (!newPatientRefresh) return;
     const res = await request(app).post("/api/auth/logout").send({ refresh_token: newPatientRefresh });
     expect([200, 204]).toContain(res.status);
@@ -253,7 +285,7 @@ describe("Sync endpoints", () => {
   });
 
   it("POST /api/sync/queue/:id/process", async () => {
-    const c = getContext();
+    getContext();
     if (!syncItemId) return;
     const res = await authed("patient").post(`/api/sync/queue/${syncItemId}/process`);
     expect([200, 400, 404]).toContain(res.status);

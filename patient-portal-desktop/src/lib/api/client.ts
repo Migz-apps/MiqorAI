@@ -1,14 +1,18 @@
 const PROD_API_FALLBACK = "https://miqorai.onrender.com";
-const rawApiUrl = import.meta.env.VITE_API_URL?.trim();
-const API_URL =
-  import.meta.env.DEV
-    ? rawApiUrl ?? ""
-    : !rawApiUrl || /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/i.test(rawApiUrl)
-      ? PROD_API_FALLBACK
-      : rawApiUrl;
+const LOCAL_API_PATTERN = /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|10\.0\.2\.2)(?::\d+)?$/i;
+
+function resolveApiUrl(): string {
+  const rawApiUrl = import.meta.env.VITE_API_URL?.trim() ?? "";
+  if (import.meta.env.DEV) return rawApiUrl;
+  return !rawApiUrl || LOCAL_API_PATTERN.test(rawApiUrl) ? PROD_API_FALLBACK : rawApiUrl;
+}
+
+const API_URL = resolveApiUrl().replace(/\/$/, "");
 const TOKEN_KEY = "miqorai-patient-tokens";
 
 export type Tokens = { access_token: string; refresh_token: string };
+
+type SessionPayload = Tokens;
 
 let tokens: Tokens | null = null;
 
@@ -98,11 +102,48 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function loginApi(email: string, password: string) {
   saveTokens(null);
-  const data = await api<{ access_token: string; refresh_token: string }>("/api/auth/login", {
+  const data = await api<SessionPayload>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
   saveTokens({ access_token: data.access_token, refresh_token: data.refresh_token });
+}
+
+export async function completePatientSignupApi(email: string, otp: string) {
+  saveTokens(null);
+  const data = await api<SessionPayload>("/api/auth/register/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  });
+  saveTokens({ access_token: data.access_token, refresh_token: data.refresh_token });
+}
+
+export async function requestForgotPasswordApi(email: string) {
+  return api<{ message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resendForgotPasswordOtpApi(email: string) {
+  return api<{ message: string }>("/api/auth/forgot-password/resend-otp", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyForgotPasswordOtpApi(email: string, otp: string) {
+  return api<{ reset_token: string }>("/api/auth/forgot-password/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  });
+}
+
+export async function resetPasswordApi(token: string, newPassword: string) {
+  return api<{ message: string }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
 }
 
 export async function logoutApi() {

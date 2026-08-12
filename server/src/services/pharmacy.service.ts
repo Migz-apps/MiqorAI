@@ -720,6 +720,14 @@ export async function getPharmacyPatient(pharmacyId: string, patientId: string) 
     where: { id: patientId },
     include: {
       user: { select: { email: true, phone: true } },
+      medicalRecords: {
+        where: {
+          isActive: true,
+          recordType: { in: ["allergy", "diagnosis"] },
+        },
+        orderBy: { recordedAt: "desc" },
+        take: 20,
+      },
       prescriptions: {
         where: { pharmacyId },
         orderBy: { prescribedAt: "desc" },
@@ -734,6 +742,17 @@ export async function getPharmacyPatient(pharmacyId: string, patientId: string) 
   });
   if (!patient || !patient.isActive) throw notFound("Patient not found");
 
+  const allergies = patient.medicalRecords
+    .filter((record) => record.recordType === "allergy")
+    .map((record) => {
+      const data = record.data as { name?: string; severity?: string };
+      return data.severity ? `${data.name ?? "Allergy"} (${data.severity})` : String(data.name ?? "Allergy");
+    });
+
+  const conditions = patient.medicalRecords
+    .filter((record) => record.recordType === "diagnosis")
+    .map((record) => String((record.data as { name?: string }).name ?? "Condition"));
+
   return {
     id: patient.id,
     first_name: patient.firstName,
@@ -742,6 +761,8 @@ export async function getPharmacyPatient(pharmacyId: string, patientId: string) 
     insurance_id: patient.insuranceId,
     email: patient.user.email,
     phone: patient.user.phone,
+    allergies,
+    conditions,
     prescriptions: patient.prescriptions.map((rx) => serializePrescription(rx as never)),
   };
 }

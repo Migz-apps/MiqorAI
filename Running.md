@@ -1,120 +1,137 @@
 # Running MiqorAI
 
-## Run all web frontends
+## What runs together
+
+MiqorAI currently runs as:
+
+- one shared backend in `server/`
+- multiple web portals
+- one mobile patient app
+- one shared PostgreSQL database
+- one shared Redis instance
+- one optional external clinical-safety AI service
+
+The old `backend/` microservices stack is no longer part of the active run path for this repo.
+
+## Start the full local web system
 
 From the repository root:
 
 ```powershell
-# Windows
-.\scripts\run-all-frontends.ps1
+npm run dev:full
 ```
 
-```bash
-# macOS / Linux
-./scripts/run-all-frontends.sh
-```
+This starts:
 
-Or:
-
-```bash
-npm run dev
-```
-
-| App | URL |
-|-----|-----|
+| Service | URL |
+|---------|-----|
+| Shared backend API | http://localhost:3000 |
 | Patient portal | http://localhost:5173 |
 | Hospital portal | http://localhost:8080 |
 | Insurance portal | http://localhost:8081 |
 | Pharmacy portal | http://localhost:8082 |
 | Admin portal | http://localhost:8083 |
 
-Press **Ctrl+C** to stop all servers.
+Press `Ctrl+C` to stop all servers.
 
-## Run one web frontend
+## Start a smaller local set
 
-```bash
-cd patient-portal-desktop   # or hospital-portal, insurance-portal, pharmacy-portal, admin-portal
+Backend only:
+
+```powershell
+npm run dev:api
+```
+
+Backend + patient + hospital:
+
+```powershell
+npm run dev:core
+```
+
+## Run a single web portal
+
+```powershell
+cd patient-portal-desktop
 npm run dev
 ```
 
+You can replace `patient-portal-desktop` with:
+
+- `hospital-portal`
+- `insurance-portal`
+- `pharmacy-portal`
+- `admin-portal`
+
+Important: a single frontend still needs the shared backend if you want real authentication and data flows.
+
 ## Run the mobile app
 
-```bash
+```powershell
 cd mobile_patient
 npm start
 ```
 
-## Docker
+For local device testing, use `mobile_patient/.env.local.example` to point the app at your local backend.
 
-Build and run all web portals:
-
-```bash
-docker compose build
-docker compose up
-```
-
-| Service | URL |
-|---------|-----|
-| Patient portal | http://localhost:5173 |
-| Hospital portal | http://localhost:8080 |
-| Insurance portal | http://localhost:8081 |
-| Pharmacy portal | http://localhost:8082 |
-| Admin portal | http://localhost:8083 |
-
-Run one portal:
-
-```bash
-cd hospital-portal
-docker build -t miqorai-hospital-portal .
-docker run -p 8080:80 miqorai-hospital-portal
-```
-
-Stop Docker containers:
-
-```bash
-docker compose down
-```
-
-## Run the microservices backend
+## Install dependencies
 
 From the repository root:
 
 ```powershell
-# Windows — starts Postgres, Redis, RabbitMQ, Mailhog, then all 6 services
-.\backend\scripts\start-backend.ps1
+npm install
+npm run install:all
+npm install --prefix mobile_patient
 ```
 
-```bash
-# macOS / Linux
-./backend/scripts/start-backend.sh
-```
+## Build
 
-| Service | URL |
-|---------|-----|
-| API Gateway (use this from frontends) | http://localhost:8080 |
-| Auth service | http://localhost:8081 |
-| Patient service | http://localhost:8082 |
-| Medical service | http://localhost:8083 |
-| Audit service | http://localhost:8084 |
-| Notification service | http://localhost:8085 |
-| MailHog (dev email) | http://localhost:8025 |
-| RabbitMQ management | http://localhost:15672 |
-
-Stop backend services:
+Build backend and all web portals:
 
 ```powershell
-.\backend\scripts\stop-backend.ps1
+npm run build:all
 ```
 
-```bash
-./backend/scripts/stop-backend.sh
+Type-check the mobile app:
+
+```powershell
+cd mobile_patient
+npm run typecheck
 ```
 
-Run backend tests:
+## Tests
 
-```bash
-cd backend
-mvn test
+Production wiring checks:
+
+```powershell
+npm run test:production:wiring
 ```
 
-Note: the API gateway uses port **8080**. If you also run the hospital portal locally, change one of them to avoid a port conflict.
+Portal integration checks:
+
+```powershell
+npm run test:integration:portals
+```
+
+Full backend API suite:
+
+```powershell
+npm run test:api:all
+```
+
+## Redis for development
+
+If your local setup needs Redis started separately:
+
+```powershell
+npm run redis:up
+```
+
+Stop it with:
+
+```powershell
+npm run redis:down
+```
+
+## Docker note
+
+This repo still contains Docker-related assets for frontend packaging and local support, but the authoritative runtime path for the current system is the shared `server/` backend plus the client apps above.

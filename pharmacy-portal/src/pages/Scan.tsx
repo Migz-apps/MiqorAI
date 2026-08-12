@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QRScanner } from "@/components/MiqorAI/QRScanner";
+import { QRScanner } from "@/components/miqorai/QRScanner";
 import { ScanLine } from "lucide-react";
 
 export default function Scan() {

@@ -14,8 +14,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
   PieChart, Pie, Legend,
 } from "recharts";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
-import { KpiCard } from "@/components/MiqorAI/KpiCard";
+import { PageHeader } from "@/components/miqorai/PageHeader";
+import { KpiCard } from "@/components/miqorai/KpiCard";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapSavingsRecord } from "@/lib/api/insurer";
 import { fmtKsh, fmtKshShort, fmtNum } from "@/lib/format";

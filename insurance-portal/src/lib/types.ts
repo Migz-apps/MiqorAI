@@ -47,6 +47,7 @@ export type MedicationAdherence = {
 };
 
 export type NonAdherent = {
+  memberId: string;
   patientId: string;
   name: string;
   medication: string;
@@ -56,6 +57,7 @@ export type NonAdherent = {
 
 export type FlaggedClaim = {
   id: string;
+  sourceId: string;
   patientId: string;
   patientName: string;
   provider: string;

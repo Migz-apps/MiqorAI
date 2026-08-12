@@ -58,6 +58,7 @@ export type AdherenceResponse = {
   overall_rate: number;
   by_medication: Array<{ medication: string; rate: number; patients: number }>;
   non_adherent_patients: Array<{
+    member_id: string;
     patient_id: string;
     name: string;
     adherence_rate: number;
@@ -144,8 +145,20 @@ const STAFF_ROLE_MAP: Record<string, Role> = {
   admin: "admin",
 };
 
+const BACKEND_STAFF_ROLE_MAP: Record<Role, string> = {
+  analyst: "analyst",
+  fraud: "fraud_investigator",
+  contracts: "contracts_manager",
+  executive: "executive",
+  admin: "admin",
+};
+
 export function mapStaffRole(role: string): Role {
   return STAFF_ROLE_MAP[role] ?? "analyst";
+}
+
+export function toBackendStaffRole(role: Role): string {
+  return BACKEND_STAFF_ROLE_MAP[role];
 }
 
 function dateStr(d: string | Date): string {
@@ -201,6 +214,7 @@ export function mapAlert(a: {
 export function mapFlaggedClaim(c: FraudResponse["flagged_claims"][number], idx: number): FlaggedClaim {
   return {
     id: c.id.slice(0, 8).toUpperCase(),
+    sourceId: c.id,
     patientId: c.patient_id.slice(0, 8).toUpperCase(),
     patientName: `Patient ${idx + 1}`,
     provider: c.provider,
@@ -248,6 +262,7 @@ export function mapInvoice(inv: {
 
 export function mapStaffRow(s: {
   id: string;
+  user_id?: string;
   email: string;
   role: string;
   active: boolean;
@@ -256,7 +271,7 @@ export function mapStaffRow(s: {
   const local = s.email.split("@")[0].replace(/[._]/g, " ");
   const name = local.replace(/\b\w/g, (c) => c.toUpperCase());
   return {
-    id: s.id,
+    id: s.user_id ?? s.id,
     name,
     email: s.email,
     role: mapStaffRole(s.role),
@@ -282,6 +297,7 @@ export function mapMedication(m: { medication: string; rate: number; patients: n
 export function mapNonAdherent(p: AdherenceResponse["non_adherent_patients"][number]): NonAdherent {
   const daysOverdue = Math.max(1, Math.round((75 - p.adherence_rate) / 3));
   return {
+    memberId: p.member_id,
     patientId: p.patient_id.slice(0, 8).toUpperCase(),
     name: p.name,
     medication: "Multiple",
@@ -346,7 +362,7 @@ export const insurerApi = {
     >("/api/insurer/invoices"),
   contractUsage: () => api<ContractUsageResponse>("/api/insurer/contract/usage"),
   staff: () =>
-    api<Array<{ id: string; email: string; role: string; active: boolean; last_login: string | null }>>(
+    api<Array<{ id: string; user_id?: string; email: string; role: string; active: boolean; last_login: string | null }>>(
       "/api/insurer/staff",
     ),
   auditLogs: (limit = 50) =>
@@ -369,6 +385,12 @@ export const insurerApi = {
       method: "POST",
       body: JSON.stringify({ label }),
     }),
+  inviteStaff: (body: { email: string; role: string }) =>
+    api("/api/insurer/staff/invite", { method: "POST", body: JSON.stringify(body) }),
+  updateStaffRole: (userId: string, role: string) =>
+    api(`/api/insurer/staff/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }),
+  deactivateStaff: (userId: string) =>
+    api(`/api/insurer/staff/${userId}`, { method: "DELETE" }),
   rotateApiKey: (id: string) => api(`/api/insurer/api-keys/${id}/rotate`, { method: "POST", body: "{}" }),
   exportSavings: (format: "csv" | "pdf") =>
     api<{ download_url: string }>("/api/insurer/savings/export", {
@@ -379,6 +401,26 @@ export const insurerApi = {
     api<{ download_url: string }>("/api/insurer/adherence/export", { method: "POST", body: "{}" }),
   exportFraud: () => api<{ download_url: string }>("/api/insurer/fraud/export", { method: "POST", body: "{}" }),
   exportMembers: () => api<{ download_url: string }>("/api/insurer/members/export"),
+  remindAdherence: (memberIds: string[]) =>
+    api<{ sent: number }>("/api/insurer/adherence/remind", {
+      method: "POST",
+      body: JSON.stringify({ member_ids: memberIds }),
+    }),
+  bulkUpdateFraudClaims: (claimIds: string[], status: string) =>
+    api<{ updated: number }>("/api/insurer/fraud/bulk-status", {
+      method: "PUT",
+      body: JSON.stringify({ claim_ids: claimIds, status }),
+    }),
+  getFraudClaimDetail: (claimId: string) => api<Record<string, unknown>>(`/api/insurer/fraud/claims/${claimId}`),
+  scheduleReport: (body: { report_type: string; frequency: string; email?: string }) =>
+    api("/api/insurer/reports/schedule", { method: "POST", body: JSON.stringify(body) }),
   contractPdf: () => api<{ download_url: string }>("/api/insurer/contract/pdf"),
   invoicePdf: (id: string) => api<{ download_url: string }>(`/api/insurer/invoices/${id}/pdf`),
+  requestContractAmendment: (notes: string) =>
+    api("/api/insurer/contract/amendment", { method: "POST", body: JSON.stringify({ notes }) }),
+  investigateProvider: (providerName: string) =>
+    api<{ provider: string; claims: unknown[]; risk_score: number }>("/api/insurer/providers/investigate", {
+      method: "POST",
+      body: JSON.stringify({ provider_name: providerName }),
+    }),
 };

@@ -4,6 +4,7 @@ import { hashPassword, hashToken, randomToken } from "../utils/crypto.js";
 import { badRequest, notFound } from "../utils/errors.js";
 import { sendInvitationEmail } from "./notification.service.js";
 import { config } from "../config.js";
+import { buildPortalUrl } from "./portal-url.service.js";
 
 export async function listPharmacyStaff(pharmacyId: string) {
   const staff = await prisma.pharmacyStaff.findMany({
@@ -34,7 +35,7 @@ export async function invitePharmacyStaff(
       expiresAt: new Date(Date.now() + config.invitationExpiryDays * 86400000),
     },
   });
-  await sendInvitationEmail(input.email, `${config.corsOrigins[0]}/invite?token=${token}`);
+  await sendInvitationEmail(input.email, buildPortalUrl("pharmacy", `/login?invite_token=${token}`));
   return { invitation_sent: true };
 }
 
@@ -81,7 +82,7 @@ export async function inviteInsurerStaff(
       expiresAt: new Date(Date.now() + config.invitationExpiryDays * 86400000),
     },
   });
-  await sendInvitationEmail(input.email, `${config.corsOrigins[0]}/invite?token=${token}`);
+  await sendInvitationEmail(input.email, buildPortalUrl("insurance", `/login?invite_token=${token}`));
   return { invitation_sent: true };
 }
 

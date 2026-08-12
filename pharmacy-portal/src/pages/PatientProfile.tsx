@@ -1,13 +1,14 @@
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, AlertTriangle, Activity } from "lucide-react";
-import { StatusBadge } from "@/components/MiqorAI/StatusBadge";
+import { StatusBadge } from "@/components/miqorai/StatusBadge";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapPatientDetail, mapPrescription } from "@/lib/api/mappers";
+import { toast } from "@/lib/notify";
 import { pharmacyKeys } from "@/store/rx";
 
 export default function PatientProfile() {
@@ -29,6 +30,24 @@ export default function PatientProfile() {
     queryKey: [...pharmacyKeys.patient(id!), "history"],
     queryFn: () => pharmacyApi.patientAdherenceHistory(id!),
     enabled: !!id,
+  });
+
+  const remindMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) return;
+      return pharmacyApi.adherenceRemind({
+        patient_id: id,
+        message: "Reminder from your pharmacy: your refill may be due soon. Please check your medication plan with MiqorAI.",
+      });
+    },
+    onSuccess: () => {
+      toast.success("Reminder sent", {
+        description: "The patient received a refill reminder by SMS or email.",
+      });
+    },
+    onError: () => {
+      toast.error("Reminder could not be sent");
+    },
   });
 
   if (isLoading) return <div className="p-lg text-sm text-text-secondary">Loading patient…</div>;
@@ -64,7 +83,13 @@ export default function PatientProfile() {
             <span>Last visit {patient.lastVisit}</span>
           </div>
         </div>
-        <Button variant="outline">Send adherence SMS</Button>
+        <Button
+          variant="outline"
+          onClick={() => remindMutation.mutate()}
+          disabled={remindMutation.isPending}
+        >
+          {remindMutation.isPending ? "Sending..." : "Send adherence SMS"}
+        </Button>
       </div>
 
       {patient.allergies.length > 0 && (

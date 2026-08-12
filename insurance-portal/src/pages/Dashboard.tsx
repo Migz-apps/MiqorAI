@@ -11,10 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
-import { KpiCard } from "@/components/MiqorAI/KpiCard";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
-import { AnomalyAlert } from "@/components/MiqorAI/AnomalyAlert";
-import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
+import { KpiCard } from "@/components/miqorai/KpiCard";
+import { PageHeader } from "@/components/miqorai/PageHeader";
+import { AnomalyAlert } from "@/components/miqorai/AnomalyAlert";
+import { ProgressBar } from "@/components/miqorai/ProgressBar";
 import { useAuth } from "@/store/auth";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapAlert, mapMedication } from "@/lib/api/insurer";

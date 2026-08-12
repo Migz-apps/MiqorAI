@@ -278,7 +278,15 @@ export function ShareScreen() {
               <QrCode color={colors.mutedForeground} size={42} />
               <Text style={styles.qrPlaceholderTitle}>Camera access required</Text>
               <Text style={styles.qrPlaceholderText}>Point your camera at the provider&apos;s QR code.</Text>
-              <PrimaryButton variant="outline">Open Camera</PrimaryButton>
+              <PrimaryButton
+                variant="outline"
+                onPress={() => {
+                  setGrantMethod('manual')
+                  showToast('QR camera scanning is not enabled in Expo Go yet. Use manual provider entry for this test pass.', 'info')
+                }}
+              >
+                Use Manual Entry
+              </PrimaryButton>
             </View>
           ) : (
             <View style={styles.sheetStack}>

@@ -6,12 +6,14 @@ import { connectRedis, disconnectRedis } from "./lib/redis.js";
 import { archiveOldAuditLogs } from "./services/sync.service.js";
 import { ensureUploadDir } from "./services/file.service.js";
 import { seedReferenceDataIfEmpty } from "./services/reference.service.js";
+import { assertEmailDeliveryReady } from "./services/notification.service.js";
 
 async function main() {
   await connectDb();
   await connectRedis();
   await ensureUploadDir();
   await seedReferenceDataIfEmpty();
+  await assertEmailDeliveryReady();
 
   const archived = await archiveOldAuditLogs(config.auditArchiveDays);
   if (archived > 0) logger.info(`Archived ${archived} audit log entries older than ${config.auditArchiveDays} days`);

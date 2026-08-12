@@ -29,6 +29,14 @@ import {
 import { badRequest, notFound } from "../utils/errors.js";
 import { param } from "../utils/param.js";
 import {
+  dateStringSchema,
+  emailSchema,
+  optionalPersonNameSchema,
+  optionalPhoneSchema,
+  personNameSchema,
+  phoneSchema,
+} from "../utils/validation.js";
+import {
   approveQrAccessRequest,
   denyQrAccessRequest,
   listPendingQrAccessRequestsForPatient,
@@ -48,15 +56,15 @@ async function requirePatient(userId: string) {
 }
 
 const profileUpdateSchema = z.object({
-  first_name: z.string().min(1).optional(),
-  last_name: z.string().min(1).optional(),
+  first_name: optionalPersonNameSchema,
+  last_name: optionalPersonNameSchema,
   national_id: z.string().optional(),
   insurance_id: z.string().optional(),
-  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
+  date_of_birth: dateStringSchema.optional(),
+  emergency_contact_name: optionalPersonNameSchema,
+  emergency_contact_phone: optionalPhoneSchema,
+  email: emailSchema.optional(),
+  phone: optionalPhoneSchema,
 });
 
 const recordCreateSchema = z.object({
@@ -76,14 +84,14 @@ const accessGrantSchema = z.object({
 });
 
 const familySchema = z.object({
-  dependent_phone: z.string().min(8),
+  dependent_phone: phoneSchema,
   relationship: z.enum(["child", "parent", "spouse", "sibling", "other"]),
   access_level: z.enum(["full", "caregiver_only", "read_only"]),
 });
 
 const familyDependentSchema = z.object({
-  name: z.string().min(2),
-  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  name: personNameSchema,
+  date_of_birth: dateStringSchema,
   relationship: z.enum(["child", "parent", "spouse", "sibling", "other"]),
   access_level: z.enum(["full", "caregiver_only", "read_only"]),
 });

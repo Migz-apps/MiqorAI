@@ -68,7 +68,7 @@ export default function Billing() {
           <p className="body text-text-secondary">Cash, insurance and MiqorAI claims for today.</p>
         </div>
         <div className="flex gap-sm">
-          <Button variant="outline" className="h-10"><Printer className="h-4 w-4 mr-2" />Print day-end</Button>
+          <Button variant="outline" className="h-10" onClick={() => window.print()}><Printer className="h-4 w-4 mr-2" />Print day-end</Button>
           <Button className="h-10 bg-pharmacy hover:bg-pharmacy/90 text-pharmacy-foreground" onClick={() => void exportBilling()}>
             <Download className="h-4 w-4 mr-2" />Export CSV
           </Button>

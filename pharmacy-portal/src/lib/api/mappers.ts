@@ -16,6 +16,12 @@ type ApiRxItem = {
   inventory_id?: string | null;
 };
 
+type ApiInteractionItem = {
+  message?: string;
+  note?: string;
+  severity?: string;
+};
+
 export type ApiPrescription = {
   id: string;
   patient_id: string;
@@ -30,6 +36,7 @@ export type ApiPrescription = {
   total_amount?: number;
   items?: ApiRxItem[];
   allergies?: unknown[];
+  conditions?: unknown[];
   patient?: {
     id?: string;
     first_name?: string;
@@ -40,7 +47,12 @@ export type ApiPrescription = {
     phone?: string;
     email?: string;
   };
-  interactions?: Array<{ message?: string; severity?: string }>;
+  interactions?:
+    | Array<ApiInteractionItem>
+    | {
+        has_interactions?: boolean;
+        interactions?: ApiInteractionItem[];
+      };
 };
 
 type ApiInventory = {
@@ -75,9 +87,9 @@ export function mapRxStatus(status: string): RxStatus {
 }
 
 function hospitalName(hospital?: ApiHospital): string {
-  if (!hospital) return "—";
+  if (!hospital) return "â€”";
   if (typeof hospital === "string") return hospital;
-  return hospital.name ?? "—";
+  return hospital.name ?? "â€”";
 }
 
 function patientName(rx: ApiPrescription): string {
@@ -109,13 +121,32 @@ function mapAllergies(allergies?: unknown[]): string[] {
   });
 }
 
+function mapConditions(conditions?: unknown[]): string[] {
+  if (!conditions?.length) return [];
+  return conditions.map((c) => {
+    if (typeof c === "string") return c;
+    if (c && typeof c === "object" && "name" in c) return String((c as { name: string }).name);
+    if (c && typeof c === "object" && "diagnosis" in c) return String((c as { diagnosis: string }).diagnosis);
+    return JSON.stringify(c);
+  });
+}
+
+function mapInteractionMessages(interactions?: ApiPrescription["interactions"]): string[] {
+  if (!interactions) return [];
+  const items = Array.isArray(interactions) ? interactions : (interactions.interactions ?? []);
+  return items
+    .map((item) => item.note ?? item.message ?? "")
+    .map((message) => message.trim())
+    .filter(Boolean);
+}
+
 function mapRxItems(items?: ApiRxItem[]): RxItem[] {
   return (items ?? []).map((it) => ({
     drugId: it.inventory_id ?? it.drug_id ?? it.id ?? it.drug_name,
     name: it.drug_name,
     strength: it.strength ?? "",
     form: mapForm(it.dosage_form),
-    dose: it.dose ?? "—",
+    dose: it.dose ?? "â€”",
     durationDays: it.duration_days ?? 0,
     quantity: it.quantity,
     unitPrice: it.unit_price,
@@ -132,20 +163,21 @@ export function mapPrescription(rx: ApiPrescription): Rx {
     patientId: rx.patient_id,
     patientName: patientName(rx),
     patientAge: ageFromDob(rx.patient?.date_of_birth),
-    patientPhone: rx.patient?.phone ?? "—",
+    patientPhone: rx.patient?.phone ?? "â€”",
     doctorName: "Prescriber",
     hospital: hospitalName(rx.hospital),
     issuedAt: rx.prescribed_at ?? new Date().toISOString(),
     status: mapRxStatus(rx.status),
-    diagnosis: rx.diagnosis ?? "—",
+    diagnosis: rx.diagnosis ?? "â€”",
     allergies: mapAllergies(rx.allergies),
     notes: rx.notes ?? undefined,
     items,
     insurance:
       rx.insurance_provider
-        ? { provider: rx.insurance_provider, member: rx.insurance_member ?? "—" }
+        ? { provider: rx.insurance_provider, member: rx.insurance_member ?? "â€”" }
         : undefined,
     total,
+    interactionMessages: mapInteractionMessages(rx.interactions),
   };
 }
 
@@ -160,8 +192,8 @@ export function mapInventoryItem(item: ApiInventory): StockItem {
     stock: item.stock,
     minStock: item.reorder_point ?? 0,
     unitPrice: item.unit_price,
-    expiry: item.expiry_date ?? "—",
-    supplier: item.supplier ?? "—",
+    expiry: item.expiry_date ?? "â€”",
+    supplier: item.supplier ?? "â€”",
     controlled: item.controlled ?? false,
   };
 }
@@ -171,17 +203,19 @@ export function mapPatientListItem(p: {
   name: string;
   phone?: string | null;
   email?: string | null;
+  allergies?: unknown[];
+  conditions?: unknown[];
   adherence?: number;
 }): Patient {
   return {
     id: p.id,
     name: p.name,
     age: 0,
-    phone: p.phone ?? "—",
-    allergies: [],
-    conditions: [],
+    phone: p.phone ?? "â€”",
+    allergies: mapAllergies(p.allergies),
+    conditions: mapConditions(p.conditions),
     adherence: p.adherence ?? 0,
-    lastVisit: "—",
+    lastVisit: "â€”",
   };
 }
 
@@ -191,19 +225,22 @@ export function mapPatientDetail(data: {
   last_name: string;
   date_of_birth?: string | null;
   phone?: string | null;
+  allergies?: unknown[];
+  conditions?: unknown[];
+  adherence?: number;
   prescriptions?: ApiPrescription[];
 }, adherence?: { overall_rate?: number }): Patient {
   return {
     id: data.id,
     name: `${data.first_name} ${data.last_name}`.trim(),
     age: ageFromDob(data.date_of_birth),
-    phone: data.phone ?? "—",
-    allergies: [],
-    conditions: [],
-    adherence: adherence?.overall_rate ? Math.round(adherence.overall_rate) : 0,
+    phone: data.phone ?? "â€”",
+    allergies: mapAllergies(data.allergies),
+    conditions: mapConditions(data.conditions),
+    adherence: adherence?.overall_rate ? Math.round(adherence.overall_rate) : (data.adherence ?? 0),
     lastVisit: data.prescriptions?.[0]?.prescribed_at
       ? formatDistanceToNow(new Date(data.prescriptions[0].prescribed_at), { addSuffix: true })
-      : "—",
+      : "â€”",
   };
 }
 
@@ -223,7 +260,7 @@ export function mapStaffMember(s: {
     active: s.active,
     lastActive: s.last_login
       ? formatDistanceToNow(new Date(s.last_login), { addSuffix: true })
-      : "—",
+      : "â€”",
   };
 }
 
@@ -237,7 +274,7 @@ export function mapAdherenceTrend(trend: Array<{ month?: string; adherence_rate?
 export function mapRevenueTrend(trend: Array<{ date?: string; amount?: number }>) {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return trend.map((t) => ({
-    day: t.date ? days[new Date(t.date).getDay()] ?? t.date.slice(5) : "—",
+    day: t.date ? days[new Date(t.date).getDay()] ?? t.date.slice(5) : "â€”",
     value: t.amount ?? 0,
   }));
 }

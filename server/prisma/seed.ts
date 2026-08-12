@@ -313,6 +313,7 @@ async function clearDatabase() {
     prisma.auditLog.deleteMany(),
     prisma.refreshToken.deleteMany(),
     prisma.passwordResetToken.deleteMany(),
+    prisma.authChallenge.deleteMany(),
     prisma.hospitalStaff.deleteMany(),
     prisma.pharmacyStaff.deleteMany(),
     prisma.insurerStaff.deleteMany(),

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Key, Globe, Bell, Lock, Copy } from "lucide-react";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { PageHeader } from "@/components/miqorai/PageHeader";
 import { useAuth } from "@/store/auth";
 import { insurerApi, insurerKeys } from "@/lib/api/insurer";
 import { toast } from "@/lib/notify";
@@ -63,6 +63,18 @@ export default function Settings() {
       }
     },
     onError: () => toast.error("Could not rotate API key"),
+  });
+
+  const createKey = useMutation({
+    mutationFn: () => insurerApi.createApiKey("Primary API key"),
+    onSuccess: async (res) => {
+      void queryClient.invalidateQueries({ queryKey: insurerKeys.apiKeys });
+      if (res.api_key) {
+        await navigator.clipboard.writeText(res.api_key);
+        toast.success("API key created and copied to clipboard");
+      }
+    },
+    onError: () => toast.error("Could not create API key"),
   });
 
   const toggle = (key: string, value: boolean) => {
@@ -152,10 +164,10 @@ export default function Settings() {
             </Button>
             <Button
               variant="outline"
-              disabled={!primaryKey || rotateKey.isPending}
-              onClick={() => primaryKey && rotateKey.mutate(primaryKey.id)}
+              disabled={(!!primaryKey && rotateKey.isPending) || (!primaryKey && createKey.isPending)}
+              onClick={() => primaryKey ? rotateKey.mutate(primaryKey.id) : createKey.mutate()}
             >
-              Rotate
+              {primaryKey ? "Rotate" : "Create key"}
             </Button>
           </div>
           <p className="text-[11px] text-text-secondary">

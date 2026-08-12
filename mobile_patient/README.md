@@ -110,6 +110,32 @@ Start the Expo development server:
 npm start
 ```
 
+### Testing On A Physical Android Phone With Expo Go
+
+For your current setup, where the phone provides the hotspot and the computer joins it:
+
+1. Keep the backend running on your computer on port `3000`.
+2. Start the Expo app from `mobile_patient`.
+3. If Expo Go cannot reach the backend automatically, create a local `.env` from `.env.local.example`.
+4. Set `EXPO_PUBLIC_API_URL` to your computer's hotspot IP, for example `http://192.168.x.x:3000`.
+5. Restart Expo after changing the `.env` file.
+
+In development, the app now tries to derive your computer's host IP from the Metro bundle URL before falling back to emulator-only addresses. In production builds, it uses `EXPO_PUBLIC_API_URL` and falls back to the deployed backend instead of localhost-style addresses.
+
+### Expo Go Compatibility
+
+This project should be kept on the same Expo SDK major version as the Expo Go app installed on the phone.
+
+- Expo Go `54.0.6` requires an Expo SDK 54 project.
+- A newer Expo SDK such as 55 or 56 will not be reliably compatible with that Expo Go client.
+- Full compatibility with every Expo Go version is not possible; the app must match the installed Expo Go SDK family.
+
+### Local First, Deployed Later
+
+For this mobile testing pass, use the local backend first by creating a local `.env` from `.env.local.example`.
+
+The default `.env.example` and `.env.production.example` already target the deployed backend. When you do the final whole-system test later, keep `EXPO_PUBLIC_API_URL` pointed at the deployed backend URL and re-test login, dashboard loading, records, QR generation, grants, and exports against the deployed environment too.
+
 ### iOS Development
 ```bash
 npm run ios

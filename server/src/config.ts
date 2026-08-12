@@ -1,20 +1,30 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+const nodeEnv = process.env.NODE_ENV ?? "development";
+const isProduction = nodeEnv === "production";
+
 function required(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`Missing env ${name}`);
   return v;
 }
 
+function requiredInProduction(name: string, fallback: string): string {
+  const value = process.env[name]?.trim();
+  if (value) return value;
+  if (isProduction) throw new Error(`Missing env ${name} in production`);
+  return fallback;
+}
+
 export const config = {
   port: parseInt(process.env.PORT ?? "3000", 10),
-  nodeEnv: process.env.NODE_ENV ?? "development",
+  nodeEnv,
   databaseUrl: required("DATABASE_URL"),
   supabaseUrl: (process.env.SUPABASE_URL ?? "").replace(/\/$/, ""),
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   supabaseStorageBucket: process.env.SUPABASE_STORAGE_BUCKET ?? "miqorai-uploads",
-  redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
+  redisUrl: requiredInProduction("REDIS_URL", "redis://localhost:6379"),
   jwtSecret: required("JWT_SECRET"),
   jwtRefreshSecret: required("JWT_REFRESH_SECRET"),
   jwtAccessExpires: process.env.JWT_ACCESS_EXPIRES ?? "15m",
@@ -24,11 +34,12 @@ export const config = {
   qrSecret: required("QR_SECRET"),
   qrRefreshSeconds: parseInt(process.env.QR_REFRESH_SECONDS ?? "60", 10),
   smtp: {
-    host: process.env.SMTP_HOST ?? "localhost",
+    host: process.env.SMTP_HOST?.trim() ?? (isProduction ? "" : "localhost"),
     port: parseInt(process.env.SMTP_PORT ?? "1025", 10),
     user: process.env.SMTP_USER ?? "",
     pass: process.env.SMTP_PASS ?? "",
     from: process.env.SMTP_FROM ?? "noreply@miqorai.com",
+    secure: process.env.SMTP_SECURE === "true" || process.env.SMTP_PORT === "465",
   },
   sms: {
     provider: process.env.SMS_PROVIDER ?? "log",
@@ -36,7 +47,7 @@ export const config = {
     authToken: process.env.TWILIO_AUTH_TOKEN ?? "",
     fromNumber: process.env.SMS_FROM_NUMBER ?? "",
   },
-  corsOrigins: (process.env.CORS_ORIGINS ?? "http://localhost:5173")
+  corsOrigins: requiredInProduction("CORS_ORIGINS", "http://localhost:5173")
     .split(",")
     .map((s) => s.trim()),
   uploadDir: process.env.UPLOAD_DIR ?? "./uploads",
@@ -44,7 +55,17 @@ export const config = {
   rateLimitPerMinute: parseInt(process.env.RATE_LIMIT_PER_MINUTE ?? "100", 10),
   auditArchiveDays: parseInt(process.env.AUDIT_ARCHIVE_DAYS ?? "365", 10),
   otpExpiresMinutes: parseInt(process.env.OTP_EXPIRES_MINUTES ?? "10", 10),
-  baseUrl: process.env.BASE_URL ?? "http://localhost:3000",
+  passwordResetExpiresMinutes: parseInt(process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? "60", 10),
+  authChallengeResendCooldownSeconds: parseInt(process.env.AUTH_CHALLENGE_RESEND_COOLDOWN_SECONDS ?? "45", 10),
+  authChallengeMaxAttempts: parseInt(process.env.AUTH_CHALLENGE_MAX_ATTEMPTS ?? "5", 10),
+  baseUrl: requiredInProduction("BASE_URL", "http://localhost:3000"),
+  portalUrls: {
+    patient: requiredInProduction("PATIENT_PORTAL_URL", "http://localhost:5173").replace(/\/$/, ""),
+    hospital: requiredInProduction("HOSPITAL_PORTAL_URL", "http://localhost:8080").replace(/\/$/, ""),
+    insurance: requiredInProduction("INSURANCE_PORTAL_URL", "http://localhost:8081").replace(/\/$/, ""),
+    pharmacy: requiredInProduction("PHARMACY_PORTAL_URL", "http://localhost:8082").replace(/\/$/, ""),
+    admin: requiredInProduction("ADMIN_PORTAL_URL", "http://localhost:8083").replace(/\/$/, ""),
+  },
   aiServiceUrl: (
     process.env.AI_SERVICE_BASE_URL ??
     process.env.AI_SERVICE_URL ??

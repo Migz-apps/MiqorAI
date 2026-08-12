@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "backgroundColor": "#0A5C6E"
     },
@@ -17,11 +17,13 @@
       "adaptiveIcon": {
         "backgroundColor": "#0A5C6E"
       },
+      "usesCleartextTraffic": true,
       "package": "com.miqorai.patient",
       "versionCode": 1
     },
     "extra": {
-      "apiUrl": "${EXPO_PUBLIC_API_URL}"
+      "apiUrl": "${EXPO_PUBLIC_API_URL}",
+      "apiPort": "${EXPO_PUBLIC_API_PORT}"
     }
   }
 }

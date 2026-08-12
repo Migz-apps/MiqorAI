@@ -1,32 +1,35 @@
 # Clinical Safety AI Integration
 
-The MiqorAI Node.js API calls a remote FastAPI clinical-safety service (for example a fine-tuned model running on Google Colab behind ngrok) **only when a doctor orders a lab test or prescribes medication**.
+The MiqorAI Node.js API calls a remote always-on FastAPI clinical-safety service over public HTTPS only when a doctor orders a lab test or prescribes medication.
 
 ## Environment variables
 
 Add these to `server/.env`:
 
 ```env
-AI_SERVICE_URL=https://xxxx.ngrok-free.app
+AI_SERVICE_BASE_URL=https://your-ai-service.example.com
+AI_SERVICE_API_KEY=
 MIQORAI_AI_MOCK=false
 ```
 
 | Variable | Description |
 |----------|-------------|
-| `AI_SERVICE_URL` | Base URL of the Colab/ngrok FastAPI service (no trailing slash) |
-| `MIQORAI_AI_MOCK` | `true` = use local mock or `/clinical-safety/check/mock` when URL is set |
+| `AI_SERVICE_BASE_URL` | Primary base URL of the deployed FastAPI clinical-safety service, without a trailing slash |
+| `AI_SERVICE_URL` | Legacy alias still supported by the backend |
+| `AI_SERVICE_API_KEY` | Optional bearer/API key forwarded to the AI service when required |
+| `MIQORAI_AI_MOCK` | `true` uses the mock checker instead of the live model |
 
-If **neither** `AI_SERVICE_URL` nor `MIQORAI_AI_MOCK=true` is set, prescriptions and lab orders proceed without an AI gate (existing behavior preserved).
+If neither `AI_SERVICE_BASE_URL` nor `AI_SERVICE_URL` is set and `MIQORAI_AI_MOCK` is not `true`, prescriptions and lab orders proceed without an AI gate.
 
 ## Health check
 
 ```bash
-curl http://localhost:3000/api/v1/clinical-safety/health
+curl https://miqorai.onrender.com/api/v1/clinical-safety/health
 ```
 
-Proxies to `GET {AI_SERVICE_URL}/health` when configured.
+This proxies to `GET {AI_SERVICE_BASE_URL}/health` when the AI service is configured.
 
-Remote AI service endpoints:
+Expected remote AI endpoints:
 
 - `GET /health`
 - `POST /clinical-safety/check`
@@ -36,9 +39,11 @@ Remote AI service endpoints:
 
 1. Doctor submits `POST /api/hospital/prescription` or `POST /api/hospital/lab-order`.
 2. Backend builds a clinical-safety payload from patient history, visits, complaint, and attempted action.
-3. Backend calls the remote AI service (15s timeout, one retry on transient errors).
-4. If `intervention_required` is **false** → order is created normally.
-5. If `intervention_required` is **true** → order is **not** created. Response:
+3. Backend calls the remote AI service with the configured timeout and retry policy.
+4. If `intervention_required` is `false`, the order is created normally.
+5. If `intervention_required` is `true`, the order is blocked and a `409 Conflict` response is returned.
+
+Example blocked response:
 
 ```json
 {
@@ -57,15 +62,13 @@ Remote AI service endpoints:
 }
 ```
 
-HTTP status: **409 Conflict**
-
-If the AI service is unreachable, a safe fallback alert is returned with `intervention_required: true`.
+If the AI service is unreachable, the backend returns a safe fallback alert with `intervention_required: true`.
 
 ## Override and cancel
 
 After a block, the doctor can:
 
-**Override** (requires documented reason):
+Override with a documented reason:
 
 ```http
 POST /api/v1/clinical-safety/{pendingActionId}/override
@@ -77,7 +80,7 @@ Content-Type: application/json
 
 This completes the original prescription or lab order and stores an audit record.
 
-**Cancel**:
+Cancel:
 
 ```http
 POST /api/v1/clinical-safety/{pendingActionId}/cancel
@@ -88,24 +91,24 @@ No order is created.
 
 ## Mock mode
 
-Set `MIQORAI_AI_MOCK=true` to test without Colab:
+Set `MIQORAI_AI_MOCK=true` to test without the deployed AI host.
 
-- With `AI_SERVICE_URL` set → calls `/clinical-safety/check/mock`
-- Without URL → uses built-in local mock (flags high-risk drug/test names)
+- With `AI_SERVICE_BASE_URL` or `AI_SERVICE_URL` set, the backend calls `/clinical-safety/check/mock`
+- Without an AI URL, the backend uses the built-in local mock
 
 ## Audit trail
 
 Decisions are stored in `clinical_safety_audit_logs` with:
 
-- patient, doctor, attempted action, AI alert
-- final decision: `ALLOWED`, `BLOCKED`, `OVERRIDDEN`, `CANCELLED`
+- patient, doctor, attempted action, and AI alert details
+- final decision of `ALLOWED`, `BLOCKED`, `OVERRIDDEN`, or `CANCELLED`
 - override reason when applicable
 
-## What is NOT gated
+## What is not gated
 
-- Reception / check-in
+- Reception and check-in
 - Doctor assignment
-- Vitals, diagnosis notes, referrals
+- Vitals, diagnosis notes, and referrals
 - Pharmacy dispensing
 
-Only **test orders** and **medication prescriptions** trigger the AI service.
+Only test orders and medication prescriptions trigger the AI service.

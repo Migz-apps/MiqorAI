@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, ShieldCheck } from "lucide-react";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { PageHeader } from "@/components/miqorai/PageHeader";
 import { insurerApi, insurerKeys, mapAuditEntry } from "@/lib/api/insurer";
 import { ROLE_LABEL } from "@/store/auth";
 import { fmtDateTime } from "@/lib/format";

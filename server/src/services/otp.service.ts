@@ -1,17 +1,13 @@
-import crypto from "crypto";
 import { prisma } from "../lib/prisma.js";
 import { config } from "../config.js";
 import { hashToken } from "../utils/crypto.js";
 import { badRequest } from "../utils/errors.js";
 import { sendSms } from "./sms.service.js";
-
-function generateOtpCode(): string {
-  return String(crypto.randomInt(100000, 999999));
-}
+import { generateSixDigitCode } from "../utils/one-time-code.js";
 
 export async function sendOtp(phone: string): Promise<{ sent: boolean; expires_in_minutes: number }> {
   const normalized = phone.replace(/\s/g, "");
-  const code = generateOtpCode();
+  const code = generateSixDigitCode();
   const expiresAt = new Date(Date.now() + config.otpExpiresMinutes * 60_000);
 
   await prisma.otpVerification.deleteMany({ where: { phone: normalized, verifiedAt: null } });

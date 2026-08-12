@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { pharmacyApi } from "@/lib/api/pharmacy";
@@ -15,7 +16,15 @@ export default function Patients() {
     queryKey: pharmacyKeys.patients(),
     queryFn: async () => {
       const rows = await pharmacyApi.patients();
-      return (rows as Array<{ id: string; name: string; phone?: string | null; email?: string | null }>).map(mapPatientListItem);
+      return (rows as Array<{
+        id: string;
+        name: string;
+        phone?: string | null;
+        email?: string | null;
+        allergies?: unknown[];
+        conditions?: unknown[];
+        adherence?: number;
+      }>).map(mapPatientListItem);
     },
   });
 

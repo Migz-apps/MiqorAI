@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/MiqorAI/StatusBadge";
+import { StatusBadge } from "@/components/miqorai/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Search, Filter } from "lucide-react";
 import type { RxStatus } from "@/lib/types";

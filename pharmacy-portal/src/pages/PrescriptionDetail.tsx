@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/MiqorAI/StatusBadge";
+import { StatusBadge } from "@/components/miqorai/StatusBadge";
 import {
   AlertTriangle, ArrowLeft, ShieldCheck, Package, CheckCircle2, PauseCircle,
   XCircle, Printer, User, Stethoscope, Pill, Phone, FileText, Bell,
@@ -92,7 +92,7 @@ export default function PrescriptionDetail() {
 
   const interactions = useMemo(() => {
     if (!rx) return [];
-    return [];
+    return rx.interactionMessages;
   }, [rx]);
 
   if (isLoading) return <div className="p-lg text-sm text-text-secondary">Loading prescription…</div>;

@@ -1,199 +1,143 @@
 # MiqorAI
 
-MiqorAI is a connected health network platform with separate web and mobile applications for patients, hospitals, pharmacies, insurers, and platform administrators. Each app is an independent frontend with its own dependencies, dev server port, and Docker image.
+MiqorAI is a connected health platform made up of multiple client apps backed by one shared Node.js API, one shared PostgreSQL database, Redis, and an optional clinical-safety AI service.
 
 ## Repository structure
 
 | Directory | Role | Stack | Dev port |
 |-----------|------|-------|----------|
-| `patient-portal-desktop/` | Patient web portal (records, QR, export) | Vite, React, React Router | 5173 |
-| `hospital-portal/` | Hospital staff workspace | Vite, React, shadcn/ui | 8080 |
-| `insurance-portal/` | Insurer analytics and operations | Vite, React, shadcn/ui | 8081 |
-| `pharmacy-portal/` | Pharmacy dispensing workspace | Vite, React, shadcn/ui | 8082 |
-| `admin-portal/` | Platform management cockpit | TanStack Start, React | 8083 |
+| `server/` | Shared backend API, auth, files, reports, integrations | Node.js, Express, Prisma | 3000 |
+| `patient-portal-desktop/` | Patient web portal | Vite, React | 5173 |
+| `hospital-portal/` | Hospital staff portal | Vite, React | 8080 |
+| `insurance-portal/` | Insurer portal | Vite, React | 8081 |
+| `pharmacy-portal/` | Pharmacy portal | Vite, React | 8082 |
+| `admin-portal/` | Platform admin portal | TanStack Start, React | 8083 |
 | `mobile_patient/` | Patient mobile app | Expo, React Native | Expo default |
 
 Supporting folders:
 
-- `scripts/` — helper scripts to run all web frontends at once
-- `docker/` — shared Docker assets
-- `docker-compose.yml` — orchestrates all web portal containers
+- `scripts/` - local helper scripts
+- `seed_data/` - CSV seed inputs used by the backend seed flow
+- `docker-compose.dev.yml` - local Redis support for development
 
-## What was changed in this cleanup
+## Current launch story
 
-1. **Removed Lovable tooling** — deleted `.lovable/` folders, `bun.lock` files, `lovable-tagger`, and `@lovable.dev/vite-tanstack-config`. Vite configs now use standard plugins only.
-2. **Rebranded to MiqorAI** — replaced MediPass, Med-Pass, and related naming across user-facing text, storage keys, demo credentials, and component paths (`components/MiqorAI/`).
-3. **Assigned unique dev ports** — each web portal runs on its own port so they can run simultaneously without conflict.
-4. **Added run-all scripts** — start every web frontend with one command.
-5. **Added Docker support** — multi-stage Dockerfiles per portal plus `docker-compose.yml` for production-style deployment.
+All portals are meant to talk to the shared backend in `server/`.
 
-## Prerequisites
+The frontends are no longer meant to run as isolated mock-only products for launch. A valid backend, database, and environment configuration are part of the normal system startup story.
 
-- **Node.js 22+** and **npm**
-- For mobile: **Expo CLI** (via `npx expo`)
+## Local development
 
-## Quick start — run all web frontends
-
-From the repository root:
-
-```powershell
-# Windows
-.\scripts\run-all-frontends.ps1
-```
-
-```bash
-# macOS / Linux
-chmod +x scripts/run-all-frontends.sh
-./scripts/run-all-frontends.sh
-```
-
-Or using npm directly:
-
-```bash
-npm install
-npm run dev
-```
-
-Then open:
-
-- Patient: http://localhost:5173
-- Hospital: http://localhost:8080
-- Insurance: http://localhost:8081
-- Pharmacy: http://localhost:8082
-- Admin: http://localhost:8083
-
-## Run a single frontend
-
-```bash
-cd patient-portal-desktop   # or any portal folder
-npm install
-npm run dev
-```
-
-## Build all web frontends
+Install dependencies:
 
 ```bash
 npm install
 npm run install:all
-npm run build:all
+npm install --prefix mobile_patient
 ```
 
-## Demo credentials
-
-Most staff portals accept any valid staff email with demo password:
-
-```
-MiqorAI
-```
-
-(Previously documented as `medpass`; updated during rebranding.)
-
-## Docker deployment
-
-Each portal includes its own `Dockerfile`. SPA portals (patient, hospital, insurance, pharmacy) are built with Node and served by nginx. The admin portal uses a Node runtime for TanStack Start SSR output.
-
-Build and run everything:
+Start backend plus the main web portals:
 
 ```bash
-docker compose build
-docker compose up
+npm run dev:full
 ```
 
-Individual image:
+That starts:
+
+- API: http://localhost:3000
+- Patient portal: http://localhost:5173
+- Hospital portal: http://localhost:8080
+- Insurance portal: http://localhost:8081
+- Pharmacy portal: http://localhost:8082
+- Admin portal: http://localhost:8083
+
+If you only want backend + patient + hospital:
 
 ```bash
-cd hospital-portal
-docker build -t MiqorAI-hospital-portal .
-docker run -p 8080:80 MiqorAI-hospital-portal
+npm run dev:core
 ```
 
-Port mapping when using `docker compose up`:
+If you only want the backend:
 
-| Service | Host port |
-|---------|-----------|
-| patient-portal | 5173 |
-| hospital-portal | 8080 |
-| insurance-portal | 8081 |
-| pharmacy-portal | 8082 |
-| admin-portal | 8083 |
+```bash
+npm run dev:api
+```
 
-## Mobile patient app
+## Mobile app
 
 ```bash
 cd mobile_patient
-npm install
 npm start
 ```
 
-See `mobile_patient/README.md` for Expo setup details.
+For local phone testing, point `EXPO_PUBLIC_API_URL` at your computer's reachable IP using `mobile_patient/.env.local.example`.
 
-## Architecture overview
+## Backend setup
 
-```mermaid
-flowchart LR
-  subgraph clients [Client apps]
-    P[Patient portal]
-    H[Hospital portal]
-    PH[Pharmacy portal]
-    I[Insurance portal]
-    A[Admin portal]
-    M[Mobile patient]
-  end
+The backend needs:
 
-  subgraph future [Future backend]
-    API[MiqorAI API]
-  end
+- `DATABASE_URL`
+- `REDIS_URL`
+- `CORS_ORIGINS`
+- `BASE_URL`
+- JWT, encryption, file-signing, and QR secrets
 
-  P -.-> API
-  H -.-> API
-  PH -.-> API
-  I -.-> API
-  A -.-> API
-  M -.-> API
-```
+Use:
 
-Currently each frontend uses local mock data and does not require a shared backend to run in development.
+- [server/.env.example](C:/Users/user/Downloads/github/MiqorAI-git/MiqorAI/server/.env.example:1)
+- [server/SETUP.md](C:/Users/user/Downloads/github/MiqorAI-git/MiqorAI/server/SETUP.md:1)
+- [server/CLINICAL_SAFETY.md](C:/Users/user/Downloads/github/MiqorAI-git/MiqorAI/server/CLINICAL_SAFETY.md:1)
 
-## Per-app documentation
+## Build commands
 
-- `patient-portal-desktop/` — patient web UI
-- `hospital-portal/README.md`
-- `insurance-portal/README.md`
-- `pharmacy-portal/README.md`
-- `mobile_patient/README.md`
-
-## Verification checklist
-
-Run these commands from the repo root to confirm the cleanup:
-
-```powershell
-# 1. No Lovable references in source (lockfiles may still mention removed packages until npm install)
-Select-String -Path .\*\src\* -Pattern "lovable|Lovable" -Recurse
-
-# 2. No old MediPass branding in source
-Select-String -Path .\*\src\* -Pattern "MediPass|Med-Pass|medpass" -Recurse
-
-# 3. Install and build all web apps
-npm install
-npm run install:all
-npm run build:all
-
-# 4. Start all dev servers (Ctrl+C to stop)
-npm run dev
-
-# 5. Docker (when your machine can handle it)
-docker compose config
-docker compose build
-```
-
-On bash:
+Build backend and all web portals:
 
 ```bash
-rg -i "lovable" --glob '!node_modules' --glob '!package-lock.json'
-rg -i "medipass|med-pass|medpass" --glob '!node_modules' --glob '!package-lock.json'
-npm install && npm run install:all && npm run build:all
+npm run build:all
 ```
+
+Type-check the mobile app:
+
+```bash
+cd mobile_patient
+npm run typecheck
+```
+
+## Test commands
+
+Production wiring checks:
+
+```bash
+npm run test:production:wiring
+```
+
+Cross-portal integration checks:
+
+```bash
+npm run test:integration:portals
+```
+
+Full backend API suite:
+
+```bash
+npm run test:api:all
+```
+
+## Deployment overview
+
+- Backend: deploy `server/` with its production environment variables
+- Database: shared PostgreSQL instance, currently prepared for Supabase
+- Redis: shared hosted Redis instance
+- AI service: separate always-on HTTPS service used by clinical safety flows
+- Web portals: deploy each frontend separately and point them to the deployed backend
+- Mobile app: build separately and point it to the deployed backend
+
+## Notes
+
+- Do not rely on placeholder or demo credentials in production-facing portals.
+- Do not deploy portals without a reachable shared backend.
+- The hospital QR workflow, reports, prescriptions, lab ordering, patient access grants, and insurer workflows all depend on the shared backend.
 
 ## License
 
-Proprietary — MiqorAI.
+Proprietary - MiqorAI.

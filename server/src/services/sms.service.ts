@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
+import { serviceUnavailable } from "../utils/errors.js";
 
 export async function sendSms(
   phone: string,
@@ -31,12 +32,38 @@ export async function sendSms(
     if (!res.ok) {
       const errText = await res.text();
       logger.error("Twilio SMS failed", { status: res.status, err: errText });
-      throw new Error("SMS delivery failed");
+      throw serviceUnavailable("SMS delivery failed", {
+        provider: "twilio",
+        recipient: normalized,
+      });
     }
     const data = (await res.json()) as { sid?: string };
     return { sent: true, channel: "sms", sid: data.sid };
   }
 
+  if (config.nodeEnv === "production") {
+    throw serviceUnavailable("SMS delivery is not configured", {
+      provider: config.sms.provider || "unknown",
+      recipient: normalized,
+    });
+  }
+
   logger.info("SMS (dev/log mode)", { phone: normalized, message });
   return { sent: true, channel: "sms" };
+}
+
+export async function assertSmsDeliveryReady(): Promise<void> {
+  if (config.nodeEnv !== "production") return;
+
+  const configured =
+    config.sms.provider === "twilio" &&
+    Boolean(config.sms.accountSid) &&
+    Boolean(config.sms.authToken) &&
+    Boolean(config.sms.fromNumber);
+
+  if (!configured) {
+    throw serviceUnavailable("SMS delivery is not configured", {
+      provider: config.sms.provider || "unknown",
+    });
+  }
 }

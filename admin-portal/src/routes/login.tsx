@@ -1,48 +1,58 @@
-import { createFileRoute, Link, useNavigate, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Sparkles, Eye, EyeOff, ShieldCheck, Activity, Globe2, Lock } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import {
+  Activity,
+  Eye,
+  EyeOff,
+  Globe2,
+  Lock,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { FormAlert } from "@/components/FormAlert";
+import { useAuth } from "@/lib/auth";
 import { MESSAGES } from "@/lib/user-messages";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in · MiqorAI Management" },
-      { name: "description", content: "Secure access to the MiqorAI Management dashboard." },
+      {
+        name: "description",
+        content: "Secure access to the MiqorAI Management dashboard.",
+      },
     ],
   }),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const session = useAuth((s) => s.session);
-  const login = useAuth((s) => s.login);
-  const nav = useNavigate();
+  const session = useAuth((state) => state.session);
+  const login = useAuth((state) => state.login);
+  const navigate = useNavigate();
   const [show, setShow] = useState(false);
-  const [email, setEmail] = useState("admin@miqorai.com");
-  const [pwd, setPwd] = useState("MiqorAI123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (session) return <Navigate to="/" replace />;
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
     setLoading(true);
     setError(null);
-    const result = await login(email, pwd);
+    const result = await login(email, password);
     if (!result.ok) {
       setError(result.error ?? MESSAGES.auth.invalidCredentials);
       setLoading(false);
       return;
     }
-    nav({ to: "/" });
+    navigate({ to: "/" });
   }
 
   return (
     <div className="min-h-screen w-full grid lg:grid-cols-2 bg-background">
-      {/* LEFT — brand panel */}
       <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden border-r border-border">
         <div className="absolute inset-0 bg-cockpit" />
         <div className="absolute inset-0 grid-bg opacity-50" />
@@ -55,7 +65,9 @@ function LoginPage() {
           </div>
           <div className="leading-tight">
             <div className="text-sm font-semibold tracking-tight">MiqorAI</div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Management Console</div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              Management Console
+            </div>
           </div>
         </div>
 
@@ -65,23 +77,26 @@ function LoginPage() {
             ALL SYSTEMS OPERATIONAL
           </div>
           <h1 className="text-4xl font-semibold tracking-tight leading-tight">
-            The command center <br />for the <span className="text-gradient">MiqorAI</span> network.
+            The command center <br />
+            for the <span className="text-gradient">MiqorAI</span> network.
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Approve hospitals, resolve disputes, monitor billing & system health — all in one
+            Approve hospitals, resolve disputes, monitor billing and system health all in one
             real-time cockpit covering 4 countries and 127k+ patients.
           </p>
 
           <div className="grid grid-cols-3 gap-3 pt-2">
             {[
-              { i: Globe2, k: "4", l: "Countries" },
-              { i: Activity, k: "47", l: "Hospitals" },
-              { i: ShieldCheck, k: "99.97%", l: "Uptime" },
-            ].map(({ i: I, k, l }) => (
-              <div key={l} className="rounded-lg border border-border bg-card-gradient p-3">
-                <I className="size-4 text-primary" />
-                <div className="mt-2 font-mono text-lg font-semibold">{k}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{l}</div>
+              { icon: Globe2, key: "4", label: "Countries" },
+              { icon: Activity, key: "47", label: "Hospitals" },
+              { icon: ShieldCheck, key: "99.97%", label: "Uptime" },
+            ].map(({ icon: Icon, key, label }) => (
+              <div key={label} className="rounded-lg border border-border bg-card-gradient p-3">
+                <Icon className="size-4 text-primary" />
+                <div className="mt-2 font-mono text-lg font-semibold">{key}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {label}
+                </div>
               </div>
             ))}
           </div>
@@ -92,7 +107,6 @@ function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT — form */}
       <div className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-8">
@@ -109,25 +123,41 @@ function LoginPage() {
 
           <form onSubmit={submit} className="mt-8 space-y-4">
             <div>
-              <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Email</label>
+              <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                Email
+              </label>
               <input
-                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="admin@example.com"
                 className="mt-1.5 w-full h-11 rounded-md border border-border bg-card/60 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
               />
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Password</label>
-                <button type="button" className="text-[11px] text-primary hover:underline">Forgot?</button>
+                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Password
+                </label>
+                <button type="button" className="text-[11px] text-primary hover:underline">
+                  Forgot?
+                </button>
               </div>
               <div className="relative mt-1.5">
                 <input
-                  type={show ? "text" : "password"} required value={pwd} onChange={(e) => setPwd(e.target.value)}
-                  placeholder="••••••••••"
+                  type={show ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
                   className="w-full h-11 rounded-md border border-border bg-card/60 px-3 pr-10 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                 />
-                <button type="button" onClick={() => setShow(s => !s)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-accent text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => setShow((current) => !current)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-accent text-muted-foreground"
+                >
                   {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
@@ -136,29 +166,46 @@ function LoginPage() {
             {error ? <FormAlert>{error}</FormAlert> : null}
 
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" className="size-3.5 rounded border-border accent-[var(--color-primary)]" defaultChecked />
+              <input
+                type="checkbox"
+                className="size-3.5 rounded border-border accent-[var(--color-primary)]"
+                defaultChecked
+              />
               Keep me signed in for 30 days
             </label>
 
             <button
-              type="submit" disabled={loading}
+              type="submit"
+              disabled={loading}
               className="w-full h-11 rounded-md bg-gradient-primary text-primary-foreground font-medium glow-primary hover:opacity-95 transition disabled:opacity-60"
             >
-              {loading ? "Authenticating…" : "Sign in to Dashboard"}
+              {loading ? "Authenticating..." : "Sign in to Dashboard"}
             </button>
 
             <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-              <div className="relative flex justify-center"><span className="bg-background px-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">or</span></div>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-background px-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  or
+                </span>
+              </div>
             </div>
 
-            <button type="button" className="w-full h-11 rounded-md border border-border bg-card/60 text-sm hover:bg-accent transition flex items-center justify-center gap-2">
+            <button
+              type="button"
+              className="w-full h-11 rounded-md border border-border bg-card/60 text-sm hover:bg-accent transition flex items-center justify-center gap-2"
+            >
               <ShieldCheck className="size-4 text-primary" /> Continue with SSO
             </button>
           </form>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Need an account? <Link to="/" className="text-primary hover:underline">Request access</Link>
+            Need an account?{" "}
+            <Link to="/" className="text-primary hover:underline">
+              Request access
+            </Link>
           </p>
           <p className="mt-3 text-center text-[10px] font-mono text-muted-foreground/70">
             MiqorAI · v2.6.1 · Build 20260508

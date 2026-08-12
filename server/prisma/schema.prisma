@@ -262,6 +262,21 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model AuthChallenge {
+  id         String    @id @default(uuid()) @db.Uuid
+  email      String
+  purpose    String
+  codeHash   String    @map("code_hash")
+  payload    Json?
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([email, purpose, createdAt])
+  @@map("auth_challenges")
+}
+
 model Patient {
   id                    String   @id @default(uuid()) @db.Uuid
   userId                String   @unique @map("user_id") @db.Uuid

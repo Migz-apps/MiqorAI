@@ -22,16 +22,34 @@ export default function Settings() {
   const [name, setName] = useState(session.pharmacyName);
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [notificationRules, setNotificationRules] = useState({
+    lowStock: true,
+    expiringSoon: true,
+    smsOnDispense: true,
+    smsOnRefillDue: true,
+  });
 
   useEffect(() => {
     if (!settings) return;
     setName(String(settings.name ?? session.pharmacyName));
     setPhone(String(settings.phone ?? ""));
     setAddress(String(settings.address ?? ""));
+    const rules = (settings.notification_rules ?? {}) as Record<string, unknown>;
+    setNotificationRules({
+      lowStock: rules.lowStock === undefined ? true : Boolean(rules.lowStock),
+      expiringSoon: rules.expiringSoon === undefined ? true : Boolean(rules.expiringSoon),
+      smsOnDispense: rules.smsOnDispense === undefined ? true : Boolean(rules.smsOnDispense),
+      smsOnRefillDue: rules.smsOnRefillDue === undefined ? true : Boolean(rules.smsOnRefillDue),
+    });
   }, [settings, session.pharmacyName]);
 
   const saveMutation = useMutation({
-    mutationFn: () => pharmacyApi.updateSettings({ name, phone, address }),
+    mutationFn: () => pharmacyApi.updateSettings({
+      name,
+      phone,
+      address,
+      notification_rules: notificationRules,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: pharmacyKeys.settings() });
       toast.success("Settings saved");
@@ -81,14 +99,19 @@ export default function Settings() {
         <CardHeader className="pb-sm"><CardTitle className="h3">Notification rules</CardTitle></CardHeader>
         <CardContent className="space-y-md">
           {[
-            "Alert when stock falls below minimum",
-            "Alert when medication expires within 90 days",
-            "SMS patient on dispense",
-            "SMS patient when refill is due (adherence)",
-          ].map((r) => (
-            <div key={r} className="flex items-center justify-between">
-              <div className="text-sm">{r}</div>
-              <Switch defaultChecked />
+            { key: "lowStock", label: "Alert when stock falls below minimum" },
+            { key: "expiringSoon", label: "Alert when medication expires within 90 days" },
+            { key: "smsOnDispense", label: "SMS patient on dispense" },
+            { key: "smsOnRefillDue", label: "SMS patient when refill is due (adherence)" },
+          ].map((rule) => (
+            <div key={rule.key} className="flex items-center justify-between">
+              <div className="text-sm">{rule.label}</div>
+              <Switch
+                checked={notificationRules[rule.key as keyof typeof notificationRules]}
+                onCheckedChange={(checked) =>
+                  setNotificationRules((current) => ({ ...current, [rule.key]: checked }))
+                }
+              />
             </div>
           ))}
         </CardContent>

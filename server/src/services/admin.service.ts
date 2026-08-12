@@ -7,6 +7,7 @@ import { sendInvitationEmail } from "./notification.service.js";
 import { writeAuditLog } from "./audit.service.js";
 import { badRequest, notFound } from "../utils/errors.js";
 import { getRedis } from "../lib/redis.js";
+import { buildPortalUrl } from "./portal-url.service.js";
 
 export async function getAdminDashboard() {
   const [
@@ -404,7 +405,7 @@ export async function createInvitation(
       expiresAt: new Date(Date.now() + config.invitationExpiryDays * 86400000),
     },
   });
-  const inviteUrl = `${config.corsOrigins[0]}/invite?token=${token}`;
+  const inviteUrl = buildPortalUrl("admin", `/login?invite_token=${token}`);
   await sendInvitationEmail(email, inviteUrl);
   return { invitation_id: invitation.id, invite_url: inviteUrl };
 }

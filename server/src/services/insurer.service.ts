@@ -19,16 +19,24 @@ export async function getInsurerDashboard(insurerId: string) {
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const memberRows = await prisma.insurerMember.findMany({
+    where: { insurerId, isActive: true },
+    select: { patientId: true },
+    take: 1000,
+  });
+  const memberPatientIds = memberRows.map((row) => row.patientId);
 
-  const [savings, members, claims, adherenceSnapshots, hospitals] = await Promise.all([
+  const [savings, claims, adherenceSnapshots, hospitals] = await Promise.all([
     prisma.savingsRecord.aggregate({
       where: { insurerId, createdAt: { gte: monthStart } },
       _sum: { savings: true },
       _count: true,
     }),
-    prisma.insurerMember.count({ where: { insurerId, isActive: true } }),
     prisma.claim.findMany({ where: { insurerId }, take: 100 }),
-    prisma.patientAdherenceSnapshot.findMany({ take: 500 }),
+    prisma.patientAdherenceSnapshot.findMany({
+      where: memberPatientIds.length > 0 ? { patientId: { in: memberPatientIds } } : { patientId: { in: [] } },
+      take: 500,
+    }),
     prisma.providerRiskScore.findMany({ orderBy: { anomalyScore: "desc" }, take: 7 }),
   ]);
 
@@ -55,7 +63,7 @@ export async function getInsurerDashboard(insurerId: string) {
 
   return {
     total_savings: grossSavings,
-    members_covered: members,
+    members_covered: memberPatientIds.length,
     adherence_rate: Math.round(avgAdherence),
     roi: grossSavings > 0 ? Math.round((grossSavings / Math.max(fee, 1)) * 10) / 10 : 0,
     savings_trend: savingsTrend.map((s) => ({
@@ -132,7 +140,10 @@ export async function getInsurerAdherence(insurerId: string) {
     take: 500,
   });
 
-  const snapshots = await prisma.patientAdherenceSnapshot.findMany();
+  const memberPatientIds = members.map((member) => member.patientId);
+  const snapshots = await prisma.patientAdherenceSnapshot.findMany({
+    where: memberPatientIds.length > 0 ? { patientId: { in: memberPatientIds } } : { patientId: { in: [] } },
+  });
   const snapshotByPatient = new Map(snapshots.map((s) => [s.patientId, s]));
 
   const byMedication: Record<string, { total: number; count: number }> = {};
@@ -143,6 +154,7 @@ export async function getInsurerAdherence(insurerId: string) {
     const rate = snap ? Number(snap.overallRate) : 0;
     if (rate < 75) {
       nonAdherent.push({
+        member_id: member.id,
         patient_id: member.patientId,
         name: `${member.patient.firstName} ${member.patient.lastName}`,
         adherence_rate: rate,
@@ -181,11 +193,33 @@ export async function getInsurerAdherence(insurerId: string) {
 }
 
 export async function getFraudAnomalies(insurerId: string, days = 7) {
-  const since = new Date(Date.now() - days * 86400000);
-  const claims = await prisma.claim.findMany({
-    where: { insurerId, createdAt: { gte: since } },
+  const lookbackMs = days * 86400000;
+  let windowStart = new Date(Date.now() - lookbackMs);
+  let windowEnd = new Date();
+  let usedLatestAvailableWindow = false;
+
+  let claims = await prisma.claim.findMany({
+    where: { insurerId, createdAt: { gte: windowStart, lte: windowEnd } },
     orderBy: { fraudScore: "desc" },
   });
+
+  if (claims.length === 0) {
+    const latestClaim = await prisma.claim.findFirst({
+      where: { insurerId },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+
+    if (latestClaim) {
+      usedLatestAvailableWindow = true;
+      windowEnd = latestClaim.createdAt;
+      windowStart = new Date(windowEnd.getTime() - lookbackMs);
+      claims = await prisma.claim.findMany({
+        where: { insurerId, createdAt: { gte: windowStart, lte: windowEnd } },
+        orderBy: { fraudScore: "desc" },
+      });
+    }
+  }
 
   const high = claims.filter((c) => c.fraudScore >= 90).length;
   const medium = claims.filter((c) => c.fraudScore >= 70 && c.fraudScore < 90).length;
@@ -195,6 +229,9 @@ export async function getFraudAnomalies(insurerId: string, days = 7) {
     high_risk: high,
     medium_risk: medium,
     low_risk: low,
+    window_start: windowStart,
+    window_end: windowEnd,
+    used_latest_available_window: usedLatestAvailableWindow,
     flagged_claims: claims.map((c) => ({
       id: c.id,
       patient_id: c.patientId,

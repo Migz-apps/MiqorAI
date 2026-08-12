@@ -10,16 +10,18 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileBarChart2, Download, FileText, FileSpreadsheet, Calendar, CheckCircle2 } from "lucide-react";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
+import { PageHeader } from "@/components/miqorai/PageHeader";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys } from "@/lib/api/insurer";
 import { toast } from "@/lib/notify";
+import { useAuth } from "@/store/auth";
 
 function fmtDate(d: string | Date): string {
   return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
 }
 
 export default function Reports() {
+  const session = useAuth((s) => s.session)!;
   const queryClient = useQueryClient();
   const [metrics, setMetrics] = useState({ savings: true, adherence: true, fraud: true, members: false, contract: false });
   const [format, setFormat] = useState<"pdf" | "csv" | "excel">("pdf");
@@ -47,6 +49,18 @@ export default function Reports() {
       void queryClient.invalidateQueries({ queryKey: insurerKeys.reports });
     },
     onError: () => toast.error("Report generation failed"),
+  });
+
+  const scheduleMutation = useMutation({
+    mutationFn: () => insurerApi.scheduleReport({
+      report_type: "board_report",
+      frequency: "monthly",
+      email: session.email,
+    }),
+    onSuccess: () => {
+      toast.success("Monthly schedule created");
+    },
+    onError: () => toast.error("Could not schedule monthly report"),
   });
 
   return (
@@ -127,7 +141,9 @@ export default function Reports() {
                 Watermarked with your insurer code and timestamp.
               </div>
               <div className="flex gap-sm">
-                <Button variant="outline" size="sm">Schedule monthly</Button>
+                <Button variant="outline" size="sm" disabled={scheduleMutation.isPending} onClick={() => scheduleMutation.mutate()}>
+                  {scheduleMutation.isPending ? "Scheduling..." : "Schedule monthly"}
+                </Button>
                 <Button
                   size="sm"
                   disabled={generateMutation.isPending}

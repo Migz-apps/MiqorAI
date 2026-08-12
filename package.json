@@ -14,6 +14,8 @@
     "build:all": "npm run build --prefix server && npm run build --prefix patient-portal-desktop && npm run build --prefix hospital-portal && npm run build --prefix insurance-portal && npm run build --prefix pharmacy-portal && npm run build --prefix admin-portal",
     "test:api": "npm run db:seed --prefix server && npm test --prefix server",
     "test:api:all": "npm run test:all --prefix server",
+    "test:integration:portals": "npm run test:integration --prefix server",
+    "test:production:wiring": "node scripts/check-production-wiring.mjs",
     "verify": "npm run test:api && npm run build:all"
   },
   "devDependencies": {

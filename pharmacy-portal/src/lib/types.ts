@@ -24,6 +24,7 @@ export type Rx = {
   items: RxItem[];
   insurance?: { provider: string; member: string };
   total: number;           // KES
+  interactionMessages: string[];
 };
 
 export type RxItem = {

@@ -89,7 +89,7 @@ export default function Login() {
       </div>
 
       <div className="mt-lg p-sm rounded-md bg-primary-light/40 border border-primary/10 text-[11px] text-primary leading-relaxed">
-        Use the local development credentials from the project credentials file. Passwords are never pre-filled in the portal.
+        Use your assigned hospital code, work email, and password. Passwords are never pre-filled in the portal.
       </div>
     </AuthShell>
   );

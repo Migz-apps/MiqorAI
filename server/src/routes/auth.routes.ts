@@ -9,7 +9,11 @@ import {
   logoutUser,
   refreshAccessToken,
   registerPatient,
+  resendForgotPasswordOtp,
+  resendPatientRegistrationOtp,
   resetPassword,
+  verifyForgotPasswordOtp,
+  verifyPatientRegistration,
 } from "../services/auth.service.js";
 import { getEnhancedCurrentUser, publicHospitalStaffSignup } from "../services/portal-complete.service.js";
 import { sendOtp, verifyOtp } from "../services/otp.service.js";
@@ -20,14 +24,22 @@ import {
 } from "../services/twofa.service.js";
 import { authenticate } from "../middleware/auth.js";
 import { validateBody } from "../middleware/errorHandler.js";
+import {
+  dateStringSchema,
+  emailSchema,
+  otpCodeSchema,
+  personNameSchema,
+  phoneSchema,
+  strongPasswordSchema,
+} from "../utils/validation.js";
 
 const router = Router();
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: emailSchema,
   password: z.string().min(6),
   organization_code: z.string().optional(),
-  totp_code: z.string().length(6).optional(),
+  totp_code: otpCodeSchema.optional(),
 });
 
 const refreshSchema = z.object({
@@ -39,42 +51,61 @@ const logoutSchema = z.object({
 });
 
 const registerSchema = z.object({
-  phone: z.string().min(8),
-  password: z.string().min(8),
-  full_name: z.string().min(2),
-  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  email: z.string().email().optional(),
+  phone: phoneSchema,
+  password: strongPasswordSchema,
+  full_name: personNameSchema,
+  date_of_birth: dateStringSchema.refine((value) => {
+    const dob = new Date(`${value}T00:00:00.000Z`);
+    const minimumAdultDate = new Date();
+    minimumAdultDate.setUTCFullYear(minimumAdultDate.getUTCFullYear() - 13);
+    return dob <= minimumAdultDate;
+  }, "Patient must be at least 13 years old to self-register"),
+  email: emailSchema,
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email(),
+  email: emailSchema,
 });
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  new_password: z.string().min(8),
+  new_password: strongPasswordSchema,
+});
+
+const registrationVerifySchema = z.object({
+  email: emailSchema,
+  otp: otpCodeSchema,
+});
+
+const registrationResendSchema = z.object({
+  email: emailSchema,
 });
 
 const otpSendSchema = z.object({
-  phone: z.string().min(8),
+  phone: phoneSchema,
 });
 
 const otpVerifySchema = z.object({
-  phone: z.string().min(8),
-  otp: z.string().length(6),
+  phone: phoneSchema,
+  otp: otpCodeSchema,
+});
+
+const forgotPasswordVerifySchema = z.object({
+  email: emailSchema,
+  otp: otpCodeSchema,
 });
 
 const totpSchema = z.object({
-  token: z.string().length(6),
+  token: otpCodeSchema,
 });
 
 const hospitalSignupSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: emailSchema,
+  password: strongPasswordSchema,
   hospital_code: z.string().min(3),
   role: z.nativeEnum(HospitalStaffRole),
   department: z.string().optional(),
-  full_name: z.string().optional(),
+  full_name: personNameSchema.optional(),
 });
 
 router.post("/hospital-signup", validateBody(hospitalSignupSchema), async (req, res, next) => {
@@ -124,6 +155,22 @@ router.post("/register", validateBody(registerSchema), async (req, res, next) =>
   }
 });
 
+router.post("/register/resend-otp", validateBody(registrationResendSchema), async (req, res, next) => {
+  try {
+    res.json(await resendPatientRegistrationOtp(req.body.email));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/register/verify-otp", validateBody(registrationVerifySchema), async (req, res, next) => {
+  try {
+    res.json(await verifyPatientRegistration(req.body.email, req.body.otp));
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/send-otp", validateBody(otpSendSchema), async (req, res, next) => {
   try {
     res.json(await sendOtp(req.body.phone));
@@ -143,7 +190,24 @@ router.post("/verify-otp", validateBody(otpVerifySchema), async (req, res, next)
 router.post("/forgot-password", validateBody(forgotPasswordSchema), async (req, res, next) => {
   try {
     await forgotPassword(req.body.email);
-    res.json({ message: "If the email exists, a reset link has been sent" });
+    res.json({ message: "If the email exists, a reset code has been sent" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/forgot-password/resend-otp", validateBody(forgotPasswordSchema), async (req, res, next) => {
+  try {
+    await resendForgotPasswordOtp(req.body.email);
+    res.json({ message: "If the email exists, a new reset code has been sent" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/forgot-password/verify-otp", validateBody(forgotPasswordVerifySchema), async (req, res, next) => {
+  try {
+    res.json(await verifyForgotPasswordOtp(req.body.email, req.body.otp));
   } catch (err) {
     next(err);
   }
@@ -160,7 +224,7 @@ router.post("/reset-password", validateBody(resetPasswordSchema), async (req, re
 
 const changePasswordSchema = z.object({
   current_password: z.string().min(6),
-  new_password: z.string().min(8),
+  new_password: strongPasswordSchema,
 });
 
 router.post("/change-password", authenticate, validateBody(changePasswordSchema), async (req, res, next) => {

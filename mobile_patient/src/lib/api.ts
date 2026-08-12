@@ -1,4 +1,4 @@
-import { Platform } from 'react-native'
+import { NativeModules, Platform } from 'react-native'
 
 export type AuthTokens = {
   access_token: string
@@ -165,12 +165,39 @@ export class ApiError extends Error {
   }
 }
 
-const defaultApiUrl =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:3000'
-    : 'http://localhost:3000'
+const DEFAULT_LOCAL_PORT = (process.env.EXPO_PUBLIC_API_PORT ?? '3000').trim() || '3000'
+const PROD_API_FALLBACK = 'https://miqorai.onrender.com'
+const LOCAL_API_PATTERN = /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|10\.0\.2\.2)(?::\d+)?$/i
 
-const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl).replace(/\/$/, '')
+function getBundleHost() {
+  const scriptURL = NativeModules.SourceCode?.scriptURL
+  if (!scriptURL) {
+    return null
+  }
+
+  try {
+    return new URL(scriptURL).hostname
+  } catch {
+    return null
+  }
+}
+
+const bundleHost = getBundleHost()
+const defaultApiUrl = bundleHost
+  ? `http://${bundleHost}:${DEFAULT_LOCAL_PORT}`
+  : Platform.OS === 'android'
+    ? `http://10.0.2.2:${DEFAULT_LOCAL_PORT}`
+    : `http://localhost:${DEFAULT_LOCAL_PORT}`
+
+const rawApiUrl = (process.env.EXPO_PUBLIC_API_URL ?? '').trim()
+const resolvedApiUrl =
+  __DEV__
+    ? rawApiUrl || defaultApiUrl
+    : !rawApiUrl || LOCAL_API_PATTERN.test(rawApiUrl)
+      ? PROD_API_FALLBACK
+      : rawApiUrl
+
+const API_URL = resolvedApiUrl.replace(/\/$/, '')
 
 let sessionTokens: AuthTokens | null = null
 
@@ -252,6 +279,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const mobileApi = {
   apiUrl: API_URL,
+  bundleHost,
   async login(email: string, password: string) {
     setSessionTokens(null)
     const data = await request<AuthTokens>('/api/auth/login', {

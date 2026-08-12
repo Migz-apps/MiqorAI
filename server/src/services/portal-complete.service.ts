@@ -674,15 +674,54 @@ export async function listPharmacyPatients(pharmacyId: string) {
     take: 200,
   });
   const ids = dispensed.map((d) => d.patientId);
-  const patients = await prisma.patient.findMany({
-    where: { id: { in: ids } },
-    include: { user: { select: { phone: true, email: true } } },
-  });
+  if (ids.length === 0) return [];
+
+  const [patients, snapshots, records] = await Promise.all([
+    prisma.patient.findMany({
+      where: { id: { in: ids } },
+      include: { user: { select: { phone: true, email: true } } },
+    }),
+    prisma.patientAdherenceSnapshot.findMany({
+      where: { pharmacyId, patientId: { in: ids } },
+      select: { patientId: true, overallRate: true },
+    }),
+    prisma.medicalRecord.findMany({
+      where: {
+        patientId: { in: ids },
+        isActive: true,
+        recordType: { in: ["allergy", "diagnosis"] },
+      },
+      select: { patientId: true, recordType: true, data: true },
+      take: 1000,
+    }),
+  ]);
+
+  const adherenceByPatient = new Map(
+    snapshots.map((snapshot) => [snapshot.patientId, Number(snapshot.overallRate)]),
+  );
+  const recordsByPatient = new Map<string, { allergies: string[]; conditions: string[] }>();
+
+  for (const record of records) {
+    const entry = recordsByPatient.get(record.patientId) ?? { allergies: [], conditions: [] };
+    const data = (record.data ?? {}) as { name?: string; severity?: string };
+    if (record.recordType === "allergy") {
+      const label = data.severity ? `${data.name ?? "Allergy"} (${data.severity})` : (data.name ?? "Allergy");
+      entry.allergies.push(String(label));
+    }
+    if (record.recordType === "diagnosis") {
+      entry.conditions.push(String(data.name ?? "Condition"));
+    }
+    recordsByPatient.set(record.patientId, entry);
+  }
+
   return patients.map((p) => ({
     id: p.id,
     name: `${p.firstName} ${p.lastName}`,
     phone: p.user.phone,
     email: p.user.email,
+    allergies: recordsByPatient.get(p.id)?.allergies ?? [],
+    conditions: recordsByPatient.get(p.id)?.conditions ?? [],
+    adherence: adherenceByPatient.get(p.id) ?? 0,
   }));
 }
 
@@ -893,12 +932,26 @@ export async function getInsurerMemberStats(insurerId: string) {
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
-  const [active, total, newEnrollments] = await Promise.all([
-    prisma.insurerMember.count({ where: { insurerId, isActive: true } }),
-    prisma.insurerMember.count({ where: { insurerId } }),
-    prisma.insurerMember.count({ where: { insurerId, enrolledAt: { gte: monthStart } } }),
-  ]);
-  return { active_this_month: active, total_members: total, new_enrollments: newEnrollments, high_risk_cohort: Math.floor(total * 0.12) };
+  const memberRows = await prisma.insurerMember.findMany({
+    where: { insurerId },
+    select: { patientId: true, isActive: true, enrolledAt: true },
+    take: 1000,
+  });
+  const patientIds = memberRows.map((row) => row.patientId);
+  const snapshots = await prisma.patientAdherenceSnapshot.findMany({
+    where: patientIds.length > 0 ? { patientId: { in: patientIds } } : { patientId: { in: [] } },
+    select: { patientId: true, overallRate: true },
+  });
+  const highRiskCount = snapshots.filter((snapshot) => Number(snapshot.overallRate) < 75).length;
+  const active = memberRows.filter((row) => row.isActive).length;
+  const total = memberRows.length;
+  const newEnrollments = memberRows.filter((row) => row.enrolledAt >= monthStart).length;
+  return {
+    active_this_month: active,
+    total_members: total,
+    new_enrollments: newEnrollments,
+    high_risk_cohort: highRiskCount,
+  };
 }
 
 export async function exportInsurerMembers(insurerId: string, userId: string) {

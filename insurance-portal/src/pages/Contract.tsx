@@ -1,23 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Download, MessageSquare, CheckCircle2, AlertCircle } from "lucide-react";
-import { PageHeader } from "@/components/MiqorAI/PageHeader";
-import { ProgressBar } from "@/components/MiqorAI/ProgressBar";
-import { StatusPill } from "@/components/MiqorAI/StatusPill";
+import { PageHeader } from "@/components/miqorai/PageHeader";
+import { ProgressBar } from "@/components/miqorai/ProgressBar";
+import { StatusPill } from "@/components/miqorai/StatusPill";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapInvoice } from "@/lib/api/insurer";
 import { fmtKsh } from "@/lib/format";
 import { toast } from "@/lib/notify";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 function dateStr(d: string | Date): string {
   return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
 }
 
 export default function Contract() {
+  const [amendmentNotes, setAmendmentNotes] = useState("");
+
   const { data: contract, isLoading: contractLoading } = useQuery({
     queryKey: insurerKeys.contract,
     queryFn: insurerApi.contract,
@@ -35,6 +47,17 @@ export default function Contract() {
 
   const invoices = (invoicesRaw ?? []).map(mapInvoice);
   const isLoading = contractLoading || invLoading || usageLoading;
+
+  const amendmentMutation = useMutation({
+    mutationFn: () => insurerApi.requestContractAmendment(amendmentNotes.trim()),
+    onSuccess: () => {
+      setAmendmentNotes("");
+      toast.success("Amendment request submitted");
+    },
+    onError: () => {
+      toast.error("Could not submit amendment request");
+    },
+  });
 
   const downloadPdf = async () => {
     try {
@@ -83,7 +106,7 @@ export default function Contract() {
               <FileText className="h-4 w-4 text-insurer" /> Active contract
             </CardTitle>
             <p className="text-xs text-text-secondary">
-              {contract?.contract_id ? `Contract # ${contract.contract_id.slice(0, 12).toUpperCase()}` : "Default partnership"} · Renews automatically
+              {contract?.contract_id ? `Contract # ${contract.contract_id.slice(0, 12).toUpperCase()}` : "Default partnership"} Â· Renews automatically
             </p>
           </div>
           <Badge variant="outline" className={statusActive ? "bg-success/10 text-success border-success/30 gap-1" : "bg-secondary/15 text-secondary border-secondary/30 gap-1"}>
@@ -92,13 +115,13 @@ export default function Contract() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-md">
           {[
-            { k: "Start date", v: contract?.start_date ? dateStr(contract.start_date) : "—" },
-            { k: "End date", v: contract?.end_date ? dateStr(contract.end_date) : "—" },
+            { k: "Start date", v: contract?.start_date ? dateStr(contract.start_date) : "â€”" },
+            { k: "End date", v: contract?.end_date ? dateStr(contract.end_date) : "â€”" },
             { k: "MiqorAI fee", v: `${contract?.fee_percentage ?? usage?.fee_percentage ?? 20}% of verified savings` },
             { k: "Status", v: contract?.status ?? "active" },
             { k: "Data access", v: "Anonymized population health" },
             { k: "Support", v: "24/7 email + phone" },
-          ].map(t => (
+          ].map((t) => (
             <div key={t.k} className="p-sm rounded-md bg-background-grey">
               <div className="text-[11px] uppercase tracking-wide text-text-secondary">{t.k}</div>
               <div className="text-sm font-semibold mt-1">{t.v}</div>
@@ -109,8 +132,27 @@ export default function Contract() {
           <Button size="sm" variant="outline" className="gap-sm" onClick={() => void downloadPdf()}>
             <Download className="h-3.5 w-3.5" /> Download PDF
           </Button>
-          <Button size="sm" variant="outline">Request amendment</Button>
-          <Button size="sm" variant="outline" className="gap-sm"><MessageSquare className="h-3.5 w-3.5" /> Contact MiqorAI</Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">Request amendment</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Request contract amendment</DialogTitle>
+              </DialogHeader>
+              <Textarea
+                value={amendmentNotes}
+                onChange={(e) => setAmendmentNotes(e.target.value)}
+                placeholder="Describe the amendment you want MiqorAI to review."
+              />
+              <DialogFooter>
+                <Button onClick={() => amendmentMutation.mutate()} disabled={amendmentMutation.isPending || !amendmentNotes.trim()} className="bg-insurer hover:bg-insurer/90 text-insurer-foreground">
+                  {amendmentMutation.isPending ? "Submitting..." : "Submit request"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button size="sm" variant="outline" className="gap-sm" asChild><a href="mailto:support@miqorai.com"><MessageSquare className="h-3.5 w-3.5" /> Contact MiqorAI</a></Button>
         </div>
       </Card>
 
@@ -137,7 +179,7 @@ export default function Contract() {
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-sm text-text-secondary py-8">No invoices yet.</TableCell>
                   </TableRow>
-                ) : invoices.map(inv => (
+                ) : invoices.map((inv) => (
                   <TableRow key={inv.id}>
                     <TableCell className="font-mono text-xs font-medium">{inv.id}</TableCell>
                     <TableCell className="text-sm">{inv.period}</TableCell>
@@ -165,7 +207,7 @@ export default function Contract() {
             <CardTitle className="h3">Usage vs allowance</CardTitle>
           </CardHeader>
           <CardContent className="space-y-md">
-            {usageItems.map(u => {
+            {usageItems.map((u) => {
               const pct = (u.used / u.allow) * 100;
               const warn = pct > 90;
               return (
@@ -184,8 +226,8 @@ export default function Contract() {
               );
             })}
             <div className="pt-md border-t flex flex-col gap-sm">
-              <Button size="sm" className="bg-insurer hover:bg-insurer/90 text-insurer-foreground">Upgrade plan</Button>
-              <Button size="sm" variant="outline">View pricing</Button>
+              <Button size="sm" className="bg-insurer hover:bg-insurer/90 text-insurer-foreground" asChild><a href="mailto:support@miqorai.com?subject=Upgrade%20plan">Upgrade plan</a></Button>
+              <Button size="sm" variant="outline" asChild><a href="mailto:support@miqorai.com?subject=Pricing%20request">View pricing</a></Button>
             </div>
           </CardContent>
         </Card>

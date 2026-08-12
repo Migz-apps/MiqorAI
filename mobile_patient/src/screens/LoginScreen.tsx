@@ -21,6 +21,7 @@ import {
     PrimaryButton,
     TextButton,
 } from '../components/ui'
+import { mobileApi } from '../lib/api'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
 import { useTranslation } from '../i18n'
@@ -179,6 +180,17 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
                                     <TextButton onPress={onNavigateToSignup}>
                                         Sign Up
                                     </TextButton>
+                                </View>
+                            ) : null}
+
+                            {__DEV__ ? (
+                                <View className="mt-sm rounded-md border border-border bg-card px-md py-sm">
+                                    <Text className="text-text-secondary text-[12px] font-semibold">
+                                        Dev API: {mobileApi.apiUrl}
+                                    </Text>
+                                    <Text className="text-muted-fg text-[11px] leading-[16px] mt-1">
+                                        Production defaults to the deployed backend. For local phone testing, set EXPO_PUBLIC_API_URL to your computer hotspot IP and keep the backend on port 3000.
+                                    </Text>
                                 </View>
                             ) : null}
                         </View>

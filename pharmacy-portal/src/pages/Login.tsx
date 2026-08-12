@@ -13,9 +13,9 @@ export default function Login() {
   const session = useAuth((s) => s.session);
   const login = useAuth((s) => s.login);
   const nav = useNavigate();
-  const [code, setCode] = useState("MPC-GOODLIFE-001");
-  const [email, setEmail] = useState("brian@goodlife.co.ke");
-  const [password, setPassword] = useState("MiqorAI123!");
+  const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,7 +54,7 @@ export default function Login() {
           <Label htmlFor="pcode">Pharmacy code</Label>
           <div className="relative">
             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-            <Input id="pcode" className="pl-9 h-11" value={code} onChange={(e) => setCode(e.target.value)} placeholder="MPC-GOODLIFE-001" autoComplete="off" />
+            <Input id="pcode" className="pl-9 h-11" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Pharmacy code" autoComplete="off" />
           </div>
         </div>
         <div className="space-y-xs">
@@ -67,7 +67,7 @@ export default function Login() {
             <a href="#" className="text-xs text-pharmacy hover:underline">Forgot?</a>
           </div>
           <div className="relative">
-            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="pr-10 h-11" />
+            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="pr-10 h-11" placeholder="Enter your password" />
             <button type="button" onClick={() => setShowPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -84,7 +84,7 @@ export default function Login() {
       </div>
 
       <div className="mt-lg p-sm rounded-md bg-pharmacy-light/60 border border-pharmacy/15 text-[11px] text-pharmacy leading-relaxed">
-        <strong>Demo:</strong> <code>brian@goodlife.co.ke</code> + <code>MPC-GOODLIFE-001</code> + password <code className="font-mono">MiqorAI123!</code>
+        Use your assigned pharmacy code, staff email, and password to access the portal.
       </div>
     </AuthShell>
   );

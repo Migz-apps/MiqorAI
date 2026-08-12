@@ -157,6 +157,11 @@ export const patientApi = {
     date_of_birth: string;
     email?: string;
   }) => api("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
+  resendRegistrationOtp: (email: string) =>
+    api<{ sent: boolean; expires_in_minutes: number }>("/api/auth/register/resend-otp", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
 };
 
 export function profileToUser(p: ProfileResponse) {

@@ -82,6 +82,11 @@ export async function listEnrichedInsurerMembers(
     take: filters.limit ?? 50,
     skip: filters.offset ?? 0,
   });
+  const patientIds = members.map((member) => member.patientId);
+  const snapshots = await prisma.patientAdherenceSnapshot.findMany({
+    where: patientIds.length > 0 ? { patientId: { in: patientIds } } : { patientId: { in: [] } },
+  });
+  const snapshotByPatient = new Map(snapshots.map((snapshot) => [snapshot.patientId, snapshot]));
 
   return members
     .filter((m) => {
@@ -94,9 +99,11 @@ export async function listEnrichedInsurerMembers(
       const age = Math.floor(
         (Date.now() - m.patient.dateOfBirth.getTime()) / (365.25 * 86400000),
       );
-      const activeMeds = m.patient.prescriptions.flatMap((p) => p.items.map((i) => i.drugName));
+      const activeMeds = [...new Set(m.patient.prescriptions.flatMap((p) => p.items.map((i) => i.drugName)))];
+      const adherenceSnapshot = snapshotByPatient.get(m.patientId);
+      const adherenceRate = adherenceSnapshot ? Number(adherenceSnapshot.overallRate) : 0;
       const riskBand =
-        activeMeds.length >= 4 ? "high" : activeMeds.length >= 2 ? "medium" : "low";
+        adherenceRate < 75 ? "high" : adherenceRate < 85 || activeMeds.length >= 4 ? "medium" : "low";
       return {
         member_number: m.memberNumber,
         patient_id: m.patientId,
@@ -104,7 +111,7 @@ export async function listEnrichedInsurerMembers(
         age,
         plan_tier: "standard",
         active_medications: activeMeds,
-        adherence_rate: riskBand === "high" ? 72 : riskBand === "medium" ? 85 : 94,
+        adherence_rate: adherenceRate,
         risk_band: riskBand,
         phone: m.patient.user.phone,
         email: m.patient.user.email,
