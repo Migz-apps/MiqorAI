@@ -26,13 +26,19 @@ function requireSmtpTransport() {
 }
 
 export async function assertEmailDeliveryReady(): Promise<void> {
-  const activeTransport = requireSmtpTransport();
-  if (!activeTransport) return;
+  if (!transporter) {
+    logger.warn("Email delivery is not configured; continuing without SMTP until env vars are set", {
+      provider: "smtp",
+    });
+    return;
+  }
 
   if (config.nodeEnv === "production") {
-    await activeTransport.verify().catch((err: Error) => {
-      logger.error("SMTP verification failed", { err: err.message });
-      throw serviceUnavailable("Email delivery verification failed", { provider: "smtp" });
+    await transporter.verify().catch((err: Error) => {
+      logger.error("SMTP verification failed; continuing startup and deferring failure to email actions", {
+        err: err.message,
+        provider: "smtp",
+      });
     });
   }
 }
