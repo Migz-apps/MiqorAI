@@ -17,6 +17,45 @@ function requiredInProduction(name: string, fallback: string): string {
   return fallback;
 }
 
+function normalizeUrl(value: string): string {
+  return value.trim().replace(/\/$/, "");
+}
+
+const rawCorsOrigins = requiredInProduction("CORS_ORIGINS", "http://localhost:5173");
+const corsOrigins = rawCorsOrigins
+  .split(",")
+  .map((s) => normalizeUrl(s))
+  .filter(Boolean);
+
+const baseUrl = normalizeUrl(requiredInProduction("BASE_URL", "http://localhost:3000"));
+
+type PortalTarget = "patient" | "hospital" | "insurance" | "pharmacy" | "admin";
+
+const portalOriginHints: Record<PortalTarget, string[]> = {
+  patient: ["patient"],
+  hospital: ["hospital"],
+  insurance: ["insurance", "insurer"],
+  pharmacy: ["pharmacy"],
+  admin: ["admin"],
+};
+
+function inferPortalUrl(target: PortalTarget): string | undefined {
+  const hints = portalOriginHints[target];
+  return corsOrigins.find((origin) => hints.some((hint) => origin.toLowerCase().includes(hint)));
+}
+
+function resolvePortalUrl(target: PortalTarget, envName: string, localFallback: string): string {
+  const explicit = process.env[envName]?.trim();
+  if (explicit) return normalizeUrl(explicit);
+
+  const inferred = inferPortalUrl(target);
+  if (inferred) return inferred;
+
+  if (!isProduction) return normalizeUrl(localFallback);
+
+  return baseUrl;
+}
+
 export const config = {
   port: parseInt(process.env.PORT ?? "3000", 10),
   nodeEnv,
@@ -47,9 +86,7 @@ export const config = {
     authToken: process.env.TWILIO_AUTH_TOKEN ?? "",
     fromNumber: process.env.SMS_FROM_NUMBER ?? "",
   },
-  corsOrigins: requiredInProduction("CORS_ORIGINS", "http://localhost:5173")
-    .split(",")
-    .map((s) => s.trim()),
+  corsOrigins,
   uploadDir: process.env.UPLOAD_DIR ?? "./uploads",
   invitationExpiryDays: parseInt(process.env.INVITATION_EXPIRY_DAYS ?? "7", 10),
   rateLimitPerMinute: parseInt(process.env.RATE_LIMIT_PER_MINUTE ?? "100", 10),
@@ -58,13 +95,13 @@ export const config = {
   passwordResetExpiresMinutes: parseInt(process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? "60", 10),
   authChallengeResendCooldownSeconds: parseInt(process.env.AUTH_CHALLENGE_RESEND_COOLDOWN_SECONDS ?? "45", 10),
   authChallengeMaxAttempts: parseInt(process.env.AUTH_CHALLENGE_MAX_ATTEMPTS ?? "5", 10),
-  baseUrl: requiredInProduction("BASE_URL", "http://localhost:3000"),
+  baseUrl,
   portalUrls: {
-    patient: requiredInProduction("PATIENT_PORTAL_URL", "http://localhost:5173").replace(/\/$/, ""),
-    hospital: requiredInProduction("HOSPITAL_PORTAL_URL", "http://localhost:8080").replace(/\/$/, ""),
-    insurance: requiredInProduction("INSURANCE_PORTAL_URL", "http://localhost:8081").replace(/\/$/, ""),
-    pharmacy: requiredInProduction("PHARMACY_PORTAL_URL", "http://localhost:8082").replace(/\/$/, ""),
-    admin: requiredInProduction("ADMIN_PORTAL_URL", "http://localhost:8083").replace(/\/$/, ""),
+    patient: resolvePortalUrl("patient", "PATIENT_PORTAL_URL", "http://localhost:5173"),
+    hospital: resolvePortalUrl("hospital", "HOSPITAL_PORTAL_URL", "http://localhost:8080"),
+    insurance: resolvePortalUrl("insurance", "INSURANCE_PORTAL_URL", "http://localhost:8081"),
+    pharmacy: resolvePortalUrl("pharmacy", "PHARMACY_PORTAL_URL", "http://localhost:8082"),
+    admin: resolvePortalUrl("admin", "ADMIN_PORTAL_URL", "http://localhost:8083"),
   },
   aiServiceUrl: (
     process.env.AI_SERVICE_BASE_URL ??
