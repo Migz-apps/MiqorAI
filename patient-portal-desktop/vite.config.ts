@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "url";
 
 // Default to root-hosted deployments like Vercel.
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
