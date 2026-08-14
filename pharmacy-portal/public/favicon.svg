@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MiqorAI">
+  <rect width="64" height="64" rx="16" fill="#0A5C6E"/>
+  <path d="M18 45V19h7.2l6.8 10.4L38.8 19H46v26h-6.6V29.8L32 40.7l-7.4-10.9V45H18Z" fill="#F7FBFC"/>
+  <path d="M49 16h-4v4h-4v4h4v4h4v-4h4v-4h-4v-4Z" fill="#7EE0E8"/>
+</svg>

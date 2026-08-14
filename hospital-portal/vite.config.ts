@@ -2,59 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-function vendorChunkName(id: string): string | undefined {
-  if (!id.includes("node_modules")) return undefined;
-
-  if (
-    id.includes("/react/") ||
-    id.includes("/react-dom/") ||
-    id.includes("/react-router") ||
-    id.includes("/scheduler/") ||
-    id.includes("/@tanstack/")
-  ) {
-    return "framework";
-  }
-
-  if (
-    id.includes("/@radix-ui/") ||
-    id.includes("/cmdk/") ||
-    id.includes("/vaul/") ||
-    id.includes("/embla-carousel-react/") ||
-    id.includes("/input-otp/") ||
-    id.includes("/sonner/")
-  ) {
-    return "ui";
-  }
-
-  if (
-    id.includes("/react-hook-form/") ||
-    id.includes("/@hookform/") ||
-    id.includes("/zod/")
-  ) {
-    return "forms";
-  }
-
-  if (
-    id.includes("/recharts/") ||
-    id.includes("/qrcode.react/") ||
-    id.includes("/@yudiel/react-qr-scanner/") ||
-    id.includes("/date-fns/") ||
-    id.includes("/lucide-react/")
-  ) {
-    return "data-viz";
-  }
-
-  return "vendor";
-}
-
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 700,
-    rollupOptions: {
-      output: {
-        manualChunks: vendorChunkName,
-      },
-    },
   },
   server: {
     host: "::",
