@@ -4,7 +4,7 @@ import {
   getContext,
   initTestContext,
 } from "./helpers/context.js";
-import { checkAiServiceHealth, checkClinicalSafety } from "../src/services/ai-clinical-safety.client.js";
+import { checkAiServiceHealth, checkClinicalSafety } from "../src/modules/clinical/ai-clinical-safety.client.js";
 import type { ClinicalSafetyRequest } from "../src/types/clinical-safety.types.js";
 
 const originalFetch = globalThis.fetch;

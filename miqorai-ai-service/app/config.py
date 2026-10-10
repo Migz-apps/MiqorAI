@@ -24,6 +24,9 @@ class Settings(BaseSettings):
 
     debug_raw_model_output: bool = False
     cors_origins: str = "*"
+    # When set (env AI_SERVICE_API_KEY), every inference endpoint requires
+    # "Authorization: Bearer <key>". Empty keeps the service open (dev/demo).
+    ai_service_api_key: str = ""
 
     @field_validator("base_model_id", "adapter_path", "cors_origins", mode="before")
     @classmethod

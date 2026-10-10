@@ -78,6 +78,7 @@ export const config = {
     user: process.env.SMTP_USER ?? "",
     pass: process.env.SMTP_PASS ?? "",
     from: process.env.SMTP_FROM ?? "noreply@miqorai.com",
+    redirectAllTo: (process.env.EMAIL_REDIRECT_ALL_TO ?? "").trim(),
     secure: process.env.SMTP_SECURE === "true" || process.env.SMTP_PORT === "465",
   },
   sms: {

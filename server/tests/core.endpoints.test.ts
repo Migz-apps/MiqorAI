@@ -6,7 +6,9 @@ import {
   authed,
   getContext,
 } from "./helpers/context.js";
-import { getTestSixDigitCode } from "../src/utils/one-time-code.js";
+import { getTestSixDigitCode } from "../src/shared/utils/one-time-code.js";
+import { prisma } from "../src/shared/lib/prisma.js";
+import { hashPassword } from "../src/shared/utils/crypto.js";
 
 describe("Health", () => {
   it("GET /health", async () => {
@@ -150,6 +152,13 @@ describe("Auth endpoints", () => {
       .post("/api/auth/reset-password")
       .send({ token: passwordResetToken, new_password: "RecoveredPass123!" });
     expect(res.status).toBe(200);
+
+    // Restore the seeded password so later test files can log in again:
+    // without this, every subsequent file's initTestContext fails with 401.
+    await prisma.user.update({
+      where: { email: "grace.muthoni@example.com" },
+      data: { passwordHash: hashPassword(PASSWORD) },
+    });
   });
 
   it("POST /api/auth/register - new patient", async () => {

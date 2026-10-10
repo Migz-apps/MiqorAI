@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { authed } from "./helpers/context.js";
-import { extractMedicalKeywords } from "../src/services/ai-visit.service.js";
+import { extractMedicalKeywords } from "../src/modules/clinical/ai-visit.service.js";
 
 describe("AI visit integration", () => {
   const prevEnabled = process.env.AI_SERVICE_ENABLED;

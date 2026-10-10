@@ -136,13 +136,13 @@ def build_relevant_history(request: RelevantHistoryRequest) -> RelevantHistoryRe
     )
     selected = [row for row in ranked if row[1] > 0][:5]
     if not selected and request.availableHistory:
-        selected = [(request.availableHistory[0], 0.1)]
+        selected = [(request.availableHistory[0], 0)]
 
     items = [
         RelevantHistoryItem(
             date=entry.date,
             facility=entry.facility,
-            reason=f"Matched {score} keyword(s) from current visit" if score else "Contextually related prior record",
+            reason=f"Matched {int(score)} keyword(s) from current visit" if score >= 1 else "Contextually related prior record",
             summary=" — ".join(filter(None, [entry.complaint, entry.diagnosis])) or "Prior encounter",
             tests=entry.tests,
             medications=entry.medications,
@@ -157,7 +157,10 @@ def build_relevant_history(request: RelevantHistoryRequest) -> RelevantHistoryRe
 def build_check_action(request: CheckActionRequest) -> CheckActionResponse:
     name = request.action.name.lower()
     for allergy in request.patientProfile.allergies:
-        if allergy.lower() in name or name in allergy.lower():
+        normalized_allergy = allergy.strip().lower()
+        if not normalized_allergy or normalized_allergy in {"none", "none known", "nkda"}:
+            continue
+        if normalized_allergy in name or name in normalized_allergy:
             return CheckActionResponse(
                 hasAlert=True,
                 severity="CRITICAL",

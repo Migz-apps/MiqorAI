@@ -1,4 +1,5 @@
 import {
+  Prisma,
   AccessAction,
   AccessScope,
   AppointmentStatus,
@@ -16,10 +17,11 @@ import {
   VisitStatus,
 } from "@prisma/client";
 import { randomUUID } from "crypto";
-import { prisma } from "../src/lib/prisma.js";
-import { hashPassword } from "../src/utils/crypto.js";
-import { regeneratePatientQr } from "../src/services/qr.service.js";
+import { prisma } from "../src/shared/lib/prisma.js";
+import { hashPassword } from "../src/shared/utils/crypto.js";
+import { regeneratePatientQr } from "../src/modules/patient/qr.service.js";
 import {
+  Prisma,
   emailDomain,
   parseBool,
   parseLooseJson,
@@ -548,7 +550,10 @@ async function seedUsersAndPatients() {
     });
   }
 
-  await regeneratePatientQr(idFor("PAT001"));
+  const allPatients = await prisma.patient.findMany({ select: { id: true } });
+  for (const p of allPatients) {
+    await regeneratePatientQr(p.id);
+  }
 }
 
 async function seedClinicalAndInsuranceData() {
@@ -742,6 +747,34 @@ async function seedClinicalAndInsuranceData() {
       { key: "savings_fee_percentage", value: 20 },
       { key: "invitation_expiry_days", value: 7 },
     ],
+  });
+
+  // Per-user settings from seed_data/platform_settings.csv (was never read before).
+  for (const row of readCsv("platform_settings.csv")) {
+    if (!row.setting_key || !row.setting_value) continue;
+    const key = row.setting_key.replace(/USR\d+/g, (m) => idFor(m));
+    await prisma.platformSetting.upsert({
+      where: { key },
+      create: { key, value: parseLooseJson(row.setting_value, row.setting_id ?? key) as Prisma.InputJsonValue },
+      update: { value: parseLooseJson(row.setting_value, row.setting_id ?? key) as Prisma.InputJsonValue },
+    });
+  }
+
+  // Drug interactions: without these rows every interaction check silently passes.
+  await prisma.drugInteraction.createMany({
+    data: [
+      { drugA: "warfarin", drugB: "ibuprofen", severity: "severe", note: "Increased bleeding risk; avoid NSAIDs with anticoagulants." },
+      { drugA: "warfarin", drugB: "aspirin", severity: "severe", note: "Additive anticoagulant effect; major bleeding risk." },
+      { drugA: "lisinopril", drugB: "ibuprofen", severity: "moderate", note: "NSAIDs reduce ACE-inhibitor effect and stress renal function." },
+      { drugA: "lisinopril", drugB: "spironolactone", severity: "moderate", note: "Risk of hyperkalemia; monitor potassium." },
+      { drugA: "metformin", drugB: "contrast media", severity: "severe", note: "Risk of lactic acidosis around iodinated contrast; hold metformin." },
+      { drugA: "amlodipine", drugB: "simvastatin", severity: "moderate", note: "Amlodipine raises simvastatin levels; cap simvastatin at 20mg." },
+      { drugA: "amoxicillin", drugB: "methotrexate", severity: "moderate", note: "Penicillins reduce methotrexate clearance; toxicity risk." },
+      { drugA: "salbutamol", drugB: "propranolol", severity: "moderate", note: "Non-selective beta-blockers antagonise bronchodilation." },
+      { drugA: "omeprazole", drugB: "clopidogrel", severity: "moderate", note: "Reduced antiplatelet activation via CYP2C19 inhibition." },
+      { drugA: "paracetamol", drugB: "warfarin", severity: "moderate", note: "Regular high-dose paracetamol may potentiate warfarin; monitor INR." },
+    ],
+    skipDuplicates: true,
   });
 
   await prisma.pharmacyInventory.createMany({

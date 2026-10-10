@@ -1,4 +1,4 @@
-import type { TokenPayload } from "../utils/crypto.js";
+import type { TokenPayload } from "../shared/utils/crypto.js";
 
 declare global {
   namespace Express {

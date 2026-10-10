@@ -1,7 +1,7 @@
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 import { app, PASSWORD, initTestContext } from "./helpers/context.js";
-import { prisma } from "../src/lib/prisma.js";
+import { prisma } from "../src/shared/lib/prisma.js";
 
 async function loginDoctor(email: string, hospitalCode: string) {
   const res = await request(app).post("/api/auth/login").send({

@@ -2,6 +2,14 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, ScanLine, Keyboard, CheckCircle2, X } from "lucide-react";
 import { Scanner, type IDetectedBarcode, type IScannerError } from "@yudiel/react-qr-scanner";
+import { setZXingModuleOverrides } from "barcode-detector/ponyfill";
+import zxingWasmUrl from "zxing-wasm/reader/zxing_reader.wasm?url";
+
+// Serve the barcode-decoder wasm from our own bundle instead of a third-party CDN,
+// so QR check-in works offline and under a strict CSP.
+setZXingModuleOverrides({
+  locateFile: (path: string, prefix: string) => (path.endsWith(".wasm") ? zxingWasmUrl : prefix + path),
+});
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";

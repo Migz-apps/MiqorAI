@@ -1253,3 +1253,16 @@ model ClinicalSafetyAuditLog {
   @@index([patientId, createdAt])
   @@map("clinical_safety_audit_logs")
 }
+
+model DomainEvent {
+  id          String    @id @default(uuid())
+  type        String
+  payload     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+
+  @@index([processedAt, createdAt])
+  @@map("domain_events")
+}

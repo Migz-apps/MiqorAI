@@ -1,12 +1,12 @@
 import { createApp } from "./app.js";
 import { config } from "./config.js";
-import { logger } from "./lib/logger.js";
-import { connectDb, disconnectDb } from "./lib/prisma.js";
-import { connectRedis, disconnectRedis } from "./lib/redis.js";
-import { archiveOldAuditLogs } from "./services/sync.service.js";
-import { ensureUploadDir } from "./services/file.service.js";
-import { seedReferenceDataIfEmpty } from "./services/reference.service.js";
-import { assertEmailDeliveryReady } from "./services/notification.service.js";
+import { logger } from "./shared/lib/logger.js";
+import { connectDb, disconnectDb } from "./shared/lib/prisma.js";
+import { connectRedis, disconnectRedis } from "./shared/lib/redis.js";
+import { archiveOldAuditLogs } from "./modules/platform/sync.service.js";
+import { ensureUploadDir } from "./shared/services/file.service.js";
+import { seedReferenceDataIfEmpty } from "./shared/services/reference.service.js";
+import { assertEmailDeliveryReady } from "./shared/services/notification.service.js";
 
 async function main() {
   await connectDb();

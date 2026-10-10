@@ -46,7 +46,14 @@ def _format_list_field(value: Any) -> str:
     return _txt(value) or "—"
 
 
+# The fine-tune dataset used "medication_order"; the API accepts
+# "medication_prescription" for backend compatibility. Map at render time so the
+# model always sees the distribution it was trained on.
+_TRAINING_ACTION_TYPES = {"medication_prescription": "medication_order"}
+
+
 def format_doctor_attempted_action(action_type: str, item: str) -> str:
+    action_type = _TRAINING_ACTION_TYPES.get(action_type, action_type)
     lines = []
     if action_type:
         lines.append(f"type: {action_type}")
@@ -154,7 +161,6 @@ def build_user_prompt(request: ClinicalSafetyCheckRequest) -> str:
 
     lines = [
         "PATIENT DEMOGRAPHICS:",
-        f"- Patient ID: {_txt(patient_record.get('patient_id')) or '—'}",
         f"- Name: {_txt(patient_record.get('name')) or '—'}",
         f"- Sex: {_txt(patient_record.get('sex')) or '—'}",
         f"- Date of birth: {_txt(patient_record.get('date_of_birth')) or '—'}",

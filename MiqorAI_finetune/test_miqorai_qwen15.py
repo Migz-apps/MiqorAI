@@ -297,7 +297,9 @@ def load_model_and_tokenizer(model_id: str, output_dir: Path, use_4bit: bool):
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+            bnb_4bit_compute_dtype=torch.bfloat16
+            if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+            else torch.float16,
             bnb_4bit_use_double_quant=True,
         )
 
@@ -348,7 +350,6 @@ def repair_json_text(text: str) -> str:
         repaired = repaired.replace(bad, good)
     repaired = re.sub(r",\s*}", "}", repaired)
     repaired = re.sub(r",\s*]", "]", repaired)
-    repaired = repaired.replace("},", "}")
     return repaired.strip()
 
 
@@ -393,7 +394,7 @@ def fill_missing_fields(payload: dict[str, Any]) -> dict[str, Any]:
     options = [str(option).strip() for option in options if str(option).strip()]
     if len(options) < 2:
         options = DEFAULT_DOCTOR_OPTIONS.copy()
-    filled["doctor_options"] = options[:2] if len(options) >= 2 else DEFAULT_DOCTOR_OPTIONS.copy()
+    filled["doctor_options"] = options if len(options) >= 2 else DEFAULT_DOCTOR_OPTIONS.copy()
 
     filled["intervention_required"] = _coerce_bool(filled.get("intervention_required", True))
     return filled
@@ -482,11 +483,13 @@ def main() -> None:
         print(json.dumps(repaired_payload, indent=2, ensure_ascii=False))
 
         ok, problems = passes_json_validation(repaired_payload)
-        if ok:
+        if ok and not used_fallback:
             passed += 1
             status = "PASS"
-            if used_fallback:
-                status += " (fallback used)"
+        elif ok and used_fallback:
+            # A fallback payload means the model output could NOT be parsed —
+            # that is a model failure, not a pass.
+            status = "FAIL - model output unparseable (fallback payload used)"
         else:
             status = f"FAIL - {', '.join(problems)}"
 

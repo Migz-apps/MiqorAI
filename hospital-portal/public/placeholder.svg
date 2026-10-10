@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 48" role="img" aria-label="MiqorAI">
-  <rect width="48" height="48" rx="14" fill="#0A5C6E"/>
-  <path d="M12 34V14h6.4l5.6 8.7 5.7-8.7H36v20h-5.8V22.8L24 31.9l-6.2-9.1V34H12Z" fill="#F7FBFC"/>
-  <path d="M38 11h-3v3h-3v3h3v3h3v-3h3v-3h-3v-3Z" fill="#7EE0E8"/>
-  <text x="60" y="21" fill="#0F172A" font-family="Arial, sans-serif" font-size="16" font-weight="700">MiqorAI</text>
-  <text x="60" y="36" fill="#4B5563" font-family="Arial, sans-serif" font-size="10">Connected care platform</text>
-</svg>

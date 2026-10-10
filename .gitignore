@@ -19,6 +19,9 @@ web_modules/
 .env.*
 !.env.example
 !**/.env.example
+!.env.production.example
+!**/.env.production.example
+!**/.env.local.example
 .dev.vars
 *.pem
 *.key
@@ -44,12 +47,11 @@ target/
 *.class
 
 # -----------------------------------------------------------------------------
-# Vite / TanStack / Lovable / bundler caches
+# Vite / TanStack / bundler caches
 # -----------------------------------------------------------------------------
 .vite/
 .vite-temp/
 .tanstack/
-.lovable/
 .parcel-cache/
 .webpack/
 *.tsbuildinfo

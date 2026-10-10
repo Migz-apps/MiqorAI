@@ -4,7 +4,10 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query
+import hmac
+import json
+
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
@@ -56,6 +59,19 @@ app.add_middleware(
 )
 
 
+async def require_api_key(authorization: str | None = Header(default=None)) -> None:
+    """Enforce bearer auth on inference endpoints when AI_SERVICE_API_KEY is set."""
+    expected = settings.ai_service_api_key.strip()
+    if not expected:
+        return
+    provided = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        provided = authorization[7:].strip()
+    if not hmac.compare_digest(provided, expected):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+
+
 @app.get("/")
 async def root() -> dict[str, object]:
     return {
@@ -72,7 +88,7 @@ async def health() -> HealthResponse:
     return HealthResponse(status="ok", model_loaded=is_model_loaded())
 
 
-@app.post("/clinical-safety/check", response_model=ClinicalSafetyCheckResponse)
+@app.post("/clinical-safety/check", response_model=ClinicalSafetyCheckResponse, dependencies=[Depends(require_api_key)])
 async def clinical_safety_check(
     request: ClinicalSafetyCheckRequest,
     debug: bool = Query(default=False, description="Include raw model output in response"),
@@ -97,7 +113,7 @@ async def clinical_safety_check(
     return response
 
 
-@app.post("/clinical-safety/check/mock", response_model=ClinicalSafetyAlertResponse)
+@app.post("/clinical-safety/check/mock", response_model=ClinicalSafetyAlertResponse, dependencies=[Depends(require_api_key)])
 async def clinical_safety_check_mock(
     request: ClinicalSafetyCheckRequest,
 ) -> ClinicalSafetyAlertResponse:
@@ -107,9 +123,9 @@ async def clinical_safety_check_mock(
             alert_title="Recent Similar Test Found",
             severity="high",
             reasoning="A similar test was ordered recently; repeat testing may be unnecessary unless clinical status changed.",
-            ai_search_result='{"match_type":"duplicate_test","test":"'
-            + action.item
-            + '","source":"mock"}',
+            ai_search_result=json.dumps(
+                {"match_type": "duplicate_test", "test": action.item, "source": "mock"}
+            ),
             doctor_options=[
                 "Cancel duplicate order and review prior result",
                 "Proceed with override and document clinical justification",
@@ -121,9 +137,9 @@ async def clinical_safety_check_mock(
         alert_title="Medication Safety Alert",
         severity="high",
         reasoning="The attempted prescription requires clinical safety review before proceeding.",
-        ai_search_result='{"match_type":"medication_risk","drug":"'
-        + action.item
-        + '","source":"mock"}',
+        ai_search_result=json.dumps(
+            {"match_type": "medication_risk", "drug": action.item, "source": "mock"}
+        ),
         doctor_options=[
             "Choose a safer alternative",
             "Proceed with override and document clinical justification",
@@ -132,12 +148,12 @@ async def clinical_safety_check_mock(
     )
 
 
-@app.post("/ai/relevant-history", response_model=RelevantHistoryResponse)
+@app.post("/ai/relevant-history", response_model=RelevantHistoryResponse, dependencies=[Depends(require_api_key)])
 async def ai_relevant_history(request: RelevantHistoryRequest) -> RelevantHistoryResponse:
     return build_relevant_history(request)
 
 
-@app.post("/ai/check-action", response_model=CheckActionResponse)
+@app.post("/ai/check-action", response_model=CheckActionResponse, dependencies=[Depends(require_api_key)])
 async def ai_check_action(request: CheckActionRequest) -> CheckActionResponse:
     return build_check_action(request)
 

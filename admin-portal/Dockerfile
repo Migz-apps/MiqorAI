@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 
+# Compiles the TanStack Start admin application and its production assets.
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -7,6 +8,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
+# Runs the built admin application in a production-only Node.js container.
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production

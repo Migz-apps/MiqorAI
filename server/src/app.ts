@@ -2,22 +2,17 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import { config } from "./config.js";
-import { auditMiddleware } from "./middleware/audit.js";
-import { errorHandler } from "./middleware/errorHandler.js";
-import { apiRateLimiter } from "./middleware/rateLimit.js";
-import authRoutes from "./routes/auth.routes.js";
-import hospitalRoutes from "./routes/hospital.routes.js";
-import patientRoutes from "./routes/patient.routes.js";
-import pharmacyRoutes from "./routes/pharmacy.routes.js";
-import insurerRoutes from "./routes/insurer.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
-import scanRoutes from "./routes/scan.routes.js";
-import filesRoutes from "./routes/files.routes.js";
-import syncRoutes from "./routes/sync.routes.js";
-import onboardingRoutes from "./routes/onboarding.routes.js";
-import referenceRoutes from "./routes/reference.routes.js";
-import clinicalSafetyRoutes from "./routes/clinical-safety.routes.js";
-import aiRoutes from "./routes/ai.routes.js";
+import { auditMiddleware } from "./shared/middleware/audit.js";
+import { errorHandler, notFoundHandler } from "./shared/middleware/errorHandler.js";
+import { apiRateLimiter } from "./shared/middleware/rateLimit.js";
+import { authRoutes } from "./modules/identity/index.js";
+import { hospitalRoutes, scanRoutes, aiRoutes, clinicalSafetyRoutes } from "./modules/clinical/index.js";
+import { patientRoutes } from "./modules/patient/index.js";
+import { pharmacyRoutes } from "./modules/pharmacy/index.js";
+import { insurerRoutes } from "./modules/financing/index.js";
+import { adminRoutes, onboardingRoutes, syncRoutes } from "./modules/platform/index.js";
+import filesRoutes from "./shared/routes/files.routes.js";
+import referenceRoutes from "./shared/routes/reference.routes.js";
 
 export function createApp() {
   const app = express();
@@ -85,6 +80,7 @@ export function createApp() {
   app.use("/api/v1/clinical-safety", clinicalSafetyRoutes);
   app.use("/api/ai", aiRoutes);
 
+  app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;

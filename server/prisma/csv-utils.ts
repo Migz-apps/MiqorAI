@@ -1,13 +1,13 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const SEED_DATA_DIR = path.resolve(__dirname, "../../seed_data");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+export const SEED_DATA_DIR = resolve(__dirname, "../../seed_data");
 
 export function readCsv(filename: string): Record<string, string>[] {
-  const filePath = path.join(SEED_DATA_DIR, filename);
-  const raw = fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
+  const filePath = join(SEED_DATA_DIR, filename);
+  const raw = readFileSync(filePath, "utf8").replace(/^\uFEFF/, "");
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";

@@ -1,6 +1,6 @@
 import request from "supertest";
 import { createApp } from "../../src/app.js";
-import { connectDb, disconnectDb, prisma } from "../../src/lib/prisma.js";
+import { connectDb, disconnectDb, prisma } from "../../src/shared/lib/prisma.js";
 
 export const app = createApp();
 export const PASSWORD = "MiqorAI123!";

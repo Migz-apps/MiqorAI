@@ -29,6 +29,7 @@ public class AiClinicalSafetyClient {
     @Value("${services.miqorai.url:http://localhost:8000}")
     private String miqorAiServiceUrl;
 
+/** Handles check clinical safety. */
     public ClinicalSafetyAlert checkClinicalSafety(ClinicalSafetyRequest request) {
         try {
             ClinicalSafetyAlert alert = restClient.post()
@@ -56,6 +57,7 @@ public class AiClinicalSafetyClient {
         }
     }
 
+/** Handles check clinical safety mock. */
     public ClinicalSafetyAlert checkClinicalSafetyMock(ClinicalSafetyRequest request) {
         ClinicalSafetyAlert alert = restClient.post()
                 .uri(miqorAiServiceUrl + "/clinical-safety/check/mock")
@@ -97,6 +99,7 @@ public class AiClinicalSafetyClient {
         );
     }
 
+/** Handles safe fallback. */
     private ClinicalSafetyAlert safeFallback(String message) {
         return new ClinicalSafetyAlert(
                 "Clinical Safety Alert",
@@ -109,6 +112,7 @@ public class AiClinicalSafetyClient {
     }
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+/** Handles patient record. */
     public record PatientRecord(
             String patientId,
             String name,
@@ -121,9 +125,11 @@ public class AiClinicalSafetyClient {
             List<Map<String, Object>> currentMedicationsAsOf202606
     ) {}
 
+/** Handles doctor attempted action. */
     public record DoctorAttemptedAction(String type, String item) {}
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+/** Handles clinical safety request. */
     public record ClinicalSafetyRequest(
             PatientRecord patientRecord,
             List<Map<String, Object>> visitHistory,
@@ -132,6 +138,7 @@ public class AiClinicalSafetyClient {
     ) {}
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+/** Handles clinical safety alert. */
     public record ClinicalSafetyAlert(
             String alertTitle,
             String severity,

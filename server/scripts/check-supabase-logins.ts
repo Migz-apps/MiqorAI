@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { verifyPassword } from "../src/utils/crypto.js";
+import { verifyPassword } from "../src/shared/utils/crypto.js";
 
 const prisma = new PrismaClient();
 const password = process.env.CHECK_PASSWORD ?? "MiqorAI123!";

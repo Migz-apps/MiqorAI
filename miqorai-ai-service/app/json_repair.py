@@ -63,7 +63,6 @@ def repair_json_text(text: str) -> str:
         repaired = repaired.replace(bad, good)
     repaired = re.sub(r",\s*}", "}", repaired)
     repaired = re.sub(r",\s*]", "]", repaired)
-    repaired = repaired.replace("},", "}")
     return repaired.strip()
 
 
@@ -95,8 +94,9 @@ def fill_missing_fields(payload: dict[str, Any]) -> dict[str, Any]:
 
     if not str(filled.get("alert_title", "")).strip():
         filled["alert_title"] = "Clinical Safety Alert"
-    if not str(filled.get("severity", "")).strip():
-        filled["severity"] = "Review"
+    severity = str(filled.get("severity", "")).strip().lower()
+    canonical = {"low", "moderate", "high", "critical", "review"}
+    filled["severity"] = severity if severity in canonical else ("review" if not severity else severity)
     if not str(filled.get("reasoning", "")).strip():
         filled["reasoning"] = "Clinical review required."
     if not str(filled.get("ai_search_result", "")).strip():

@@ -3,7 +3,7 @@ import {
   authed,
   getContext,
 } from "./helpers/context.js";
-import { prisma } from "../src/lib/prisma.js";
+import { prisma } from "../src/shared/lib/prisma.js";
 
 describe("Admin endpoints", () => {
   let invitationId = "";
