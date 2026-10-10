@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,15 @@ export default function Members() {
     queryFn: insurerApi.memberStats,
   });
 
+  const [debouncedQ, setDebouncedQ] = useState(q);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQ(q), 300);
+    return () => window.clearTimeout(timer);
+  }, [q]);
+
   const { data: members, isLoading: membersLoading } = useQuery({
-    queryKey: insurerKeys.members(q || undefined),
-    queryFn: () => insurerApi.members(q || undefined),
+    queryKey: insurerKeys.members(debouncedQ || undefined),
+    queryFn: () => insurerApi.members(debouncedQ || undefined),
   });
 
   const exportData = async () => {

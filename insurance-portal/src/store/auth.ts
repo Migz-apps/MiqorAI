@@ -118,11 +118,11 @@ export const useAuth = create<AuthState>()(
 );
 
 export const PERMISSIONS = {
-  analyst:   { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: false, runReports: true,  exportData: true,  viewContract: false, viewBilling: false, manageStaff: false, viewAudit: false, manageSettings: false },
-  fraud:     { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: true,  runReports: true,  exportData: true,  viewContract: false, viewBilling: false, manageStaff: false, viewAudit: true,  manageSettings: false },
-  contracts: { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: false, runReports: true,  exportData: true,  viewContract: true,  viewBilling: true,  manageStaff: false, viewAudit: false, manageSettings: false },
-  executive: { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: true,  runReports: true,  exportData: true,  viewContract: true,  viewBilling: true,  manageStaff: false, viewAudit: true,  manageSettings: false },
-  admin:     { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: true,  runReports: true,  exportData: true,  viewContract: true,  viewBilling: true,  manageStaff: true,  viewAudit: true,  manageSettings: true  },
+  analyst:   { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: false, runReports: true,  exportData: true,  viewMembers: true, viewContract: false, viewBilling: false, manageStaff: false, viewAudit: false, manageSettings: false },
+  fraud:     { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: true,  runReports: true,  exportData: true,  viewMembers: true, viewContract: false, viewBilling: false, manageStaff: false, viewAudit: true,  manageSettings: false },
+  contracts: { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: false, runReports: true,  exportData: true,  viewMembers: true, viewContract: true,  viewBilling: true,  manageStaff: false, viewAudit: false, manageSettings: false },
+  executive: { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: true,  runReports: true,  exportData: true,  viewMembers: true, viewContract: true,  viewBilling: true,  manageStaff: false, viewAudit: true,  manageSettings: false },
+  admin:     { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: true,  runReports: true,  exportData: true,  viewMembers: true, viewContract: true,  viewBilling: true,  manageStaff: true,  viewAudit: true,  manageSettings: true  },
 } as const;
 
 export type PermKey = keyof typeof PERMISSIONS["admin"];

@@ -14,7 +14,7 @@ export type Staff = {
   email: string;
   role: Role;
   active: boolean;
-  lastLogin: string;
+  lastLogin: string | null;
 };
 
 export type SavingsRecord = {
@@ -42,7 +42,7 @@ export type MedicationAdherence = {
   medication: string;
   rate: number;
   patients: number;
-  trend: number;
+  trend: number | null;
   alert: boolean;
 };
 
@@ -50,8 +50,7 @@ export type NonAdherent = {
   memberId: string;
   patientId: string;
   name: string;
-  medication: string;
-  daysOverdue: number;
+  adherenceRate: number;
   phone: string;
 };
 
@@ -97,7 +96,7 @@ export type Alert = {
 export type AuditEntry = {
   id: string;
   user: string;
-  role: Role;
+  role: string;
   action: string;
   resource: string;
   ip: string;

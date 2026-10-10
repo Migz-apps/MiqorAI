@@ -65,37 +65,6 @@ export default function Settings() {
       </div>
 
       <Card>
-        <CardHeader className="pb-sm"><CardTitle className="h3">Pharmacy profile</CardTitle></CardHeader>
-        <CardContent className="space-y-md">
-          <div className="grid sm:grid-cols-2 gap-md">
-            <div className="space-y-xs"><Label>Pharmacy name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div className="space-y-xs"><Label>Pharmacy code</Label><Input value={session.pharmacyCode} disabled /></div>
-            <div className="space-y-xs"><Label>License #</Label><Input defaultValue={String(settings?.license_number ?? "")} readOnly /></div>
-            <div className="space-y-xs"><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-          </div>
-          <div className="space-y-xs"><Label>Address</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
-          <Button onClick={() => saveMutation.mutate()} className="bg-pharmacy hover:bg-pharmacy/90 text-pharmacy-foreground">Save changes</Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-sm"><CardTitle className="h3">Integrations</CardTitle></CardHeader>
-        <CardContent className="space-y-md">
-          {[
-            { k: "Insurance billing API", s: "Connected" },
-            { k: "Receipt printer (thermal)", s: "Connected" },
-            { k: "Label printer (barcode)", s: "Disconnected" },
-            { k: "SMS gateway (Twilio)", s: "Connected" },
-          ].map((i) => (
-            <div key={i.k} className="flex items-center justify-between border rounded-md p-sm">
-              <div className="text-sm">{i.k}</div>
-              <span className={i.s === "Connected" ? "text-xs text-success" : "text-xs text-text-secondary"}>{i.s}</span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="pb-sm"><CardTitle className="h3">Notification rules</CardTitle></CardHeader>
         <CardContent className="space-y-md">
           {[

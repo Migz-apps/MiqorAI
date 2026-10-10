@@ -34,17 +34,7 @@ export async function retrySyncItem(id: string) {
   return syncApi.process(id);
 }
 
-export async function removeSyncItem(id: string) {
-  return syncApi.delete(id);
-}
 
-export async function pushSyncItem(
-  operation: "create" | "update" | "delete",
-  resourceType: string,
-  resourceData: Record<string, unknown>,
-) {
-  return syncApi.push([{ operation, resource_type: resourceType, resource_data: resourceData }]);
-}
 
 if (typeof window !== "undefined") {
   window.addEventListener("online", () => useSync.getState().setOnline(true));

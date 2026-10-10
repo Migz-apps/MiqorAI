@@ -43,7 +43,7 @@ const App = () => (
             <Route path="/savings"   element={<RoleRoute perm="viewSavings"><Savings /></RoleRoute>} />
             <Route path="/adherence" element={<RoleRoute perm="viewAdherence"><Adherence /></RoleRoute>} />
             <Route path="/fraud"     element={<RoleRoute perm="viewFraud"><Fraud /></RoleRoute>} />
-            <Route path="/members"   element={<Members />} />
+            <Route path="/members"   element={<RoleRoute perm="viewMembers"><Members /></RoleRoute>} />
             <Route path="/reports"   element={<RoleRoute perm="runReports"><Reports /></RoleRoute>} />
             <Route path="/contract"  element={<RoleRoute perm="viewContract"><Contract /></RoleRoute>} />
             <Route path="/staff"     element={<RoleRoute perm="manageStaff"><Staff /></RoleRoute>} />

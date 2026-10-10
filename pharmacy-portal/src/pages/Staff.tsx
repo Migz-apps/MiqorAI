@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -120,7 +120,7 @@ export default function Staff() {
                 {s.active ? <Badge variant="outline" className="border-success/30 text-success bg-success/10">Active</Badge>
                   : <Badge variant="outline" className="border-error/30 text-error bg-error/10">Disabled</Badge>}
                 <div className="text-xs text-text-secondary hidden md:block w-28 text-right">{s.lastActive}</div>
-                <Button size="icon" variant="ghost" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                
               </div>
             ))}
           </div>

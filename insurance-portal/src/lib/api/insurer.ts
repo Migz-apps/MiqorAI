@@ -74,6 +74,7 @@ export type FraudResponse = {
   flagged_claims: Array<{
     id: string;
     patient_id: string;
+    patient_name?: string;
     provider: string;
     amount: number;
     score: number;
@@ -212,11 +213,12 @@ export function mapAlert(a: {
 }
 
 export function mapFlaggedClaim(c: FraudResponse["flagged_claims"][number], idx: number): FlaggedClaim {
+  void idx;
   return {
     id: c.id.slice(0, 8).toUpperCase(),
     sourceId: c.id,
     patientId: c.patient_id.slice(0, 8).toUpperCase(),
-    patientName: `Patient ${idx + 1}`,
+    patientName: c.patient_name ?? c.patient_id.slice(0, 8).toUpperCase(),
     provider: c.provider,
     amount: c.amount,
     score: c.score,
@@ -280,7 +282,7 @@ export function mapStaffRow(s: {
       ? typeof s.last_login === "string"
         ? s.last_login
         : s.last_login.toISOString()
-      : new Date(0).toISOString(),
+      : null,
   };
 }
 
@@ -289,19 +291,17 @@ export function mapMedication(m: { medication: string; rate: number; patients: n
     medication: m.medication,
     rate: m.rate,
     patients: m.patients,
-    trend: 0,
+    trend: null,
     alert: m.rate < 75,
   };
 }
 
 export function mapNonAdherent(p: AdherenceResponse["non_adherent_patients"][number]): NonAdherent {
-  const daysOverdue = Math.max(1, Math.round((75 - p.adherence_rate) / 3));
   return {
     memberId: p.member_id,
     patientId: p.patient_id.slice(0, 8).toUpperCase(),
     name: p.name,
-    medication: "Multiple",
-    daysOverdue,
+    adherenceRate: p.adherence_rate,
     phone: p.phone ?? "—",
   };
 }
@@ -309,6 +309,7 @@ export function mapNonAdherent(p: AdherenceResponse["non_adherent_patients"][num
 export function mapAuditEntry(e: {
   id: string;
   userEmail?: string | null;
+  user?: { role?: string | null; displayName?: string | null } | null;
   action: string;
   resourceType: string;
   resourceId?: string | null;
@@ -318,7 +319,7 @@ export function mapAuditEntry(e: {
   return {
     id: e.id.slice(0, 8).toUpperCase(),
     user: e.userEmail ?? "System",
-    role: "analyst",
+    role: e.user?.role ?? "system",
     action: e.action.replace(/_/g, " "),
     resource: e.resourceId ? `${e.resourceType} ${e.resourceId.slice(0, 8)}` : e.resourceType,
     ip: e.ipAddress ?? "—",
@@ -391,7 +392,7 @@ export const insurerApi = {
     api(`/api/insurer/staff/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }),
   deactivateStaff: (userId: string) =>
     api(`/api/insurer/staff/${userId}`, { method: "DELETE" }),
-  rotateApiKey: (id: string) => api(`/api/insurer/api-keys/${id}/rotate`, { method: "POST", body: "{}" }),
+  rotateApiKey: (id: string) => api<{ id: string; api_key: string }>(`/api/insurer/api-keys/${id}/rotate`, { method: "POST", body: "{}" }),
   exportSavings: (format: "csv" | "pdf") =>
     api<{ download_url: string }>("/api/insurer/savings/export", {
       method: "POST",

@@ -40,7 +40,7 @@ const App = () => (
             <Route path="/scan" element={<RoleRoute perm="scanQR"><Scan /></RoleRoute>} />
 
             <Route path="/prescriptions" element={<Prescriptions />} />
-            <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
+            <Route path="/prescriptions/:id" element={<RoleRoute perm="viewRxDetails"><PrescriptionDetail /></RoleRoute>} />
 
             <Route path="/patients" element={<Patients />} />
             <Route path="/patients/:id" element={<PatientProfile />} />

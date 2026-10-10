@@ -26,6 +26,7 @@ export type ApiPrescription = {
   id: string;
   patient_id: string;
   patient_name?: string;
+  prescriber_name?: string | null;
   hospital?: ApiHospital;
   status: string;
   diagnosis?: string | null;
@@ -87,9 +88,9 @@ export function mapRxStatus(status: string): RxStatus {
 }
 
 function hospitalName(hospital?: ApiHospital): string {
-  if (!hospital) return "â€”";
+  if (!hospital) return "—";
   if (typeof hospital === "string") return hospital;
-  return hospital.name ?? "â€”";
+  return hospital.name ?? "—";
 }
 
 function patientName(rx: ApiPrescription): string {
@@ -146,7 +147,7 @@ function mapRxItems(items?: ApiRxItem[]): RxItem[] {
     name: it.drug_name,
     strength: it.strength ?? "",
     form: mapForm(it.dosage_form),
-    dose: it.dose ?? "â€”",
+    dose: it.dose ?? "—",
     durationDays: it.duration_days ?? 0,
     quantity: it.quantity,
     unitPrice: it.unit_price,
@@ -163,18 +164,18 @@ export function mapPrescription(rx: ApiPrescription): Rx {
     patientId: rx.patient_id,
     patientName: patientName(rx),
     patientAge: ageFromDob(rx.patient?.date_of_birth),
-    patientPhone: rx.patient?.phone ?? "â€”",
-    doctorName: "Prescriber",
+    patientPhone: rx.patient?.phone ?? "—",
+    doctorName: rx.prescriber_name ?? "Prescriber",
     hospital: hospitalName(rx.hospital),
     issuedAt: rx.prescribed_at ?? new Date().toISOString(),
     status: mapRxStatus(rx.status),
-    diagnosis: rx.diagnosis ?? "â€”",
+    diagnosis: rx.diagnosis ?? "—",
     allergies: mapAllergies(rx.allergies),
     notes: rx.notes ?? undefined,
     items,
     insurance:
       rx.insurance_provider
-        ? { provider: rx.insurance_provider, member: rx.insurance_member ?? "â€”" }
+        ? { provider: rx.insurance_provider, member: rx.insurance_member ?? "—" }
         : undefined,
     total,
     interactionMessages: mapInteractionMessages(rx.interactions),
@@ -192,8 +193,8 @@ export function mapInventoryItem(item: ApiInventory): StockItem {
     stock: item.stock,
     minStock: item.reorder_point ?? 0,
     unitPrice: item.unit_price,
-    expiry: item.expiry_date ?? "â€”",
-    supplier: item.supplier ?? "â€”",
+    expiry: item.expiry_date ?? "—",
+    supplier: item.supplier ?? "—",
     controlled: item.controlled ?? false,
   };
 }
@@ -203,6 +204,7 @@ export function mapPatientListItem(p: {
   name: string;
   phone?: string | null;
   email?: string | null;
+  date_of_birth?: string | null;
   allergies?: unknown[];
   conditions?: unknown[];
   adherence?: number;
@@ -210,12 +212,12 @@ export function mapPatientListItem(p: {
   return {
     id: p.id,
     name: p.name,
-    age: 0,
-    phone: p.phone ?? "â€”",
+    age: ageFromDob(p.date_of_birth),
+    phone: p.phone ?? "—",
     allergies: mapAllergies(p.allergies),
     conditions: mapConditions(p.conditions),
     adherence: p.adherence ?? 0,
-    lastVisit: "â€”",
+    lastVisit: "—",
   };
 }
 
@@ -234,13 +236,13 @@ export function mapPatientDetail(data: {
     id: data.id,
     name: `${data.first_name} ${data.last_name}`.trim(),
     age: ageFromDob(data.date_of_birth),
-    phone: data.phone ?? "â€”",
+    phone: data.phone ?? "—",
     allergies: mapAllergies(data.allergies),
     conditions: mapConditions(data.conditions),
     adherence: adherence?.overall_rate ? Math.round(adherence.overall_rate) : (data.adherence ?? 0),
     lastVisit: data.prescriptions?.[0]?.prescribed_at
       ? formatDistanceToNow(new Date(data.prescriptions[0].prescribed_at), { addSuffix: true })
-      : "â€”",
+      : "—",
   };
 }
 
@@ -260,7 +262,7 @@ export function mapStaffMember(s: {
     active: s.active,
     lastActive: s.last_login
       ? formatDistanceToNow(new Date(s.last_login), { addSuffix: true })
-      : "â€”",
+      : "—",
   };
 }
 
@@ -274,7 +276,7 @@ export function mapAdherenceTrend(trend: Array<{ month?: string; adherence_rate?
 export function mapRevenueTrend(trend: Array<{ date?: string; amount?: number }>) {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return trend.map((t) => ({
-    day: t.date ? days[new Date(t.date).getDay()] ?? t.date.slice(5) : "â€”",
+    day: t.date ? days[new Date(t.date).getDay()] ?? t.date.slice(5) : "—",
     value: t.amount ?? 0,
   }));
 }
@@ -286,7 +288,7 @@ export function mapAuditLog(item: {
   createdAt: string;
   success?: boolean;
 }) {
-  const level = item.success === false ? "warning" as const : "info" as const;
+  const level = item.success === false ? "warning" as const : item.success === true ? "success" as const : "info" as const;
   return {
     id: item.id,
     at: item.createdAt,

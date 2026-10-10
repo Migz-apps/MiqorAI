@@ -83,7 +83,7 @@ export default function Login() {
         </Button>
         <div className="flex items-center gap-2 text-[11px] text-text-secondary">
           <ShieldCheck className="h-3.5 w-3.5 text-success" />
-          MFA required for executives · 4-hour session timeout · Every login is audited.
+          MFA required for executives · automatic session expiry · Every login is audited.
         </div>
       </form>
 

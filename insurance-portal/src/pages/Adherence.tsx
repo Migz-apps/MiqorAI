@@ -68,7 +68,7 @@ export default function Adherence() {
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
       <PageHeader
         title="Adherence dashboard"
-        subtitle="Track medication adherence to prevent the costliest outcome â€” hospitalisation."
+        subtitle="Track medication adherence to prevent the costliest outcome — hospitalisation."
         right={(
           <Button size="sm" variant="outline" className="gap-sm" onClick={() => void exportData()}>
             <Download className="h-4 w-4" /> Export
@@ -144,8 +144,7 @@ export default function Adherence() {
           <Table>
             <TableHeader>
               <TableRow className="bg-insurer-light/40 hover:bg-insurer-light/40">
-                <TableHead>Medication</TableHead>
-                <TableHead>Patients</TableHead>
+                                <TableHead>Patients</TableHead>
                 <TableHead className="w-[280px]">Adherence</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Action</TableHead>
@@ -188,7 +187,7 @@ export default function Adherence() {
               <TableRow className="bg-error/5 hover:bg-error/5">
                 <TableHead>Patient</TableHead>
                 <TableHead>Medication</TableHead>
-                <TableHead>Days overdue</TableHead>
+                <TableHead>Adherence</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead className="text-right">Outreach</TableHead>
               </TableRow>
@@ -204,10 +203,9 @@ export default function Adherence() {
                     <div className="font-medium text-sm">{p.name}</div>
                     <div className="font-mono text-[11px] text-text-secondary">{p.patientId}</div>
                   </TableCell>
-                  <TableCell>{p.medication}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={p.daysOverdue >= 14 ? "bg-error/10 text-error border-error/30" : p.daysOverdue >= 7 ? "bg-secondary/15 text-secondary border-secondary/30" : "bg-info/10 text-info border-info/30"}>
-                      {p.daysOverdue} days
+                    <Badge variant="outline" className={p.adherenceRate < 50 ? "bg-error/10 text-error border-error/30" : p.adherenceRate < 65 ? "bg-secondary/15 text-secondary border-secondary/30" : "bg-info/10 text-info border-info/30"}>
+                      {p.adherenceRate}% adherent
                     </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{p.phone}</TableCell>
@@ -226,7 +224,7 @@ export default function Adherence() {
                         size="sm"
                         variant="ghost"
                         className="h-7 text-xs gap-1"
-                        disabled={!p.phone || p.phone === "â€”"}
+                        disabled={!p.phone || p.phone === "—"}
                         onClick={() => { window.location.href = `tel:${p.phone}`; }}
                       >
                         <Phone className="h-3 w-3" /> Call

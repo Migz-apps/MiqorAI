@@ -217,7 +217,7 @@ export default function Reports() {
                         size="sm"
                         variant="ghost"
                         className="h-7 text-xs gap-1 text-insurer"
-                        onClick={() => void downloadFile(r.downloadUrl, `${r.title}.${String(r.format).toLowerCase()}`)}
+                        onClick={() => void downloadFile(r.downloadUrl, `${r.title}.${String(r.format).toLowerCase() === "excel" ? "xlsx" : String(r.format).toLowerCase()}`)}
                       >
                         <Download className="h-3 w-3" /> Download
                       </Button>

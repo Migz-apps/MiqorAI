@@ -214,7 +214,7 @@ export default function PrescriptionDetail() {
       <Card className="sticky bottom-0 z-10 shadow-lg">
         <CardContent className="p-md flex flex-wrap items-center justify-between gap-md">
           <div className="text-xs text-text-secondary">
-            {stockOk ? "All items in stock." : <span className="text-error">Stock is low for some items, but dispensing is still available for testing.</span>}
+            {stockOk ? "All items in stock." : <span className="text-error">Insufficient stock for some items — dispensing is blocked until stock is adjusted.</span>}
           </div>
           <div className="flex flex-wrap items-center gap-sm">
             <Dialog>
@@ -275,13 +275,13 @@ export default function PrescriptionDetail() {
                 <ShieldCheck className="h-4 w-4" /> Verify
               </Button>
             )}
-            {(rx.status === "verified" || rx.status === "pending") && can(session.role, "prepare") && (
+            {rx.status === "verified" && can(session.role, "prepare") && (
               <Button onClick={() => actionMutation.mutate("ready")} variant="outline" className="gap-sm border-pharmacy/40 text-pharmacy hover:bg-pharmacy/10">
                 <Package className="h-4 w-4" /> Mark ready
               </Button>
             )}
             {(rx.status === "ready" || rx.status === "verified") && can(session.role, "dispense") && (
-              <Button onClick={() => actionMutation.mutate("dispense")} className="gap-sm bg-success hover:bg-success/90 text-success-foreground">
+              <Button disabled={!stockOk} title={stockOk ? undefined : "Insufficient stock"} onClick={() => actionMutation.mutate("dispense")} className="gap-sm bg-success hover:bg-success/90 text-success-foreground">
                 <CheckCircle2 className="h-4 w-4" /> Dispense
               </Button>
             )}

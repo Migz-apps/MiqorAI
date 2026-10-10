@@ -106,7 +106,7 @@ export default function Contract() {
               <FileText className="h-4 w-4 text-insurer" /> Active contract
             </CardTitle>
             <p className="text-xs text-text-secondary">
-              {contract?.contract_id ? `Contract # ${contract.contract_id.slice(0, 12).toUpperCase()}` : "Default partnership"} Â· Renews automatically
+              {contract?.contract_id ? `Contract # ${contract.contract_id.slice(0, 12).toUpperCase()}` : "Default partnership"} · Renews automatically
             </p>
           </div>
           <Badge variant="outline" className={statusActive ? "bg-success/10 text-success border-success/30 gap-1" : "bg-secondary/15 text-secondary border-secondary/30 gap-1"}>
@@ -115,8 +115,8 @@ export default function Contract() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-md">
           {[
-            { k: "Start date", v: contract?.start_date ? dateStr(contract.start_date) : "â€”" },
-            { k: "End date", v: contract?.end_date ? dateStr(contract.end_date) : "â€”" },
+            { k: "Start date", v: contract?.start_date ? dateStr(contract.start_date) : "—" },
+            { k: "End date", v: contract?.end_date ? dateStr(contract.end_date) : "—" },
             { k: "MiqorAI fee", v: `${contract?.fee_percentage ?? usage?.fee_percentage ?? 20}% of verified savings` },
             { k: "Status", v: contract?.status ?? "active" },
             { k: "Data access", v: "Anonymized population health" },

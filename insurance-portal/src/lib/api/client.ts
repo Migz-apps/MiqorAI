@@ -42,18 +42,35 @@ export class ApiError extends Error {
   }
 }
 
+let refreshInFlight: Promise<boolean> | null = null;
+
 async function refreshAccessToken(): Promise<boolean> {
-  const t = loadTokens();
-  if (!t?.refresh_token) return false;
-  const res = await fetch(`${API_URL}/api/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: t.refresh_token }),
-  });
-  if (!res.ok) return false;
-  const data = (await res.json()) as { access_token: string };
-  saveTokens({ ...t, access_token: data.access_token });
-  return true;
+  // Single-flight: concurrent 401s share one refresh request.
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      const t = loadTokens();
+      if (!t?.refresh_token) return false;
+      const res = await fetch(`${API_URL}/api/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: t.refresh_token }),
+      });
+      if (!res.ok) {
+        // The session is unrecoverable: drop tokens so route guards redirect to login.
+        saveTokens(null);
+        return false;
+      }
+      const data = (await res.json()) as { access_token: string; refresh_token?: string };
+      saveTokens({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token ?? t.refresh_token,
+      });
+      return true;
+    })().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
 }
 
 function resolveUrl(path: string): string {
@@ -135,14 +152,17 @@ export async function getMe() {
 export async function downloadFile(url: string, fallbackFilename?: string) {
   loadTokens();
   const headers: Record<string, string> = {};
-  if (tokens?.access_token) headers.Authorization = `Bearer ${tokens.access_token}`;
+  // Never leak the token to a foreign host: attach it only for our API origin.
+  const target = resolveUrl(url);
+  const sameOrigin = !API_URL || target.startsWith(API_URL) || target.startsWith("/");
+  if (sameOrigin && tokens?.access_token) headers.Authorization = `Bearer ${tokens.access_token}`;
 
-  let res = await fetch(resolveUrl(url), { headers });
+  let res = await fetch(target, { headers });
   if (res.status === 401 && tokens?.refresh_token) {
     const ok = await refreshAccessToken();
     if (ok) {
-      headers.Authorization = `Bearer ${loadTokens()!.access_token}`;
-      res = await fetch(resolveUrl(url), { headers });
+      if (sameOrigin) headers.Authorization = `Bearer ${loadTokens()!.access_token}`;
+      res = await fetch(target, { headers });
     }
   }
 

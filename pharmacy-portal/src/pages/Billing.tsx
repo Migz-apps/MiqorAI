@@ -24,7 +24,7 @@ export default function Billing() {
   const { data: receipts = [], isLoading } = useQuery({
     queryKey: pharmacyKeys.billing(),
     queryFn: async () => {
-      const rows = await pharmacyApi.billingReceipts();
+      const rows = await pharmacyApi.billingReceipts(new Date().toISOString().slice(0, 10));
       return (rows as Parameters<typeof mapBillingReceipt>[0][]).map(mapBillingReceipt);
     },
   });
@@ -135,9 +135,6 @@ export default function Billing() {
                   <div className="font-bold text-sm tabular-nums">KES {r.total.toLocaleString()}</div>
                   <div className="text-[10px] text-text-secondary">Total billed</div>
                 </div>
-                <Button size="icon" variant="ghost" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition" title="Open receipt">
-                  <ArrowUpRight className="h-4 w-4" />
-                </Button>
               </div>
             ))}
           </div>

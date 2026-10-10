@@ -29,10 +29,19 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function Savings() {
   const [q, setQ] = useState("");
+  const [period, setPeriod] = useState<"month" | "ytd">("month");
+
+  const range = (() => {
+    const now = new Date();
+    const start = period === "month"
+      ? new Date(now.getFullYear(), now.getMonth(), 1)
+      : new Date(now.getFullYear(), 0, 1);
+    return { start: start.toISOString().slice(0, 10), end: now.toISOString().slice(0, 10) };
+  })();
 
   const { data: savings, isLoading } = useQuery({
-    queryKey: insurerKeys.savings(),
-    queryFn: () => insurerApi.savings(),
+    queryKey: insurerKeys.savings(range.start, range.end),
+    queryFn: () => insurerApi.savings(range.start, range.end),
   });
 
   const { data: recordsRaw } = useQuery({
@@ -86,10 +95,10 @@ export default function Savings() {
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
       <PageHeader
         title="Savings dashboard"
-        subtitle="Verified duplicate-test savings. Every Franc here is auditable to a claim."
+        subtitle="Verified duplicate-test savings. Every shilling here is auditable to a claim."
         right={
           <>
-            <Tabs defaultValue="month">
+            <Tabs value={period} onValueChange={(v) => setPeriod(v as "month" | "ytd")}>
               <TabsList className="h-9">
                 <TabsTrigger value="month">This month</TabsTrigger>
                 <TabsTrigger value="ytd">YTD</TabsTrigger>
