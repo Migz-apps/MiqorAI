@@ -16,7 +16,7 @@ function TransactionsPage() {
     queryFn: () => adminApi.transactionsLedger(50),
   });
   const { data: audit, isLoading: auditLoading } = useQuery({
-    queryKey: adminKeys.auditLogs,
+    queryKey: adminKeys.auditLogs(4),
     queryFn: () => adminApi.auditLogs(4),
   });
 

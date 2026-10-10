@@ -34,7 +34,7 @@ type AuthCtx = {
     phone: string;
     password: string;
     dateOfBirth: string;
-  }) => Promise<{ verificationRequired: boolean; email: string } | null>;
+  }) => Promise<{ verificationRequired?: boolean; email?: string; error?: string } | null>;
   verifySignupOtp: (email: string, otp: string) => Promise<boolean>;
   resendSignupOtp: (email: string) => Promise<boolean>;
   requestPasswordReset: (email: string) => Promise<boolean>;
@@ -59,10 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const persist = (u: User | null) => {
     setUser(u);
-    if (typeof window !== "undefined") {
-      if (u) localStorage.setItem(KEY, JSON.stringify(u));
-      else localStorage.removeItem(KEY);
-    }
   };
 
   useEffect(() => {
@@ -113,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       return { verificationRequired: true, email: data.email.trim().toLowerCase() };
     } catch (err) {
-      if (err instanceof ApiError && err.status === 400) return null;
+      if (err instanceof ApiError) return { error: err.message };
       return null;
     }
   };
@@ -186,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (patch.name) {
       const parts = patch.name.trim().split(/\s+/);
       body.first_name = parts[0];
-      body.last_name = parts.slice(1).join(" ") || parts[0];
+      body.last_name = parts.slice(1).join(" ");
     }
     if (patch.dob) body.date_of_birth = patch.dob;
     if (patch.phone !== undefined) body.phone = patch.phone;

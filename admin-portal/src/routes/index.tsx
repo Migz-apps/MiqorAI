@@ -49,7 +49,7 @@ function Dashboard() {
     queryFn: () => adminApi.hourlyMetrics(),
   });
   const { data: hospitals } = useQuery({
-    queryKey: adminKeys.hospitals("active"),
+    queryKey: adminKeys.hospitals("active", 10),
     queryFn: () => adminApi.hospitalsStats({ status: "active", limit: 10 }),
   });
 
@@ -265,7 +265,7 @@ function RevenueSnapshot({ series }: { series: Array<{ month: string; insurers: 
 }
 
 function TopHospitals({ hospitals }: { hospitals: Array<{ id: string; name: string; city: string; patient_count: number; total_savings: number }> }) {
-  const max = hospitals[0]?.total_savings ?? 1;
+  const max = Math.max(hospitals[0]?.total_savings ?? 0, 1);
   return (
     <div className="rounded-xl border border-border bg-card-gradient p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between mb-4">

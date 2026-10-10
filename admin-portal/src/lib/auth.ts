@@ -45,7 +45,12 @@ export const useAuth = create<AuthState>()(
         set({ session: null });
       },
       restoreSession: async () => {
-        if (!loadTokens()) return;
+        if (!loadTokens()) {
+          // Tokens gone (expired/cleared) — a persisted session without tokens
+          // renders a shell where every call 401s. Drop it so guards redirect.
+          set({ session: null });
+          return;
+        }
         try {
           const me = await getMe();
           if (me.role !== "super_admin") throw new Error("not admin");

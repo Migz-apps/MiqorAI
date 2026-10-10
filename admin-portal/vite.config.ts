@@ -24,6 +24,9 @@ export default defineConfig({
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart({
+      // This release consumes the legacy option shape at runtime while shipping
+      // newer type definitions — keep the shape that actually works.
+      // @ts-expect-error legacy option shape
       tsr: {
         srcDirectory: "src",
       },

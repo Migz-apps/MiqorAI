@@ -139,8 +139,17 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
       .then(([d, q]) => { setDash(d); setQr(q.qr_code); })
       .catch(() => undefined);
     loadRequests();
-    const timer = window.setInterval(loadRequests, 5000);
-    return () => window.clearInterval(timer);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") loadRequests();
+    }, 5000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadRequests();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const respondToRequest = async (id: string, decision: "approve" | "deny") => {
@@ -511,18 +520,12 @@ function ProfileTab() {
   }, [settings?.theme]);
 
   const saveProfile = async () => {
-    const parts = form.name.trim().split(/\s+/);
-    await patientApi.updateProfile({
-      first_name: parts[0],
-      last_name: parts.slice(1).join(" ") || parts[0],
-      email: form.email,
-      phone: form.phone,
-      national_id: form.nationalId,
-      insurance_id: form.insuranceId,
-      date_of_birth: form.dob,
-    }).catch(() => undefined);
-    await updateUser(form);
-    toast(MESSAGES.generic.saved);
+    try {
+      await updateUser(form);
+      toast(MESSAGES.generic.saved);
+    } catch {
+      toast(MESSAGES.generic.error, "error");
+    }
   };
 
   const exportData = async () => {
@@ -565,9 +568,9 @@ function ProfileTab() {
       <Card title="Security">
         <div className="space-y-4">
           <Toggle label="Biometric Login" desc="Use fingerprint or face ID" checked={settings?.biometric_enabled ?? false}
-            onChange={(v) => void patientApi.updateSettings({ biometric_enabled: v }).then(setSettings)} />
+            onChange={(v) => void patientApi.updateSettings({ biometric_enabled: v }).then(setSettings).catch(() => toast(MESSAGES.generic.error, "error"))} />
           <Toggle label="Two-Factor Authentication" checked={settings?.two_factor_enabled ?? false}
-            onChange={(v) => void patientApi.updateSettings({ two_factor_enabled: v }).then(setSettings)} />
+            onChange={(v) => void patientApi.updateSettings({ two_factor_enabled: v }).then(setSettings).catch((e) => toast(e instanceof Error ? e.message : MESSAGES.generic.error, "error"))} />
           <div className="rounded-lg border border-warning/40 bg-warning/10 p-4">
             <div className="flex items-center gap-2 font-medium text-sm"><FiShield className="text-warning" /> Recovery Phrase</div>
             {showRecovery && recovery ? (
@@ -587,7 +590,7 @@ function ProfileTab() {
                 <div className="font-medium text-sm">{c.name} <span className="text-muted-foreground font-normal">· {c.relationship}</span></div>
                 <div className="text-xs text-muted-foreground">{c.phone}</div>
               </div>
-              <button onClick={() => void patientApi.deleteEmergencyContact(c.id).then(() => setContacts((p) => p.filter((x) => x.id !== c.id)))} aria-label="Remove">
+              <button onClick={() => void patientApi.deleteEmergencyContact(c.id).then(() => setContacts((p) => p.filter((x) => x.id !== c.id))).catch(() => toast(MESSAGES.generic.error, "error"))} aria-label="Remove">
                 <FiTrash2 className="text-muted-foreground hover:text-destructive" />
               </button>
             </li>
@@ -610,7 +613,7 @@ function ProfileTab() {
         <p className="text-sm text-muted-foreground">This will permanently delete your account and all medical records.</p>
         <div className="mt-5 flex gap-2 justify-end">
           <button onClick={() => setDelOpen(false)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">Cancel</button>
-          <button onClick={() => void patientApi.deleteAccount().then(async () => { await logout(); navigate("/"); })} className="rounded-lg bg-destructive text-destructive-foreground px-4 py-2 text-sm">
+          <button onClick={() => void patientApi.deleteAccount().then(async () => { await logout(); navigate("/"); }).catch(() => toast(MESSAGES.generic.error, "error"))} className="rounded-lg bg-destructive text-destructive-foreground px-4 py-2 text-sm">
             Yes, delete
           </button>
         </div>

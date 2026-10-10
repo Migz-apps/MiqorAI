@@ -401,10 +401,10 @@ export default function LoginPage() {
         dateOfBirth,
       });
       if (!result?.verificationRequired) {
-        setFormError("We couldn't create your account. Check your details and try again.");
+        setFormError(result?.error ?? "We couldn't create your account. Check your details and try again.");
         return;
       }
-      setPendingVerificationEmail(result.email);
+      setPendingVerificationEmail(result.email ?? normalizeEmail(email));
       setSignupOtp("");
       setFieldErrors({});
       toast("We sent a verification code to your email.");

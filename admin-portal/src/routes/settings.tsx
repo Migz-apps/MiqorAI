@@ -29,6 +29,7 @@ function SettingsPage() {
     invitationExpiryDays: "7",
   });
   const [inviteEmail, setInviteEmail] = useState("");
+  const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
   const [inviteRole, setInviteRole] = useState("operator");
 
   useEffect(() => {
@@ -64,6 +65,7 @@ function SettingsPage() {
       }),
     onSuccess: async (result) => {
       setInviteEmail("");
+      setLastInviteUrl(result.invite_url);
       toast.success("Invitation created");
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(result.invite_url).catch(() => undefined);
@@ -96,7 +98,7 @@ function SettingsPage() {
             <button
               type="button"
               onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
+              disabled={saveMutation.isPending || !settings}
               className="h-9 px-3.5 rounded-md bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 text-sm font-medium disabled:opacity-60"
             >
               Save changes
@@ -179,6 +181,12 @@ function SettingsPage() {
               Send invite
             </button>
           </div>
+          {lastInviteUrl && (
+            <div className="mt-2 text-xs break-all rounded-md border border-border bg-card px-3 py-2">
+              <span className="font-medium">Invite link: </span>
+              <code>{lastInviteUrl}</code>
+            </div>
+          )}
         </section>
       </div>
 

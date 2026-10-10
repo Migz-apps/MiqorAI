@@ -19,7 +19,7 @@ function CompliancePage() {
     queryFn: () => adminApi.complianceSummary(),
   });
   const { data: audit, isLoading: auditLoading } = useQuery({
-    queryKey: adminKeys.auditLogs,
+    queryKey: adminKeys.auditLogs(50),
     queryFn: () => adminApi.auditLogs(50),
   });
 

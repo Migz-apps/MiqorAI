@@ -58,6 +58,8 @@ export type HospitalStat = {
   patient_count: number;
   total_savings: number;
   pilot_days_remaining: number | null;
+  code?: string;
+  visit_count?: number;
 };
 
 export type PilotHospitalStat = {
@@ -201,12 +203,12 @@ export const adminKeys = {
   network: ["admin", "network"] as const,
   hourly: ["admin", "hourly"] as const,
   revenue: ["admin", "revenue"] as const,
-  hospitals: (status?: string) => ["admin", "hospitals", status] as const,
+  hospitals: (status?: string, limit?: number) => ["admin", "hospitals", status, limit ?? "all"] as const,
   hospitalsPilot: ["admin", "hospitals", "pilot"] as const,
   pharmacies: (status?: string) => ["admin", "pharmacies", status] as const,
   insurers: ["admin", "insurers"] as const,
   disputes: ["admin", "disputes"] as const,
-  auditLogs: ["admin", "audit-logs"] as const,
+  auditLogs: (limit = 50) => ["admin", "audit-logs", limit] as const,
   invoices: ["admin", "invoices"] as const,
   transactions: ["admin", "transactions"] as const,
   compliance: ["admin", "compliance"] as const,

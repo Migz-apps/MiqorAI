@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={() => {
                   localStorage.removeItem("miqorai-patient-auth");
                   localStorage.removeItem("miqorai-patient-tokens");
-                  window.location.href = "/login";
+                  window.location.href = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/login`;
                 }}
               >
                 Clear session & go to login

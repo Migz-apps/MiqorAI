@@ -21,6 +21,10 @@ export const Route = createFileRoute("/hospitals")({
 
 function HospitalsPage() {
   const queryClient = useQueryClient();
+  const settingsQuery = useQuery({
+    queryKey: ["admin", "settings"],
+    queryFn: () => adminApi.getPlatformSettings(),
+  });
   const [tab, setTab] = useState(0);
 
   const { data: me } = useQuery({
@@ -29,12 +33,12 @@ function HospitalsPage() {
   });
 
   const { data: pending } = useQuery({
-    queryKey: adminKeys.hospitals("pending"),
+    queryKey: adminKeys.hospitals("pending", 50),
     queryFn: () => adminApi.hospitalsStats({ status: "pending", limit: 50 }),
     enabled: tab === 0,
   });
   const { data: active } = useQuery({
-    queryKey: adminKeys.hospitals("active"),
+    queryKey: adminKeys.hospitals("active", 50),
     queryFn: () => adminApi.hospitalsStats({ status: "active", limit: 50 }),
     enabled: tab === 1,
   });
@@ -44,16 +48,16 @@ function HospitalsPage() {
     enabled: tab === 2,
   });
   const { data: all } = useQuery({
-    queryKey: adminKeys.hospitals("all"),
+    queryKey: adminKeys.hospitals("all", 50),
     queryFn: () => adminApi.hospitalsStats({ limit: 100 }),
     enabled: tab === 3,
   });
 
   const refreshHospitals = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: adminKeys.hospitals("pending") }),
-      queryClient.invalidateQueries({ queryKey: adminKeys.hospitals("active") }),
-      queryClient.invalidateQueries({ queryKey: adminKeys.hospitals("all") }),
+      queryClient.invalidateQueries({ queryKey: adminKeys.hospitals("pending", 50) }),
+      queryClient.invalidateQueries({ queryKey: adminKeys.hospitals("active", 50) }),
+      queryClient.invalidateQueries({ queryKey: adminKeys.hospitals("all", 50) }),
       queryClient.invalidateQueries({ queryKey: adminKeys.hospitalsPilot }),
       queryClient.invalidateQueries({ queryKey: adminKeys.dashboard }),
       queryClient.invalidateQueries({ queryKey: adminKeys.pending }),
@@ -64,7 +68,8 @@ function HospitalsPage() {
   const approveMutation = useMutation({
     mutationFn: async (hospitalId: string) => {
       if (!me?.id) throw new Error("Admin session not ready");
-      const pilotEndDate = new Date(Date.now() + 90 * 86400000)
+      const pilotDays = Number(settingsQuery.data?.default_pilot_duration_days ?? 90);
+      const pilotEndDate = new Date(Date.now() + pilotDays * 86400000)
         .toISOString()
         .slice(0, 10);
       return adminApi.approveHospital(hospitalId, me.id, pilotEndDate);

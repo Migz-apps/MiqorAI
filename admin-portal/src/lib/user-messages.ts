@@ -16,6 +16,7 @@ const TECHNICAL =
   /(\b(401|403|404|500|502|503)\b|stack|syntaxerror|typeerror|referenceerror|unhandled|rejection|fetch failed|network error|econnrefused|cors|json\.parse|undefined|null is not|sql|postgres|mongodb|firebase|supabase|axios|exception|internal server)/i;
 
 export function toUserMessage(input: unknown): string {
+  if (input instanceof Error) return toUserMessage(input.message);
   if (typeof input === "string") {
     const trimmed = input.trim();
     if (!trimmed) return MESSAGES.generic.error;
