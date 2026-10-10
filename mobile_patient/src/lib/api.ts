@@ -201,6 +201,19 @@ const API_URL = resolvedApiUrl.replace(/\/$/, '')
 
 let sessionTokens: AuthTokens | null = null
 
+// The store registers these so refreshed tokens persist across restarts and a
+// dead session logs the user out instead of masquerading as "offline".
+let onTokensRefreshed: ((tokens: AuthTokens) => void) | null = null
+let onAuthExpired: (() => void) | null = null
+
+export function registerAuthHooks(hooks: {
+  onTokensRefreshed?: (tokens: AuthTokens) => void
+  onAuthExpired?: () => void
+}) {
+  onTokensRefreshed = hooks.onTokensRefreshed ?? null
+  onAuthExpired = hooks.onAuthExpired ?? null
+}
+
 export function setSessionTokens(tokens: AuthTokens | null) {
   sessionTokens = tokens
 }
@@ -234,14 +247,17 @@ async function refreshAccessToken() {
   })
 
   if (!response.ok) {
+    sessionTokens = null
+    onAuthExpired?.()
     return false
   }
 
-  const data = (await response.json()) as { access_token: string }
+  const data = (await response.json()) as { access_token: string; refresh_token?: string }
   sessionTokens = {
-    ...sessionTokens,
     access_token: data.access_token,
+    refresh_token: data.refresh_token ?? sessionTokens.refresh_token,
   }
+  onTokensRefreshed?.(sessionTokens)
   return true
 }
 

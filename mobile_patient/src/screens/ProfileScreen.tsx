@@ -37,13 +37,16 @@ import {
   useAppToast,
 } from '../components/ui'
 import { useResponsive } from '../responsive'
+import { mobileApi } from '../lib/api'
 import { usePatientStore } from '../store'
+import appConfig from '../../app.json'
 import { colors, radius, shadows, spacing } from '../theme'
 import { formatDate } from '../utils'
 
 export function ProfileScreen() {
   const {
     activePatient,
+    profile,
     biometricsEnabled,
     emergencyContacts,
     setBiometricsEnabled,
@@ -51,21 +54,25 @@ export function ProfileScreen() {
     logout,
     requestExportData,
     deleteAccount,
+    addEmergencyContact,
     updateProfile,
   } = usePatientStore()
 
   const { showToast } = useAppToast()
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [newContactName, setNewContactName] = useState('')
+  const [newContactPhone, setNewContactPhone] = useState('')
+  const [newContactRelation, setNewContactRelation] = useState('')
+  const [isSavingContact, setIsSavingContact] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [showEmergencyContacts, setShowEmergencyContacts] = useState(false)
   const [showRecoveryPhrase, setShowRecoveryPhrase] = useState(false)
-  const [editFirstName, setEditFirstName] = useState(activePatient?.firstName || '')
-  const [editLastName, setEditLastName] = useState(activePatient?.lastName || '')
-  const [editPhone, setEditPhone] = useState(activePatient?.phoneNumber || '')
-  const [editEmail, setEditEmail] = useState(activePatient?.email || '')
+  const [editFirstName, setEditFirstName] = useState(profile?.firstName || '')
+  const [editLastName, setEditLastName] = useState(profile?.lastName || '')
+  const [editPhone, setEditPhone] = useState(profile?.phoneNumber || '')
+  const [editEmail, setEditEmail] = useState(profile?.email || '')
   const { isCompact, isLargePhone, recoveryColumns, stackedActions } = useResponsive()
   const recoveryCellWidth = recoveryColumns === 4 ? '23.5%' : recoveryColumns === 3 ? '31.4%' : '48.2%'
   const recoveryWords = (recoveryPhrase ?? '').split(/\s+/).filter(Boolean)
@@ -195,20 +202,15 @@ export function ProfileScreen() {
         <SectionHeader title="App Settings" />
         <View style={styles.settingsCard}>
           <SettingRow
-            icon={isDarkMode ? <Moon color={colors.textSecondary} size={18} /> : <Sun color={colors.textSecondary} size={18} />}
-            label="Dark Mode"
-            description="Switch between light and dark theme"
-            toggle
-            value={isDarkMode}
-            onToggle={setIsDarkMode}
-          />
-          <SettingRow
             icon={<Bell color={colors.textSecondary} size={18} />}
             label="Notifications"
             description="Appointment reminders and alerts"
             toggle
             value={notificationsEnabled}
-            onToggle={setNotificationsEnabled}
+            onToggle={(v) => {
+              setNotificationsEnabled(v)
+              void mobileApi.updateSettings({ notifications: { push: v } }).catch(() => undefined)
+            }}
           />
           <SettingRow
             icon={<Globe color={colors.textSecondary} size={18} />}
@@ -250,13 +252,10 @@ export function ProfileScreen() {
       <View style={styles.sectionSpacing}>
         <SectionHeader title="About" />
         <View style={styles.settingsCard}>
-          <SettingRow icon={<HelpCircle color={colors.textSecondary} size={18} />} label="Help & Support" />
-          <SettingRow icon={<Shield color={colors.textSecondary} size={18} />} label="Privacy Policy" />
-          <SettingRow icon={<FileText color={colors.textSecondary} size={18} />} label="Terms of Service" />
           <SettingRow
             icon={<AlertCircle color={colors.textSecondary} size={18} />}
             label="App Version"
-            description="1.0.0 (Build 2026.01)"
+            description={appConfig.expo.version}
             last
           />
         </View>
@@ -340,7 +339,41 @@ export function ProfileScreen() {
               </Pressable>
             </View>
           ))}
-          <PrimaryButton fullWidth>Add Emergency Contact</PrimaryButton>
+          <View style={{ gap: spacing.sm }}>
+            <InputField label="Name" value={newContactName} onChangeText={setNewContactName} />
+            <InputField label="Phone" value={newContactPhone} onChangeText={setNewContactPhone} keyboardType="phone-pad" />
+            <InputField label="Relationship" value={newContactRelation} onChangeText={setNewContactRelation} placeholder="e.g. Spouse" />
+            <PrimaryButton
+              fullWidth
+              isLoading={isSavingContact}
+              onPress={async () => {
+                if (!newContactName.trim() || !newContactPhone.trim()) {
+                  showToast('Name and phone are required.', 'error')
+                  return
+                }
+                setIsSavingContact(true)
+                try {
+                  await addEmergencyContact({
+                    name: newContactName.trim(),
+                    phoneNumber: newContactPhone.trim(),
+                    relationship: newContactRelation.trim() || 'Family',
+                    email: '',
+                    isPrimary: false,
+                  })
+                  setNewContactName('')
+                  setNewContactPhone('')
+                  setNewContactRelation('')
+                  showToast('Emergency contact added.', 'success')
+                } catch (error) {
+                  showToast(error instanceof Error ? error.message : 'Could not add contact.', 'error')
+                } finally {
+                  setIsSavingContact(false)
+                }
+              }}
+            >
+              Add Emergency Contact
+            </PrimaryButton>
+          </View>
         </View>
       </BottomSheet>
 

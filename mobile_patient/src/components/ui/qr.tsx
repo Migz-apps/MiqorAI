@@ -1,5 +1,5 @@
 import { Maximize2, RefreshCw, Share2, Wifi, WifiOff } from 'lucide-react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
@@ -23,11 +23,14 @@ export function QRDisplay({
   const fullscreenQrSize = Math.min(isTablet ? 320 : 280, width - (isCompact ? 80 : 96))
   const qrCardMaxWidth = isTablet ? 420 : 360
 
+  const regeneratedForExpiry = useRef(0)
   useEffect(() => {
     const timer = setInterval(() => {
       const remaining = Math.max(0, Math.floor((qrExpiresAt - Date.now()) / 1000))
       setTimeLeft(remaining)
-      if (remaining === 0) {
+      // Fire the refresh once per expiry, not on every tick at zero.
+      if (remaining === 0 && regeneratedForExpiry.current !== qrExpiresAt) {
+        regeneratedForExpiry.current = qrExpiresAt
         regenerateQR()
       }
     }, 1000)
@@ -36,6 +39,12 @@ export function QRDisplay({
   }, [qrExpiresAt, regenerateQR])
 
   const badgeColor = timeLeft > 30 ? colors.success : timeLeft > 10 ? colors.secondary : colors.error
+
+  // The QR SVG re-encodes only when its value or size changes — not every second.
+  const qrCode = useMemo(
+    () => <QRCode value={qrValue} size={qrSize} color={colors.primary} backgroundColor="#FFFFFF" />,
+    [qrValue, qrSize],
+  )
 
   if (!activePatient || !qrValue) {
     return (
@@ -60,7 +69,7 @@ export function QRDisplay({
           )}
         </View>
         <View style={styles.qrBox}>
-          <QRCode value={qrValue} size={qrSize} color={colors.primary} backgroundColor="#FFFFFF" />
+          {qrCode}
           <View style={styles.qrCenterLogo}>
             <View style={styles.qrCenterLogoInner}>
               <Text style={styles.qrCenterLogoText}>M+</Text>

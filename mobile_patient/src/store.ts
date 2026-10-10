@@ -1,3 +1,4 @@
+import { registerAuthHooks } from './lib/api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
@@ -237,7 +238,7 @@ const resolveDurationDate = (value: string) => {
       '1y': 365 * 24 * 60 * 60 * 1000,
     }[value] ?? 7 * 24 * 60 * 60 * 1000
 
-  return new Date(Date.now() + durationMs).toISOString().slice(0, 10)
+  return new Date(Date.now() + durationMs).toISOString()
 }
 
 const initialState = {
@@ -644,19 +645,22 @@ function toApiMessage(error: unknown) {
 }
 
 async function syncAllRemoteData() {
+  // Only the profile is required to sign in; every other dataset degrades to its
+  // empty default if its endpoint fails, instead of failing the whole login.
+  const settle = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback)
   const [profile, dashboard, records, prescriptions, labs, accessGrants, accessLogs, family, settings, emergencyContacts, qr, recovery] =
     await Promise.all([
       mobileApi.profile(),
-      mobileApi.dashboard(),
-      mobileApi.records(),
-      mobileApi.prescriptions(),
-      mobileApi.labs(),
-      mobileApi.accessGrants(),
-      mobileApi.accessLogs(),
-      mobileApi.family(),
-      mobileApi.settings(),
-      mobileApi.emergencyContacts(),
-      mobileApi.qrCode(),
+      settle(mobileApi.dashboard(), { quick_stats: undefined, upcoming_appointments: [], recent_activity: [], health_insights: undefined } as Awaited<ReturnType<typeof mobileApi.dashboard>>),
+      settle(mobileApi.records(), { items: [], total: 0 } as Awaited<ReturnType<typeof mobileApi.records>>),
+      settle(mobileApi.prescriptions(), [] as Awaited<ReturnType<typeof mobileApi.prescriptions>>),
+      settle(mobileApi.labs(), [] as Awaited<ReturnType<typeof mobileApi.labs>>),
+      settle(mobileApi.accessGrants(), [] as Awaited<ReturnType<typeof mobileApi.accessGrants>>),
+      settle(mobileApi.accessLogs(), { items: [], total: 0 } as Awaited<ReturnType<typeof mobileApi.accessLogs>>),
+      settle(mobileApi.family(), [] as Awaited<ReturnType<typeof mobileApi.family>>),
+      settle(mobileApi.settings(), { biometric_enabled: false, language: "en", theme: "system" } as Awaited<ReturnType<typeof mobileApi.settings>>),
+      settle(mobileApi.emergencyContacts(), [] as Awaited<ReturnType<typeof mobileApi.emergencyContacts>>),
+      settle(mobileApi.qrCode(), { qr_code: "", patient_id: "", hash: "", generated_at: new Date().toISOString() } as Awaited<ReturnType<typeof mobileApi.qrCode>>),
       mobileApi.recoveryPhrase().catch(() => ({ recovery_phrase: undefined, phrase: undefined })),
     ])
 
@@ -744,10 +748,13 @@ export const usePatientStore = create<PatientStore>()(
           .then((qr) => {
             set({
               qrValue: buildQrPayload(qr),
-              qrExpiresAt: new Date(qr.generated_at).getTime() + 60_000,
+              qrExpiresAt: Math.max(new Date(qr.generated_at).getTime() + 60_000, Date.now() + 15_000),
             })
           })
-          .catch(() => undefined)
+          .catch(() => {
+            // Back off instead of refetching every second while offline/failing.
+            set({ qrExpiresAt: Date.now() + 30_000 })
+          })
       },
       refreshDerivedState: () =>
         set((state) => ({
@@ -822,14 +829,19 @@ export const usePatientStore = create<PatientStore>()(
       },
       async grantAccess(providerQuery, accessDuration) {
         const providers = await mobileApi.searchProviders(providerQuery)
-        const provider = providers.find((entry) => entry.name.toLowerCase() === providerQuery.trim().toLowerCase()) ?? providers[0]
+        const exact = providers.find((entry) => entry.name.toLowerCase() === providerQuery.trim().toLowerCase())
+        const provider = exact ?? (providers.length === 1 ? providers[0] : undefined)
         if (!provider) {
+          if (providers.length > 1) {
+            throw new Error(`Multiple providers match. Type the full name: ${providers.slice(0, 3).map((p) => p.name).join(', ')}`)
+          }
           throw new Error('No matching provider found')
         }
 
         await mobileApi.createAccessGrant({
           grantee_type: provider.grantee_type,
           grantee_id: provider.grantee_id,
+          scope: 'full',
           expires_at: resolveDurationDate(accessDuration),
         })
 
@@ -887,6 +899,9 @@ export const usePatientStore = create<PatientStore>()(
       },
       async requestExportData() {
         const result = await mobileApi.exportData()
+        if (result.download_url && !result.download_url.startsWith('http')) {
+          result.download_url = `${mobileApi.apiUrl}${result.download_url}`
+        }
         return result.download_url
       },
       async deleteAccount() {
@@ -944,3 +959,12 @@ export const usePatientStore = create<PatientStore>()(
     },
   ),
 )
+
+registerAuthHooks({
+  onTokensRefreshed: (tokens) => {
+    usePatientStore.setState({ authTokens: tokens })
+  },
+  onAuthExpired: () => {
+    usePatientStore.setState({ isAuthenticated: false, authTokens: null })
+  },
+})

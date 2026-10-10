@@ -1,43 +1,30 @@
-import {
-    Fingerprint,
-    Lock,
-    Mail,
-} from 'lucide-react-native'
+import { Lock, Mail } from 'lucide-react-native'
 import React, { useState } from 'react'
 import {
+    Alert,
     KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
+    StyleSheet,
     Text,
     View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
 
-import {
-    InputField,
-    PrimaryButton,
-    TextButton,
-} from '../components/ui'
+import { InputField, PrimaryButton, TextButton } from '../components/ui'
 import { mobileApi } from '../lib/api'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
-import { useTranslation } from '../i18n'
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
-}
+import { colors, radius, spacing } from '../theme'
 
 interface LoginScreenProps {
     onNavigateToSignup?: () => void
 }
 
 export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
-    const { login, biometricsEnabled } = usePatientStore()
+    const login = usePatientStore((s) => s.login)
     const { isCompact, horizontalPadding, contentMaxWidth } = useResponsive()
-    const { t } = useTranslation()
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -62,38 +49,39 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
         }
     }
 
-    const handleBiometricLogin = async () => {
-        setError('Please sign in with your email and password first on this device.')
+    const handleForgotPassword = () => {
+        Alert.alert(
+            'Reset your password',
+            'Password reset is available on the MiqorAI patient web portal. Sign in there with your email to receive a reset code.',
+        )
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <SafeAreaView style={styles.safe}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                className="flex-1"
+                style={styles.flex}
             >
                 <ScrollView
                     contentContainerStyle={{ flexGrow: 1 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={{ paddingHorizontal: horizontalPadding }} className="flex-1 justify-center items-center">
-                        <View style={{ maxWidth: contentMaxWidth }} className="w-full py-xxl gap-xl">
-                            {/* Header section */}
-                            <View className="items-center gap-sm">
-                                <View className="w-[72px] h-[72px] rounded-[22px] bg-primary items-center justify-center mb-md">
-                                    <Text className="text-white text-[28px] font-[900]">M+</Text>
+                    <View style={[styles.center, { paddingHorizontal: horizontalPadding }]}>
+                        <View style={[styles.content, { maxWidth: contentMaxWidth }]}>
+                            <View style={styles.header}>
+                                <View style={styles.logo}>
+                                    <Text style={styles.logoText}>M+</Text>
                                 </View>
-                                <Text className={cn("text-[32px] font-[800] text-center text-text-primary", isCompact ? "text-[28px]" : "")}>
+                                <Text style={[styles.title, isCompact && styles.titleCompact]}>
                                     Welcome Back
                                 </Text>
-                                <Text className="text-[16px] text-center leading-[22px] text-text-secondary">
+                                <Text style={styles.subtitle}>
                                     Sign in to access your secure health records
                                 </Text>
                             </View>
 
-                            {/* Form section */}
-                            <View className="gap-md">
+                            <View style={styles.form}>
                                 <InputField
                                     label="Email Address"
                                     placeholder="name@example.com"
@@ -104,10 +92,10 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
                                     }}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    leftIcon={<Mail color="var(--color-text-secondary)" size={20} />}
+                                    leftIcon={<Mail color={colors.textSecondary} size={20} />}
                                 />
 
-                                <View className="relative">
+                                <View>
                                     <InputField
                                         label="Password"
                                         placeholder="Enter your password"
@@ -117,79 +105,41 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
                                             setError('')
                                         }}
                                         secureTextEntry
-                                        leftIcon={<Lock color="var(--color-text-secondary)" size={20} />}
+                                        leftIcon={<Lock color={colors.textSecondary} size={20} />}
                                     />
-                                    <Pressable className="absolute top-0 right-0 h-5 justify-center">
-                                        <Text className="text-[13px] font-bold text-primary">
-                                            Forgot Password?
-                                        </Text>
+                                    <Pressable style={styles.forgot} onPress={handleForgotPassword}>
+                                        <Text style={styles.forgotText}>Forgot Password?</Text>
                                     </Pressable>
                                 </View>
 
-                                {error ? (
-                                    <Text className="text-error text-[13px] font-semibold text-center">{error}</Text>
-                                ) : null}
+                                {error ? <Text style={styles.error}>{error}</Text> : null}
 
                                 <PrimaryButton
                                     fullWidth
                                     size="lg"
                                     onPress={handleLogin}
                                     isLoading={isLoading}
-                                    className="mt-sm"
                                 >
                                     Sign In
                                 </PrimaryButton>
-
-                                {biometricsEnabled && (
-                                    <Pressable className="items-center gap-xs mt-md" onPress={handleBiometricLogin}>
-                                        <View className="w-14 h-14 rounded-md border border-border items-center justify-center">
-                                            <Fingerprint color="var(--color-primary)" size={28} />
-                                        </View>
-                                        <Text className="text-text-secondary text-[14px] font-semibold">
-                                            Sign in with Biometrics
-                                        </Text>
-                                    </Pressable>
-                                )}
-                            </View>
-
-                            {/* Social Login Section */}
-                            <View className="gap-lg">
-                                <View className="flex-row items-center gap-md">
-                                    <View className="flex-1 h-[1px] bg-border" />
-                                    <Text className="text-muted-fg text-[13px] font-semibold">
-                                        Or continue with
-                                    </Text>
-                                    <View className="flex-1 h-[1px] bg-border" />
-                                </View>
-
-                                <View className="flex-row gap-md">
-                                    <Pressable className="flex-1 h-[52px] rounded-md border border-border bg-card items-center justify-center">
-                                        <Text className="text-text-primary text-[15px] font-bold">Google</Text>
-                                    </Pressable>
-                                    <Pressable className="flex-1 h-[52px] rounded-md border border-border bg-card items-center justify-center">
-                                        <Text className="text-text-primary text-[15px] font-bold">Apple</Text>
-                                    </Pressable>
-                                </View>
                             </View>
 
                             {onNavigateToSignup ? (
-                                <View className="flex-row justify-center items-center mt-md">
-                                    <Text className="text-text-secondary text-[15px]">
-                                        Don't have an account?{' '}
+                                <View style={styles.signupRow}>
+                                    <Text style={styles.signupText}>
+                                        {"Don't have an account? "}
                                     </Text>
-                                    <TextButton onPress={onNavigateToSignup}>
-                                        Sign Up
-                                    </TextButton>
+                                    <TextButton onPress={onNavigateToSignup}>Sign Up</TextButton>
                                 </View>
                             ) : null}
 
                             {__DEV__ ? (
-                                <View className="mt-sm rounded-md border border-border bg-card px-md py-sm">
-                                    <Text className="text-text-secondary text-[12px] font-semibold">
-                                        Dev API: {mobileApi.apiUrl}
-                                    </Text>
-                                    <Text className="text-muted-fg text-[11px] leading-[16px] mt-1">
-                                        Production defaults to the deployed backend. For local phone testing, set EXPO_PUBLIC_API_URL to your computer hotspot IP and keep the backend on port 3000.
+                                <View style={styles.devBox}>
+                                    <Text style={styles.devTitle}>Dev API: {mobileApi.apiUrl}</Text>
+                                    <Text style={styles.devBody}>
+                                        Production defaults to the deployed backend. For local phone testing, set
+                                        EXPO_PUBLIC_API_URL to your computer hotspot IP and keep the backend on port
+                                        3000.
                                     </Text>
                                 </View>
                             ) : null}
@@ -200,3 +150,51 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
         </SafeAreaView>
     )
 }
+
+const styles = StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.background },
+    flex: { flex: 1 },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    content: { width: '100%', paddingVertical: spacing.xl, gap: spacing.xl },
+    header: { alignItems: 'center', gap: spacing.sm },
+    logo: {
+        width: 72,
+        height: 72,
+        borderRadius: 22,
+        backgroundColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: spacing.md,
+    },
+    logoText: { color: '#FFFFFF', fontSize: 28, fontWeight: '900' },
+    title: { fontSize: 32, fontWeight: '800', textAlign: 'center', color: colors.textPrimary },
+    titleCompact: { fontSize: 28 },
+    subtitle: {
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 22,
+        color: colors.textSecondary,
+    },
+    form: { gap: spacing.md },
+    forgot: { position: 'absolute', top: 0, right: 0, height: 20, justifyContent: 'center' },
+    forgotText: { fontSize: 13, fontWeight: '700', color: colors.primary },
+    error: { color: colors.error, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+    signupRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: spacing.md,
+    },
+    signupText: { color: colors.textSecondary, fontSize: 15 },
+    devBox: {
+        marginTop: spacing.sm,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+    },
+    devTitle: { color: colors.textSecondary, fontSize: 12, fontWeight: '600' },
+    devBody: { color: colors.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 4 },
+})
