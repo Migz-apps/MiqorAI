@@ -1,7 +1,7 @@
 import { prisma } from "../../shared/lib/prisma.js";
 import { config } from "../../config.js";
 import { hashToken } from "../../shared/utils/crypto.js";
-import { badRequest } from "../../shared/utils/errors.js";
+import { AppError, badRequest } from "../../shared/utils/errors.js";
 import {
   sendPasswordResetEmail,
   sendPatientVerificationEmail,
@@ -87,6 +87,14 @@ async function invalidateOpenChallenges(email: string, purpose: string) {
 export async function createPatientRegistrationChallenge(input: PendingRegistrationPayload) {
   const email = normalizeEmail(input.email);
   const phone = normalizePhone(input.phone);
+
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ email }, { phone }] },
+    select: { email: true },
+  });
+  if (existing) {
+    throw new AppError("ALREADY_REGISTERED", "An account with this email or phone already exists", 409);
+  }
 
   await enforceResendCooldown(email, PURPOSE_REGISTRATION);
   await invalidateOpenChallenges(email, PURPOSE_REGISTRATION);

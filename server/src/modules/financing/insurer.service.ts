@@ -201,6 +201,7 @@ export async function getFraudAnomalies(insurerId: string, days = 7) {
 
   let claims = await prisma.claim.findMany({
     where: { insurerId, createdAt: { gte: windowStart, lte: windowEnd } },
+    include: { patient: { select: { firstName: true, lastName: true } } },
     orderBy: { fraudScore: "desc" },
   });
 
@@ -217,6 +218,7 @@ export async function getFraudAnomalies(insurerId: string, days = 7) {
       windowStart = new Date(windowEnd.getTime() - lookbackMs);
       claims = await prisma.claim.findMany({
         where: { insurerId, createdAt: { gte: windowStart, lte: windowEnd } },
+        include: { patient: { select: { firstName: true, lastName: true } } },
         orderBy: { fraudScore: "desc" },
       });
     }
@@ -236,6 +238,7 @@ export async function getFraudAnomalies(insurerId: string, days = 7) {
     flagged_claims: claims.map((c) => ({
       id: c.id,
       patient_id: c.patientId,
+      patient_name: `${c.patient.firstName} ${c.patient.lastName}`,
       provider: c.providerName,
       amount: Number(c.amount),
       score: c.fraudScore,

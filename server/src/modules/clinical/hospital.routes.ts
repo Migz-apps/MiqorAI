@@ -94,6 +94,7 @@ const checkinSchema = z
     phone: z.string().optional(),
     department: z.string().min(1),
     priority: z.enum(["normal", "urgent", "emergency"]).default("normal"),
+    reason: z.string().max(500).optional(),
   })
   .refine((d) => d.patient_id || d.phone, { message: "patient_id or phone required" });
 
@@ -400,6 +401,7 @@ router.post("/checkin", validateBody(checkinSchema), async (req, res, next) => {
         hospitalId,
         department: req.body.department,
         priority: req.body.priority,
+        chiefComplaint: req.body.reason,
         recordedBy: userId,
         status: "waiting",
       },

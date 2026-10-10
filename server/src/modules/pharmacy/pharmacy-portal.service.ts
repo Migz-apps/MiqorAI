@@ -54,6 +54,7 @@ export async function listPharmacyPatients(pharmacyId: string) {
   return patients.map((p) => ({
     id: p.id,
     name: `${p.firstName} ${p.lastName}`,
+    date_of_birth: p.dateOfBirth,
     phone: p.user.phone,
     email: p.user.email,
     allergies: recordsByPatient.get(p.id)?.allergies ?? [],

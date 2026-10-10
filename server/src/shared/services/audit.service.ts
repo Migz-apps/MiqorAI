@@ -62,6 +62,7 @@ export async function listAuditLogs(filters: {
   const [items, total] = await Promise.all([
     prisma.auditLog.findMany({
       where,
+      include: { user: { select: { role: true, displayName: true } } },
       orderBy: { createdAt: "desc" },
       take: filters.limit ?? 50,
       skip: filters.offset ?? 0,

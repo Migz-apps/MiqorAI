@@ -216,7 +216,7 @@ export async function listPharmacyPrescriptions(
     prisma.prescription.findMany({
       where,
       include: {
-        patient: { select: { id: true, firstName: true, lastName: true } },
+        patient: { select: { id: true, firstName: true, lastName: true, dateOfBirth: true } },
         items: true,
       },
       orderBy: { prescribedAt: "desc" },
@@ -226,10 +226,19 @@ export async function listPharmacyPrescriptions(
     prisma.prescription.count({ where }),
   ]);
 
+  // prescribedBy has no FK relation — resolve prescriber names with one batched lookup.
+  const prescriberIds = [...new Set(items.map((rx) => rx.prescribedBy))];
+  const prescribers = await prisma.user.findMany({
+    where: { id: { in: prescriberIds } },
+    select: { id: true, displayName: true, email: true },
+  });
+  const prescriberById = new Map(prescribers.map((u) => [u.id, u.displayName ?? u.email]));
+
   return {
     items: items.map((rx) => ({
       ...serializePrescription(rx as Awaited<ReturnType<typeof getPrescriptionForPharmacy>>),
       patient: rx.patient,
+      prescriber_name: prescriberById.get(rx.prescribedBy) ?? null,
     })),
     total,
   };
