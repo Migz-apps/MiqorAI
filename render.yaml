@@ -3,6 +3,8 @@ services:
     name: miqorai-server
     runtime: node
     rootDir: server
-    buildCommand: npm install --include=dev && npm run build
-    startCommand: npm run start:render
+    buildCommand: npm ci --include=dev && npm run build
+    preDeployCommand: npx prisma db push
+    startCommand: npm run start
+    healthCheckPath: /health
     autoDeploy: true

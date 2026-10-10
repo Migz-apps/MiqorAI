@@ -1,4 +1,23 @@
 services:
+  # Shared backend API (requires DATABASE_URL and secrets via .env or environment).
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
   patient-portal:
     build:
       context: ./patient-portal-desktop

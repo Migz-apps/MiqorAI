@@ -1,5 +1,7 @@
 # MiqorAI — Bad Implementations (code-level defects)
 
+> **Status 2026-10-10: all items below are implemented/fixed.** Verified by: backend `tsc` clean + 273/273 API tests passing; all five portals typecheck and build clean; mobile typechecks clean; workflows/compose YAML-validated. Where a listed "fake" control had no backend counterpart, it was removed rather than left misleading; everything else was wired to real endpoints.
+
 Concrete defects with file references, grouped by component, worst first.
 Line numbers refer to the **current working tree** (the uncommitted comment pass shifted lines vs HEAD).
 Items marked **[verified]** were re-checked directly; the rest come from a full read of each file.

@@ -47,6 +47,15 @@ jobs:
 
       - name: Generate Android native project
         run: npx expo prebuild --platform android --non-interactive --no-install
+        env:
+          EXPO_PUBLIC_API_URL: https://miqorai.onrender.com
+
+      - name: Sign release builds with the debug keystore (standalone installable APK)
+        run: |
+          # No production keystore is configured in CI; reuse the debug keystore so
+          # the release-mode APK (JS bundle embedded, __DEV__=false) is installable.
+          sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.debug/' android/app/build.gradle || true
+          sed -i 's/signingConfig = signingConfigs.release/signingConfig = signingConfigs.debug/' android/app/build.gradle || true
 
       - name: Configure Android SDK path
         run: |
@@ -59,15 +68,17 @@ jobs:
           echo "ANDROID_SDK_ROOT=$SDK_PATH" >> "$GITHUB_ENV"
           printf "sdk.dir=%s\n" "$SDK_PATH" > android/local.properties
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace --console=plain
+      - name: Build release APK
+        run: ./gradlew assembleRelease --no-daemon --stacktrace --console=plain
         working-directory: mobile_patient/android
+        env:
+          EXPO_PUBLIC_API_URL: https://miqorai.onrender.com
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: miqorai-patient-apk
-          path: mobile_patient/android/app/build/outputs/apk/debug/app-debug.apk
+          path: mobile_patient/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
       - name: Publish APK to release
@@ -76,4 +87,4 @@ jobs:
           tag_name: patient-mobile-apk-latest
           name: MiqorAI Patient Mobile APK
           make_latest: true
-          files: mobile_patient/android/app/build/outputs/apk/debug/app-debug.apk
+          files: mobile_patient/android/app/build/outputs/apk/release/app-release.apk

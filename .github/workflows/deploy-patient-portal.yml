@@ -35,10 +35,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck
+        run: npx tsc --noEmit
+
       - name: Build
         run: npm run build
         env:
           VITE_BASE: /MiqorAI/
+          VITE_API_URL: https://miqorai.onrender.com
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
