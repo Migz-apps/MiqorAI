@@ -185,22 +185,19 @@ export default function PatientProfile() {
     },
   });
 
+  const saveDraftRef = useRef(saveDraftMutation);
+  saveDraftRef.current = saveDraftMutation;
+
   useEffect(() => {
     if (!id || !canAddVisit || !draftHydrated || !visitDraftHasContent(visitDraft)) return;
     const timer = window.setTimeout(() => {
-      if (!saveDraftMutation.isPending) {
-        saveDraftMutation.mutate(visitDraft);
+      if (!saveDraftRef.current.isPending) {
+        saveDraftRef.current.mutate(visitDraft);
       }
     }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [
-    id,
-    canAddVisit,
-    draftHydrated,
-    visitDraft,
-    saveDraftMutation,
-  ]);
+  }, [id, canAddVisit, draftHydrated, visitDraft]);
 
   useEffect(() => {
     return () => {
@@ -276,7 +273,7 @@ export default function PatientProfile() {
       </Button>
 
       <AllergyBanner allergies={patient.allergies} />
-      <PatientHeader patient={patient} />
+      <PatientHeader openVisitId={workspace?.openVisit?.id} patient={patient} />
 
       {canAddVisit && (
         <div className="grid gap-md lg:grid-cols-2">

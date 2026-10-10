@@ -15,7 +15,7 @@ export default function Prescriptions() {
   });
 
   const { data: pharmacies = [] } = useQuery({
-    queryKey: ["pharmacies"],
+    queryKey: ["reference", "pharmacies"],
     queryFn: async () => {
       const rows = await referenceApi.pharmacies() as Array<{ name: string }>;
       return rows;

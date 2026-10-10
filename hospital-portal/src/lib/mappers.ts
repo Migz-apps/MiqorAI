@@ -314,8 +314,19 @@ export function mapNotification(row: Record<string, unknown>): Notification {
     body: String(row.body ?? ""),
     createdAt: fmtDateTime(row.createdAt as string),
     read: Boolean(row.read),
-    audience: ALL_ROLES,
+    audience: audienceForType(String(row.type ?? "all")),
   };
+}
+
+function audienceForType(type: string): Role[] {
+  const map: Record<string, Role[]> = {
+    all: ALL_ROLES,
+    doctors: ["doctor", "dept_head"],
+    nurses: ["nurse", "dept_head"],
+    reception: ["receptionist"],
+    admin: ["admin", "dept_head"],
+  };
+  return map[type] ?? ALL_ROLES;
 }
 
 export function mapSyncItem(row: Record<string, unknown>): SyncItem {

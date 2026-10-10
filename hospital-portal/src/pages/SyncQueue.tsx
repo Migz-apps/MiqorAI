@@ -10,7 +10,15 @@ import { useSync } from "@/store/sync";
 import { toast } from "@/lib/notify";
 import type { SyncItem } from "@/lib/types";
 
-const typeIcon = { visit: FileText, prescription: Pill, vitals: Activity } as const;
+const typeIcon = {
+  visit: FileText,
+  prescription: Pill,
+  vitals: Activity,
+  "check-in": Activity,
+  registration: FileText,
+} as const;
+
+const iconFor = (type: string) => iconFor(type) ?? FileText;
 
 export default function SyncQueue() {
   const { online, queue, syncAll, setOnline, retry, resolve, remove } = useSync();
@@ -19,8 +27,8 @@ export default function SyncQueue() {
   const conflicts = queue.filter(q => q.status === "conflict");
   const synced = queue.filter(q => q.status === "synced");
 
-  const onSync = () => {
-    const r = syncAll();
+  const onSync = async () => {
+    const r = await syncAll();
     if (r.conflicts > 0) toast.warning(`${r.synced} synced · ${r.conflicts} conflict(s) need review`);
     else if (r.synced > 0) toast.success(`${r.synced} record(s) synced`);
     else toast.info("Nothing to sync");
@@ -59,7 +67,7 @@ export default function SyncQueue() {
           ) : (
             <div className="divide-y">
               {queue.map(item => {
-                const Icon = typeIcon[item.type];
+                const Icon = iconFor(item.type);
                 return (
                   <div key={item.id} className="px-md py-sm flex items-center gap-md">
                     <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${

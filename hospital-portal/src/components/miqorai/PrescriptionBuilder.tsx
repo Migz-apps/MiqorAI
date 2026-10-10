@@ -96,7 +96,7 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
     return [...new Set(
       [...(drug?.forms ?? []), ...suggested]
         .map((option) => option.trim())
-        .filter((option) => option && option !== "â€”"),
+        .filter((option) => option && option !== "—"),
     )];
   }, [drug?.forms]);
 
@@ -203,17 +203,23 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
   };
 
   const submit = async () => {
-    // Temporary testing override: keep the prescription flow moving even when
-    // the builder has not fully captured medication, strength, or directions.
-    // if (!drug || !dosage || !instructions.trim()) {
-    //   toast.error("Pick a medication, strength, and instructions");
-    //   return;
-    // }
+    const medicationName = drug?.name || search.trim();
+    if (!medicationName) {
+      toast.error("Pick a medication or type its name");
+      return;
+    }
+    if (!dosage.trim()) {
+      toast.error("Enter the strength / dose");
+      return;
+    }
+    if (!instructions.trim()) {
+      toast.error("Enter the directions for the patient");
+      return;
+    }
 
-    const medicationName = drug?.name || search.trim() || "Medication to be confirmed";
     const selectedDrug = drug ?? { name: medicationName, class: "", forms: [] };
-    const normalizedStrength = dosage.trim() || "Strength to be confirmed";
-    const normalizedInstructions = instructions.trim() || "Take as directed";
+    const normalizedStrength = dosage.trim();
+    const normalizedInstructions = instructions.trim();
 
     if (hasSevere) {
       toast.error("Severe interaction blocked. Choose an alternative.");
@@ -272,12 +278,12 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
   };
 
   const proceedAfterAlert = async (overrideReason?: string) => {
-    if (!pendingRx || !drug) return;
+    if (!pendingRx) return;
     if (aiAlert?.requiresOverrideReason && overrideReason) {
       await aiApi.override({
         patientId: patient.id,
         actionType: "PRESCRIPTION",
-        actionName: drug.name,
+        actionName: String(pendingRx.medication ?? ""),
         aiAlertType: aiAlert.alertType,
         aiSeverity: aiAlert.severity,
         aiMessage: aiAlert.message,
@@ -317,7 +323,7 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
                 onClick={() => {
                   setDrug(match);
                   setSearch(match.name);
-                  setDosage(match.forms.find((form) => form && form !== "â€”") ?? "");
+                  setDosage(match.forms.find((form) => form && form !== "—") ?? "");
                 }}
                 className="w-full text-left px-sm py-xs hover:bg-primary-light/40"
               >

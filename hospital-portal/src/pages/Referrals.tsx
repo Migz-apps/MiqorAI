@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/select";
 import { hospitalApi, referenceApi } from "@/lib/api/hospital";
 import { mapCensusPatient, mapDepartment, mapIcd, mapReferral } from "@/lib/mappers";
+import { useAuth } from "@/store/auth";
 import { toast } from "@/lib/notify";
 
 export default function Referrals() {
+  const session = useAuth((s) => s.session);
   const qc = useQueryClient();
   const [patientId, setPatientId] = useState("");
   const [referTo, setReferTo] = useState<string>("Cardiology");
@@ -39,7 +41,7 @@ export default function Referrals() {
   });
 
   const { data: departments = [] } = useQuery({
-    queryKey: ["departments"],
+    queryKey: ["hospital", "departments"],
     queryFn: async () => {
       const rows = await hospitalApi.departments() as Record<string, unknown>[];
       return rows.map(mapDepartment);
@@ -47,7 +49,7 @@ export default function Referrals() {
   });
 
   const { data: icdCodes = [] } = useQuery({
-    queryKey: ["icd", "referrals"],
+    queryKey: ["reference", "icd", "referrals"],
     queryFn: async () => {
       const rows = await referenceApi.icd() as Record<string, unknown>[];
       return rows.map(mapIcd);
@@ -71,7 +73,7 @@ export default function Referrals() {
     try {
       await hospitalApi.referral({
         patient_id: patientId,
-        from_department: "General",
+        from_department: session?.department ?? "General",
         to_department: referTo === "External hospital" ? "External" : referTo,
         urgency: urgency.toLowerCase(),
         reason: reason.trim(),

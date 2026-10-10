@@ -151,9 +151,8 @@ export const QRScanner = ({ onScanned }: Props) => {
     try {
       const results = await hospitalApi.patientsSearch(v) as Array<{ patient_id: string }>;
       if (results.length > 0) {
-        const id = results[0].patient_id;
-        onScanned?.(id);
-        if (!onScanned) nav(`/patients/${id}`);
+        // Same consent flow as a QR scan: request access and wait for approval.
+        await handlePatient(results[0].patient_id);
       } else {
         toast.error("Patient not found in this hospital's records.");
       }

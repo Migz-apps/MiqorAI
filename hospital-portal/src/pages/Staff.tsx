@@ -32,7 +32,7 @@ export default function Staff() {
   const [inv, setInv] = useState({ email: "", role: "nurse" as Role, department: "General" });
 
   const { data: staff = [], isLoading } = useQuery({
-    queryKey: ["staff"],
+    queryKey: ["hospital", "staff"],
     queryFn: async () => {
       const rows = await hospitalApi.staff() as Record<string, unknown>[];
       return rows.map(mapStaffMember);
@@ -56,7 +56,7 @@ export default function Staff() {
         department: inv.department,
       });
       toast.success(`Invite sent to ${inv.email}`);
-      qc.invalidateQueries({ queryKey: ["staff"] });
+      qc.invalidateQueries({ queryKey: ["hospital", "staff"] });
       setInviteOpen(false);
       setInv({ email: "", role: "nurse", department: "General" });
     } catch {
@@ -111,15 +111,6 @@ export default function Staff() {
                   </Badge>
                 </div>
                 <div className="md:col-span-1 md:text-right flex gap-1 md:justify-end">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Resend invite" onClick={() => toast.success("Invite resent")}>
-                    <Mail className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Reset password" onClick={() => toast.success("Reset link sent")}>
-                    <KeyRound className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Toggle active" onClick={() => toast.info("Contact admin to change status")}>
-                    <Power className="h-3.5 w-3.5" />
-                  </Button>
                 </div>
               </div>
             ))}

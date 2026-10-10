@@ -35,6 +35,7 @@ export const useWaitlist = create<WaitState>((set, get) => ({
       patient_id: e.patientId,
       department: e.department,
       priority: e.priority,
+      reason: (e as { reason?: string }).reason || undefined,
     }) as { visit_id: string; checkin_time?: string };
     await get().refresh();
     const entry = get().entries.find(x => x.id === res.visit_id);
@@ -52,12 +53,22 @@ export const useWaitlist = create<WaitState>((set, get) => ({
     return fallback;
   },
   setStatus: async (id, status) => {
-    await hospitalApi.visitStatus(id, mapVisitStatusToApi(status)).catch(() => undefined);
-    set({ entries: get().entries.map(e => e.id === id ? { ...e, status } : e) });
+    try {
+      await hospitalApi.visitStatus(id, mapVisitStatusToApi(status));
+      set({ entries: get().entries.map(e => e.id === id ? { ...e, status } : e) });
+    } catch {
+      await get().refresh();
+      throw new Error("Status update failed");
+    }
   },
   assign: async (id, staffUserId, staffName) => {
-    await hospitalApi.visitAssign(id, staffUserId).catch(() => undefined);
-    set({ entries: get().entries.map(e => e.id === id ? { ...e, assignedTo: staffName ?? staffUserId } : e) });
+    try {
+      await hospitalApi.visitAssign(id, staffUserId);
+      set({ entries: get().entries.map(e => e.id === id ? { ...e, assignedTo: staffName ?? staffUserId } : e) });
+    } catch {
+      await get().refresh();
+      throw new Error("Assignment failed");
+    }
   },
   setPriority: async (id, priority) => {
     await hospitalApi.visitPriority(id, priority).catch(() => undefined);

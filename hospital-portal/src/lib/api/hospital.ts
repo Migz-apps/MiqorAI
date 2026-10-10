@@ -23,7 +23,6 @@ export const hospitalApi = {
   patientsSearch: (q: string) => api<unknown>(`/api/hospital/patients/search?q=${encodeURIComponent(q)}`),
   patient: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}`),
   patientWorkspace: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}/workspace`),
-  patientSummary: (id: string) => api<Record<string, unknown>>(`/api/hospital/patient/${id}/summary`),
   labPrior: (patientId: string, testName: string) =>
     api<{ found: boolean; prior: Record<string, unknown> | null }>(
       `/api/hospital/patient/${patientId}/lab-prior?test_name=${encodeURIComponent(testName)}`,
@@ -42,21 +41,12 @@ export const hospitalApi = {
     api(`/api/hospital/patient/${patientId}/visit-draft/${draftId}`, {
       method: "DELETE",
     }),
-  visitRecord: (patientId: string, draft: Record<string, unknown>) =>
-    api(`/api/hospital/patient/${patientId}/visit-record`, {
-      method: "POST",
-      body: JSON.stringify(draft),
-    }),
   patientQr: (id: string) => api<{ qr_code: string; hash: string }>(`/api/hospital/patient/${id}/qr`),
   checkinsToday: () => api<unknown>("/api/hospital/checkins/today"),
   checkin: (body: Record<string, unknown>) =>
     api("/api/hospital/checkin", { method: "POST", body: JSON.stringify(body) }),
   registerPatient: (body: Record<string, unknown>) =>
     api("/api/hospital/patient/register", { method: "POST", body: JSON.stringify(body) }),
-  visitVitals: (visitId: string, body: Record<string, unknown>) =>
-    api(`/api/hospital/visit/${visitId}/vitals`, { method: "POST", body: JSON.stringify(body) }),
-  visitDiagnosis: (visitId: string, body: Record<string, unknown>) =>
-    api(`/api/hospital/visit/${visitId}/diagnosis`, { method: "PUT", body: JSON.stringify(body) }),
   visitCheckout: (visitId: string, body: Record<string, unknown>) =>
     api(`/api/hospital/visit/${visitId}/checkout`, { method: "POST", body: JSON.stringify(body) }),
   visitStatus: (visitId: string, status: string) =>
@@ -65,15 +55,11 @@ export const hospitalApi = {
     api(`/api/hospital/visit/${visitId}/assign`, { method: "PUT", body: JSON.stringify({ staff_user_id: staffUserId }) }),
   visitPriority: (visitId: string, priority: string) =>
     api(`/api/hospital/visit/${visitId}/priority`, { method: "PUT", body: JSON.stringify({ priority }) }),
-  prescription: (body: Record<string, unknown>) =>
-    api("/api/hospital/prescription", { method: "POST", body: JSON.stringify(body) }),
   checkAllergies: (patient_id: string, drug_names: string[]) =>
     api<PrescriptionAllergyCheckResponse>("/api/hospital/prescription/check-allergies", {
       method: "POST",
       body: JSON.stringify({ patient_id, drug_names }),
     }),
-  labOrder: (body: Record<string, unknown>) =>
-    api("/api/hospital/lab-order", { method: "POST", body: JSON.stringify(body) }),
   prescriptions: () => api<unknown[]>("/api/hospital/prescriptions"),
   labs: () => api<unknown[]>("/api/hospital/labs"),
   labTrends: (patientId?: string) =>
@@ -113,10 +99,7 @@ export const hospitalApi = {
   },
   exportAudit: () => api<{ download_url: string }>("/api/hospital/audit-logs/export", { method: "POST", body: "{}" }),
   settings: () => api<Record<string, unknown>>("/api/hospital/settings"),
-  updateSettings: (body: Record<string, unknown>) =>
-    api("/api/hospital/settings", { method: "PUT", body: JSON.stringify(body) }),
   systemHealth: () => api<Record<string, unknown>>("/api/hospital/system/health"),
-  savings: () => api<Record<string, unknown>>("/api/hospital/savings"),
 };
 
 export const referenceApi = {

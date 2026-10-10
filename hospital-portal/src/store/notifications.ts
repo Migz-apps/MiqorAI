@@ -10,7 +10,7 @@ type NotifState = {
   unreadFor: (role: Role) => number;
   forRole: (role: Role) => Notification[];
   markRead: (id: string) => Promise<void>;
-  markAllRead: (role: Role) => Promise<void>;
+  markAllRead: (role?: Role) => Promise<void>;
   push: (n: Omit<Notification, "id" | "createdAt" | "read">) => void;
 };
 

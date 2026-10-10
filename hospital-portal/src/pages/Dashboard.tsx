@@ -37,7 +37,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-lg max-w-[1400px] mx-auto animate-fade-up">
       <PageHeader
-        title={`Good morning, ${staffName.split(" ")[0]}`}
+        title={`${new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening"}, ${staffName.split(" ")[0]}`}
         subtitle={`${today} · Here's what's happening at ${hospitalName} today.`}
       />
 

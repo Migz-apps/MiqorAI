@@ -60,15 +60,6 @@ export default function Billing() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-sm"><CardTitle className="h3">Payment methods</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-sm">
-          <Method label="Credit card" detail="•••• 4242 (Stripe)" />
-          <Method label="Bank transfer" detail="Invoice on request" />
-          <Method label="M-Pesa" detail="Kenya only" />
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="pb-sm"><CardTitle className="h3">Invoices</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">

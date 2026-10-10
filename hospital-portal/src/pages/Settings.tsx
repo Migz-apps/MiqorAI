@@ -18,7 +18,7 @@ export default function Settings() {
   const logout = useAuth(s => s.logout);
   const nav = useNavigate();
   const [name, setName] = useState(session.name);
-  const [email, setEmail] = useState(`${session.staffId.toLowerCase()}@hospital.med`);
+  const [email, setEmail] = useState(session.email ?? "");
   const [notifVisits, setNotifVisits] = useState(true);
   const [notifSync, setNotifSync] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);

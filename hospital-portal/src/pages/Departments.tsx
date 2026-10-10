@@ -32,7 +32,7 @@ export default function Departments() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   const { data: depts = [], isLoading } = useQuery({
-    queryKey: ["departments"],
+    queryKey: ["hospital", "departments"],
     queryFn: async () => {
       const rows = await hospitalApi.departments() as Record<string, unknown>[];
       return rows.map(mapDepartment);
@@ -40,7 +40,7 @@ export default function Departments() {
   });
 
   const { data: staff = [] } = useQuery({
-    queryKey: ["staff"],
+    queryKey: ["hospital", "staff"],
     queryFn: async () => {
       const rows = await hospitalApi.staff() as Record<string, unknown>[];
       return rows.map(mapStaffMember);
@@ -60,7 +60,7 @@ export default function Departments() {
         code: createForm.code.trim().toUpperCase(),
         sla_target_minutes: parseInt(createForm.sla, 10) || 30,
       });
-      await qc.invalidateQueries({ queryKey: ["departments"] });
+      await qc.invalidateQueries({ queryKey: ["hospital", "departments"] });
       setCreateOpen(false);
       setCreateForm({ name: "", code: "", sla: "30" });
       toast.success("Department created");
@@ -72,7 +72,7 @@ export default function Departments() {
   const toggleActive = async (d: DepartmentRecord) => {
     try {
       await hospitalApi.updateDepartment(d.id, { is_active: !d.isActive });
-      await qc.invalidateQueries({ queryKey: ["departments"] });
+      await qc.invalidateQueries({ queryKey: ["hospital", "departments"] });
       toast.success(d.isActive ? "Department deactivated" : "Department activated");
     } catch {
       toast.error("Failed to update department");
@@ -94,7 +94,7 @@ export default function Departments() {
         sla_target_minutes: parseInt(editForm.sla, 10) || 30,
         head_staff_id: editForm.headId === "__none__" ? null : editForm.headId,
       });
-      await qc.invalidateQueries({ queryKey: ["departments"] });
+      await qc.invalidateQueries({ queryKey: ["hospital", "departments"] });
       setEditDept(null);
       toast.success("Department updated");
     } catch {

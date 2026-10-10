@@ -23,10 +23,10 @@ export const GlobalSearchProvider = ({ children }: { children: React.ReactNode }
   const { data: patients = [] } = useQuery({
     queryKey: ["hospital", "patients", "search", query],
     queryFn: async () => {
-      const rows = await hospitalApi.patientsSearch(query || " ") as Record<string, unknown>[];
+      const rows = await hospitalApi.patientsSearch(query) as Record<string, unknown>[];
       return rows.map(mapSearchPatient);
     },
-    enabled: open,
+    enabled: open && query.trim().length >= 2,
   });
 
   useEffect(() => {

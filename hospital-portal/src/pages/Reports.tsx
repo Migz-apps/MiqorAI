@@ -106,7 +106,7 @@ export default function Reports() {
               <div>
                 <div className="text-sm font-medium">{item.title}</div>
                 <div className="text-xs text-text-secondary">
-                  {String(item.format).toUpperCase()} Â· {new Date(item.createdAt).toLocaleString()}
+                  {String(item.format).toUpperCase()} · {new Date(item.createdAt).toLocaleString()}
                 </div>
               </div>
               <Button size="sm" variant="outline" onClick={() => void downloadHistoryItem(item)}>

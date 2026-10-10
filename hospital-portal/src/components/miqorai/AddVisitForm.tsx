@@ -64,7 +64,7 @@ export const AddVisitForm = ({
   const [duplicateFromAi, setDuplicateFromAi] = useState(false);
 
   const { data: icdMatches = [] } = useQuery({
-    queryKey: ["icd", diagSearch],
+    queryKey: ["reference", "icd", diagSearch],
     queryFn: async () => {
       const rows = await referenceApi.icd(diagSearch || undefined) as Record<string, unknown>[];
       return rows.map(mapIcd);

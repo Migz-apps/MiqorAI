@@ -9,13 +9,13 @@ import { useAuth, ROLE_LABEL } from "@/store/auth";
 const ROLE_TIPS: Record<string, { title: string; tips: string[] }> = {
   receptionist: { title: "Reception quick guide", tips: [
     "Use Check-in (or ⌘K) to scan a patient QR or enter their phone.",
-    "Long waits are flagged in the waitlist; you can call patients in bulk.",
+    "Long waits and emergencies are flagged automatically in the waitlist.",
     "Use Manual register for patients without a MiqorAI card.",
     "Print stickers re-prints any visit's QR sticker.",
   ]},
   nurse: { title: "Nurse quick guide", tips: [
     "Open a patient profile to record vitals.",
-    "Order labs from the patient's Labs tab.",
+    "Order labs from the Add Visit tab on a patient's profile.",
     "Hand-off to a doctor by changing the waitlist status to 'with-doctor'.",
   ]},
   doctor: { title: "Doctor quick guide", tips: [

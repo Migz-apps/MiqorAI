@@ -3,13 +3,14 @@ import { Printer, Share2, LogOut, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/lib/notify";
+import { hospitalApi } from "@/lib/api/hospital";
 import type { Patient } from "@/lib/types";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export const PatientHeader = ({ patient }: { patient: Patient }) => {
+export const PatientHeader = ({ patient, openVisitId }: { patient: Patient; openVisitId?: string }) => {
   const age = Math.floor((Date.now() - new Date(patient.dob).getTime()) / (365.25 * 86400 * 1000));
   const [checkedOut, setCheckedOut] = useState(false);
 
@@ -65,7 +66,16 @@ export const PatientHeader = ({ patient }: { patient: Patient }) => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => { setCheckedOut(true); toast.success(`${patient.name} checked out`); }}>
+              <AlertDialogAction onClick={async () => {
+                if (!openVisitId) { toast.info("No open visit to check out"); return; }
+                try {
+                  await hospitalApi.visitCheckout(openVisitId, {});
+                  setCheckedOut(true);
+                  toast.success(`${patient.name} checked out`);
+                } catch {
+                  toast.error("Check-out failed");
+                }
+              }}>
                 Confirm check-out
               </AlertDialogAction>
             </AlertDialogFooter>

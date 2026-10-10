@@ -7,6 +7,8 @@ import { ApiError, getMe, loadTokens, loginApi, logoutApi, saveTokens, type MeRe
 type Session = {
   staffId: string;
   name: string;
+  email?: string;
+  department?: string;
   role: Role;
   hospitalCode: string;
   hospitalName: string;
@@ -20,7 +22,6 @@ type AuthState = {
   login: (hospitalCode: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
-  switchRole: (role: Role) => void;
 };
 
 const AUTH_STORAGE_KEY = "MiqorAI-hospital-auth-v2";
@@ -46,6 +47,8 @@ function sessionFromMe(me: MeResponse, hospitalCode: string): Session {
   return {
     staffId: me.id,
     name: me.display_name ?? me.email.split("@")[0],
+    email: me.email,
+    department: me.department,
     role: mapRole(me),
     hospitalCode: me.hospital_code ?? hospitalCode,
     hospitalName: me.hospital_name ?? hospitalCode,
@@ -93,11 +96,6 @@ export const useAuth = create<AuthState>()(
           saveTokens(null);
           set({ session: null, failedAttempts: 0, lockoutUntil: null });
         }
-      },
-      switchRole: (role) => {
-        const s = get().session;
-        if (!s) return;
-        set({ session: { ...s, role } });
       },
     }),
     { name: AUTH_STORAGE_KEY, partialize: (s) => ({ session: s.session, failedAttempts: s.failedAttempts, lockoutUntil: s.lockoutUntil }),

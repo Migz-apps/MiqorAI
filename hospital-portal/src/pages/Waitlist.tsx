@@ -90,9 +90,6 @@ export default function Waitlist() {
           <p className="body text-text-secondary">{loading ? "Loading…" : `${entries.length} patients across all departments today.`}</p>
         </div>
         <div className="flex gap-sm">
-          <Button variant="outline" size="sm" onClick={callAll} disabled={!selected.size}>
-            <Phone className="h-4 w-4 mr-1" /> Call selected ({selected.size})
-          </Button>
           <Button variant="outline" size="sm" onClick={markNoShowOldWaits}>
             <UserX className="h-4 w-4 mr-1" /> Auto no-show {">"} 60min
           </Button>
@@ -120,7 +117,6 @@ export default function Waitlist() {
                 </div>
               )}
             </div>
-            <Button size="sm" variant="outline"><Bell className="h-3 w-3 mr-1" /> Notify supervisor</Button>
           </CardContent>
         </Card>
       )}

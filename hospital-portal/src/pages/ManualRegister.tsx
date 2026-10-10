@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { UserPlus } from "lucide-react";
 import { useSync } from "@/store/sync";
+import { hospitalApi } from "@/lib/api/hospital";
 import { toast } from "@/lib/notify";
 import { MESSAGES } from "@/lib/user-messages";
 
@@ -34,9 +35,25 @@ export default function ManualRegister() {
       toast.error(MESSAGES.form.missingFields(missing.map(k => labels[k] ?? k)));
       return;
     }
-    enqueue({ type: "registration", patientName: form.name });
-    toast.success("Patient registered. Sticker queued for printing.");
-    setTimeout(() => nav("/stickers"), 600);
+    void (async () => {
+      try {
+        await hospitalApi.registerPatient({
+          full_name: form.name.trim(),
+          phone: form.phone.trim(),
+          date_of_birth: form.dob,
+          allergies: form.allergies
+            .split(",")
+            .map((a) => a.trim())
+            .filter(Boolean)
+            .map((name) => ({ name })),
+        });
+        enqueue({ type: "registration", patientName: form.name });
+        toast.success("Patient registered. Sticker queued for printing.");
+        setTimeout(() => nav("/stickers"), 600);
+      } catch {
+        toast.error("Registration failed");
+      }
+    })();
   };
 
   return (
