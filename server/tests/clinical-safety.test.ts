@@ -13,14 +13,14 @@ describe("Clinical safety integration", () => {
   beforeAll(async () => {
     await initTestContext();
     process.env.MIQORAI_AI_MOCK = "true";
-    process.env.AI_SERVICE_URL = "";
+    process.env.AI_SERVICE_BASE_URL = "";
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
     process.env.MIQORAI_AI_MOCK = "true";
-    process.env.AI_SERVICE_URL = "";
+    process.env.AI_SERVICE_BASE_URL = "";
   });
 
   it("GET /api/v1/clinical-safety/health — mock mode", async () => {
@@ -118,7 +118,7 @@ describe("Clinical safety integration", () => {
 
   it("AI unavailable returns safe fallback", async () => {
     process.env.MIQORAI_AI_MOCK = "false";
-    process.env.AI_SERVICE_URL = "http://127.0.0.1:9";
+    process.env.AI_SERVICE_BASE_URL = "http://127.0.0.1:9";
 
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("connection refused"));
 

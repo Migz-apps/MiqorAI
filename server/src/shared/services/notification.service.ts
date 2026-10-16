@@ -89,20 +89,55 @@ export async function sendInvitationEmail(email: string, inviteUrl: string): Pro
   );
 }
 
+export async function sendOnboardingApprovedEmail(
+  email: string,
+  organizationName: string,
+  organizationType: string,
+  accountCreated: boolean,
+): Promise<void> {
+  const loginNote = accountCreated
+    ? "<p>Your administrator account is ready — log in with the email address and password you provided when you applied.</p>"
+    : "<p>An administrator will send you an invitation to set up your account.</p>";
+  await sendEmail(
+    email,
+    "MiqorAI onboarding approved",
+    `<p>Your ${organizationType} <strong>${organizationName}</strong> has been approved on MiqorAI.</p>${loginNote}`,
+  );
+}
+
+export async function sendOnboardingRejectedEmail(
+  email: string,
+  organizationName: string,
+  reason: string,
+): Promise<void> {
+  await sendEmail(
+    email,
+    "MiqorAI onboarding update",
+    `<p>Your onboarding request for <strong>${organizationName}</strong> was not approved.</p><p>Reason: ${reason || "Not specified"}.</p>`,
+  );
+}
+
+export async function sendScheduledReportEmail(
+  email: string,
+  reportTitle: string,
+  downloadUrl: string,
+): Promise<void> {
+  await sendEmail(
+    email,
+    `MiqorAI scheduled report: ${reportTitle}`,
+    `<p>Your scheduled report <strong>${reportTitle}</strong> is ready.</p><p><a href="${downloadUrl}">Download report</a></p>`,
+  );
+}
+
 export async function sendPasswordResetEmail(
   email: string,
-  resetUrl: string,
-  code?: string,
-  expiresInMinutes?: number,
+  code: string,
+  expiresInMinutes: number,
 ): Promise<void> {
-  const codeBlock =
-    code && expiresInMinutes
-      ? `<p>Your reset code is <strong>${code}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p>`
-      : "";
   await sendEmail(
     email,
     "MiqorAI password reset",
-    `${codeBlock}<p>Reset your password:</p><p><a href="${resetUrl}">Reset password</a></p>`,
+    `<p>Your reset code is <strong>${code}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p><p>Enter this code on the password reset screen to choose a new password.</p>`,
   );
 }
 

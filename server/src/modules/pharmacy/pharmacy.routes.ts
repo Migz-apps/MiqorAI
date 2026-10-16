@@ -9,6 +9,7 @@ import {
   listPharmacyStaff,
   updatePharmacyStaffRole,
 } from "../identity/staff.service.js";
+import { requirePharmacyPermission } from "../identity/staff-permissions.js";
 import { getPharmacySettings, updatePharmacySettings } from "../financing/insurer-enrichment.service.js";
 import { param, clampLimit } from "../../shared/utils/param.js";
 import {
@@ -77,7 +78,7 @@ router.get("/prescription/:id", async (req, res, next) => {
   }
 });
 
-router.post("/prescription/:id/verify", async (req, res, next) => {
+router.post("/prescription/:id/verify", requirePharmacyPermission("dispense"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(await verifyPrescription(ctx.organizationId, param(req.params.id), ctx));
@@ -86,7 +87,7 @@ router.post("/prescription/:id/verify", async (req, res, next) => {
   }
 });
 
-router.post("/prescription/:id/ready", async (req, res, next) => {
+router.post("/prescription/:id/ready", requirePharmacyPermission("prepare"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(await readyPrescription(ctx.organizationId, param(req.params.id), ctx));
@@ -96,7 +97,7 @@ router.post("/prescription/:id/ready", async (req, res, next) => {
 });
 
 const holdSchema = z.object({ reason: z.string().min(1), notes: z.string().optional() });
-router.post("/prescription/:id/hold", validateBody(holdSchema), async (req, res, next) => {
+router.post("/prescription/:id/hold", requirePharmacyPermission("dispense"), validateBody(holdSchema), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(
@@ -107,7 +108,7 @@ router.post("/prescription/:id/hold", validateBody(holdSchema), async (req, res,
   }
 });
 
-router.post("/prescription/:id/reject", validateBody(holdSchema), async (req, res, next) => {
+router.post("/prescription/:id/reject", requirePharmacyPermission("dispense"), validateBody(holdSchema), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(
@@ -139,7 +140,7 @@ const dispenseSchema = z.object({
     .optional(),
 });
 
-router.post("/dispense", validateBody(dispenseSchema), async (req, res, next) => {
+router.post("/dispense", requirePharmacyPermission("dispense"), validateBody(dispenseSchema), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     const rawPrescriptionId = req.query.prescription_id ?? req.body.prescription_id;
@@ -167,7 +168,7 @@ router.post("/dispense", validateBody(dispenseSchema), async (req, res, next) =>
   }
 });
 
-router.post("/prescription/:id/dispense", validateBody(dispenseSchema), async (req, res, next) => {
+router.post("/prescription/:id/dispense", requirePharmacyPermission("dispense"), validateBody(dispenseSchema), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     req.body.dispensed_by = ctx.userId; // identity comes from the token, not the client
@@ -188,7 +189,7 @@ router.post("/prescription/:id/dispense", validateBody(dispenseSchema), async (r
 });
 
 const pickupSchema = z.object({ picked_up_by: z.string().min(1) });
-router.put("/prescription/:id/pickup", validateBody(pickupSchema), async (req, res, next) => {
+router.put("/prescription/:id/pickup", requirePharmacyPermission("sales"), validateBody(pickupSchema), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(
@@ -233,7 +234,7 @@ const inventoryCreateSchema = z.object({
   controlled: z.boolean().optional(),
 });
 
-router.post("/inventory", validateBody(inventoryCreateSchema), async (req, res, next) => {
+router.post("/inventory", requirePharmacyPermission("inventory"), validateBody(inventoryCreateSchema), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.status(201).json(await createPharmacyInventory(ctx.organizationId, req.body, ctx));
@@ -242,7 +243,7 @@ router.post("/inventory", validateBody(inventoryCreateSchema), async (req, res, 
   }
 });
 
-router.put("/inventory/:id", async (req, res, next) => {
+router.put("/inventory/:id", requirePharmacyPermission("inventory"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(await updatePharmacyInventory(ctx.organizationId, param(req.params.id), req.body, ctx));
@@ -258,7 +259,7 @@ const adjustSchema = z.object({
   prescription_id: z.string().uuid().optional(),
 });
 
-router.post("/inventory/adjust", validateBody(adjustSchema), async (req, res, next) => {
+router.post("/inventory/adjust", requirePharmacyPermission("inventory"), validateBody(adjustSchema), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(
@@ -351,7 +352,7 @@ router.get("/invoices", async (req, res, next) => {
   }
 });
 
-router.get("/audit-logs", async (req, res, next) => {
+router.get("/audit-logs", requirePharmacyPermission("audit"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(
@@ -392,7 +393,7 @@ router.get("/staff", async (req, res, next) => {
   }
 });
 
-router.post("/staff/invite", async (req, res, next) => {
+router.post("/staff/invite", requirePharmacyPermission("staff"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.status(201).json(await invitePharmacyStaff(ctx.organizationId, req.body));
@@ -401,7 +402,7 @@ router.post("/staff/invite", async (req, res, next) => {
   }
 });
 
-router.delete("/staff/:userId", async (req, res, next) => {
+router.delete("/staff/:userId", requirePharmacyPermission("staff"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     await deactivatePharmacyStaff(ctx.organizationId, param(req.params.userId));
@@ -411,7 +412,7 @@ router.delete("/staff/:userId", async (req, res, next) => {
   }
 });
 
-router.put("/staff/:userId/role", async (req, res, next) => {
+router.put("/staff/:userId/role", requirePharmacyPermission("staff"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(await updatePharmacyStaffRole(ctx.organizationId, param(req.params.userId), req.body.role));
@@ -429,7 +430,7 @@ router.get("/settings", async (req, res, next) => {
   }
 });
 
-router.put("/settings", async (req, res, next) => {
+router.put("/settings", requirePharmacyPermission("settings"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(await updatePharmacySettings(ctx.organizationId, req.body));
@@ -519,7 +520,7 @@ router.get("/inventory/barcode/:barcode", async (req, res, next) => {
   }
 });
 
-router.delete("/inventory/:id", async (req, res, next) => {
+router.delete("/inventory/:id", requirePharmacyPermission("inventory"), async (req, res, next) => {
   try {
     const ctx = pharmacyContextFromRequest(req);
     res.json(await deactivateInventoryItem(ctx.organizationId, param(req.params.id)));

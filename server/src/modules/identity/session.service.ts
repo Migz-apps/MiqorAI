@@ -1,4 +1,8 @@
-import { HospitalStaffRole } from "@prisma/client";
+import {
+  hospitalStaffPermissions,
+  insurerStaffPermissions,
+  pharmacyStaffPermissions,
+} from "./staff-permissions.js";
 import { prisma } from "../../shared/lib/prisma.js";
 
 export async function getEnhancedCurrentUser(userId: string) {
@@ -32,7 +36,7 @@ export async function getEnhancedCurrentUser(userId: string) {
       department: user.hospitalStaff.department,
       hospital_name: user.hospitalStaff.hospital.name,
       hospital_code: user.hospitalStaff.hospital.code,
-      permissions: staffPermissions(user.hospitalStaff.role),
+      permissions: hospitalStaffPermissions(user.hospitalStaff.role),
     };
   }
   if (user.pharmacyStaff) {
@@ -41,6 +45,7 @@ export async function getEnhancedCurrentUser(userId: string) {
       staff_role: user.pharmacyStaff.role,
       pharmacy_name: user.pharmacyStaff.pharmacy.name,
       pharmacy_code: user.pharmacyStaff.pharmacy.code,
+      permissions: pharmacyStaffPermissions(user.pharmacyStaff.role),
     };
   }
   if (user.insurerStaff) {
@@ -49,18 +54,8 @@ export async function getEnhancedCurrentUser(userId: string) {
       staff_role: user.insurerStaff.role,
       insurer_name: user.insurerStaff.insurer.name,
       insurer_code: user.insurerStaff.insurer.code,
+      permissions: insurerStaffPermissions(user.insurerStaff.role),
     };
   }
   return base;
-}
-
-function staffPermissions(role: HospitalStaffRole): string[] {
-  const map: Record<HospitalStaffRole, string[]> = {
-    admin: ["*"],
-    doctor: ["patients", "prescriptions", "labs", "referrals"],
-    nurse: ["patients", "vitals", "labs"],
-    receptionist: ["checkin", "registration", "patients"],
-    dept_head: ["patients", "staff", "reports", "departments"],
-  };
-  return map[role] ?? [];
 }

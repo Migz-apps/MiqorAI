@@ -75,18 +75,15 @@ export function parseRequiredDate(value: string | undefined, label: string): Dat
   return parsed;
 }
 
-export function parseLooseJson(value: string | undefined, label: string): unknown {
+export function parseJsonCell(value: string | undefined, context: string): unknown {
   const trimmed = (value ?? "").trim();
   if (!trimmed) return null;
-  const normalized = trimmed
-    .replace(/'/g, '"')
-    .replace(/\bNone\b/g, "null")
-    .replace(/\bTrue\b/g, "true")
-    .replace(/\bFalse\b/g, "false");
   try {
-    return JSON.parse(normalized);
-  } catch {
-    throw new Error(`Invalid JSON for ${label}: ${value}`);
+    return JSON.parse(trimmed);
+  } catch (err) {
+    throw new Error(
+      `Invalid JSON in ${context}: ${(err as Error).message}. Cell value: ${trimmed.slice(0, 200)}`,
+    );
   }
 }
 

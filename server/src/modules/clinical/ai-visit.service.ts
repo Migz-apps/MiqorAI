@@ -4,6 +4,7 @@ import { prisma } from "../../shared/lib/prisma.js";
 import { logger } from "../../shared/lib/logger.js";
 import { auditFromRequest, writeAuditLog } from "../../shared/services/audit.service.js";
 import { fetchCheckAction, fetchRelevantHistory } from "./ai-visit.client.js";
+import { allergyLabel, diagnosisName, medicationName } from "./medical-record-payload.js";
 import type {
   AiHistoryEntry,
   AiOverridePayload,
@@ -64,19 +65,16 @@ export async function buildAiPatientContext(patientId: string, hospitalId: strin
 
   const allergies = patient.medicalRecords
     .filter((r) => r.recordType === "allergy")
-    .map((r) => {
-      const d = r.data as { name?: string; severity?: string };
-      return d.severity ? `${d.name} (${d.severity})` : String(d.name ?? "Allergy");
-    });
+    .map((r) => allergyLabel(r.data));
 
   const chronicConditions = patient.medicalRecords
     .filter((r) => r.recordType === "diagnosis")
-    .map((r) => String((r.data as { name?: string }).name ?? "Condition"));
+    .map((r) => diagnosisName(r.data));
 
   const medicationRecords = [
     ...patient.medicalRecords
       .filter((r) => r.recordType === "medication")
-      .map((r) => String((r.data as { name?: string }).name ?? "")),
+      .map((r) => medicationName(r.data) ?? ""),
     ...patient.prescriptions.flatMap((rx) => rx.items.map((i) => i.drugName)),
   ].filter(Boolean);
 

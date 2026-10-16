@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { logger } from "../lib/logger.js";
 import { writeAuditLog } from "../services/audit.service.js";
 
 const SKIP_PREFIXES = ["/health", "/api/files/"];
@@ -25,8 +26,12 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
       userAgent: req.get("user-agent") ?? null,
       success: res.statusCode < 400,
       failureReason: res.statusCode >= 400 ? `HTTP ${res.statusCode}` : null,
-    }).catch(() => {
-      /* non-blocking */
+    }).catch((err: unknown) => {
+      // Non-blocking, but never silent: a failing audit trail must be visible.
+      logger.error(
+        `Failed to write audit log for ${req.method} ${req.originalUrl.split("?")[0]}`,
+        { err: err instanceof Error ? err.message : String(err) },
+      );
     });
   });
 

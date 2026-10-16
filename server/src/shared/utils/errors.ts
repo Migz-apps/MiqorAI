@@ -26,6 +26,10 @@ export function badRequest(message: string, details?: unknown) {
   return new AppError("BAD_REQUEST", message, 400, details);
 }
 
+export function conflict(message: string, details?: unknown) {
+  return new AppError("CONFLICT", message, 409, details);
+}
+
 export function serviceUnavailable(message = "Service unavailable", details?: unknown) {
   return new AppError("SERVICE_UNAVAILABLE", message, 503, details);
 }

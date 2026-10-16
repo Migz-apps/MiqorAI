@@ -2,7 +2,11 @@ import { PrismaClient } from "@prisma/client";
 import { verifyPassword } from "../src/shared/utils/crypto.js";
 
 const prisma = new PrismaClient();
-const password = process.env.CHECK_PASSWORD ?? "MiqorAI123!";
+const password = process.env.CHECK_PASSWORD ?? process.env.SEED_PASSWORD;
+if (!password) {
+  console.error("Set CHECK_PASSWORD or SEED_PASSWORD to the password to verify.");
+  process.exit(1);
+}
 
 const emails = [
   "admin@miqorai.com",

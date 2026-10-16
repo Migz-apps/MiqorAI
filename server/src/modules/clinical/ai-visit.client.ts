@@ -7,17 +7,19 @@ import type {
   RelevantHistoryResponse,
 } from "../../types/ai-visit.types.js";
 
+// The remote service and the local fallback below both apply deterministic
+// keyword rules — no model inference is involved in these two endpoints.
 const UNAVAILABLE_HISTORY: RelevantHistoryResponse = {
   relevantHistory: [],
   confidence: 0,
   aiUnavailable: true,
-  message: "MiqorAI assistant is temporarily unavailable. Continue using clinical judgment.",
+  message: "Rule-based history check is temporarily unavailable. Continue using clinical judgment.",
 };
 
 const UNAVAILABLE_ACTION: CheckActionResponse = {
   hasAlert: false,
   aiUnavailable: true,
-  message: "MiqorAI assistant is temporarily unavailable. Continue using clinical judgment.",
+  message: "Rule-based action check is temporarily unavailable. Continue using clinical judgment.",
 };
 
 function scoreHistoryMatch(entry: RelevantHistoryRequest["availableHistory"][0], keywords: string[]): number {
@@ -34,6 +36,7 @@ function scoreHistoryMatch(entry: RelevantHistoryRequest["availableHistory"][0],
   return keywords.reduce((score, kw) => (blob.includes(kw) ? score + 1 : score), 0);
 }
 
+// Local mock: mirrors the remote service's keyword rules for offline development.
 function localMockRelevantHistory(request: RelevantHistoryRequest): RelevantHistoryResponse {
   const keywords = request.keywords ?? [];
   const scored = request.availableHistory
@@ -58,6 +61,7 @@ function localMockRelevantHistory(request: RelevantHistoryRequest): RelevantHist
   };
 }
 
+// Local mock: mirrors the remote service's keyword rules for offline development.
 function localMockCheckAction(request: CheckActionRequest): CheckActionResponse {
   const name = request.action.name.toLowerCase();
   const allergyHit = request.patientProfile.allergies.find(
@@ -143,12 +147,12 @@ async function postAi<T>(path: string, body: unknown): Promise<T | null> {
       signal: controller.signal,
     });
     if (!res.ok) {
-      logger.warn("AI request failed", { path, status: res.status });
+      logger.warn("Rule service request failed", { path, status: res.status });
       return null;
     }
     return (await res.json()) as T;
   } catch (err) {
-    logger.warn("AI request error", { path, error: String(err) });
+    logger.warn("Rule service request error", { path, error: String(err) });
     return null;
   } finally {
     clearTimeout(timer);
@@ -163,30 +167,30 @@ export async function fetchRelevantHistory(
     return { relevantHistory: [], confidence: 0 };
   }
 
-  logger.info("AI relevant-history request started", {
+  logger.info("Rule-based relevant-history check started", {
     patientId: request.patientId,
     keywordCount: request.keywords?.length ?? 0,
   });
 
   if (cfg.mock && !cfg.baseUrl) {
     const mock = localMockRelevantHistory(request);
-    logger.info("AI relevant-history completed (local mock)");
+    logger.info("Rule-based relevant-history completed (local mock rules)");
     return mock;
   }
 
   const remote = await postAi<RelevantHistoryResponse>("/ai/relevant-history", request);
   if (remote) {
-    logger.info("AI relevant-history completed", { count: remote.relevantHistory?.length ?? 0 });
+    logger.info("Rule-based relevant-history completed", { count: remote.relevantHistory?.length ?? 0 });
     return remote;
   }
 
   if (cfg.mock) {
     const mock = localMockRelevantHistory(request);
-    logger.info("AI relevant-history completed (fallback mock)");
+    logger.info("Rule-based relevant-history completed (local fallback rules)");
     return mock;
   }
 
-  logger.warn("AI relevant-history unavailable");
+  logger.warn("Rule-based relevant-history unavailable");
   return UNAVAILABLE_HISTORY;
 }
 
@@ -196,7 +200,7 @@ export async function fetchCheckAction(request: CheckActionRequest): Promise<Che
     return { hasAlert: false, alertType: "NONE", recommendedAction: "SAFE_TO_PROCEED" };
   }
 
-  logger.info("AI check-action request started", {
+  logger.info("Rule-based check-action started", {
     patientId: request.patientId,
     actionType: request.action.type,
     actionName: request.action.name,
@@ -204,22 +208,22 @@ export async function fetchCheckAction(request: CheckActionRequest): Promise<Che
 
   if (cfg.mock && !cfg.baseUrl) {
     const mock = localMockCheckAction(request);
-    logger.info("AI check-action completed (local mock)", { hasAlert: mock.hasAlert });
+    logger.info("Rule-based check-action completed (local mock rules)", { hasAlert: mock.hasAlert });
     return mock;
   }
 
   const remote = await postAi<CheckActionResponse>("/ai/check-action", request);
   if (remote) {
-    logger.info("AI check-action completed", { hasAlert: remote.hasAlert });
+    logger.info("Rule-based check-action completed", { hasAlert: remote.hasAlert });
     return remote;
   }
 
   if (cfg.mock) {
     const mock = localMockCheckAction(request);
-    logger.info("AI check-action completed (fallback mock)", { hasAlert: mock.hasAlert });
+    logger.info("Rule-based check-action completed (local fallback rules)", { hasAlert: mock.hasAlert });
     return mock;
   }
 
-  logger.warn("AI check-action unavailable");
+  logger.warn("Rule-based check-action unavailable");
   return UNAVAILABLE_ACTION;
 }

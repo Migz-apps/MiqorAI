@@ -1,4 +1,4 @@
-import { prisma } from "../../shared/lib/prisma.js";
+﻿import { prisma } from "../../shared/lib/prisma.js";
 import { config } from "../../config.js";
 import { hashToken } from "../../shared/utils/crypto.js";
 import { AppError, badRequest } from "../../shared/utils/errors.js";
@@ -6,7 +6,6 @@ import {
   sendPasswordResetEmail,
   sendPatientVerificationEmail,
 } from "../../shared/services/notification.service.js";
-import { buildPortalUrl } from "../../shared/services/portal-url.service.js";
 import { generateSixDigitCode } from "../../shared/utils/one-time-code.js";
 import { normalizeEmailInput, normalizePhoneInput } from "../../shared/utils/validation.js";
 
@@ -16,10 +15,6 @@ type PendingRegistrationPayload = {
   phone: string;
   password_hash: string;
   date_of_birth: string;
-};
-
-type PasswordResetPayload = {
-  reset_token: string;
 };
 
 const PURPOSE_REGISTRATION = "patient_registration";
@@ -158,7 +153,7 @@ export async function consumePatientRegistrationChallenge(email: string, code: s
   return payload;
 }
 
-export async function createPatientPasswordResetChallenge(email: string, resetToken: string) {
+export async function createPatientPasswordResetChallenge(email: string) {
   const normalizedEmail = normalizeEmail(email);
 
   await enforceResendCooldown(normalizedEmail, PURPOSE_PASSWORD_RESET);
@@ -177,13 +172,7 @@ export async function createPatientPasswordResetChallenge(email: string, resetTo
     },
   });
 
-  const resetUrl = buildPortalUrl("patient", `/login?reset_token=${encodeURIComponent(resetToken)}`);
-  await sendPasswordResetEmail(
-    normalizedEmail,
-    resetUrl,
-    code,
-    config.passwordResetExpiresMinutes,
-  );
+  await sendPasswordResetEmail(normalizedEmail, code, config.passwordResetExpiresMinutes);
 
   return {
     sent: true,
@@ -194,7 +183,7 @@ export async function createPatientPasswordResetChallenge(email: string, resetTo
 
 
 /** Validates the emailed code; returns the normalized email. The reset token itself is
- * minted fresh by the caller — no plaintext token is ever stored at rest. */
+ * minted fresh by the caller â€” no plaintext token is ever stored at rest. */
 export async function consumePatientPasswordResetChallenge(email: string, code: string): Promise<string> {
   const normalizedEmail = normalizeEmail(email);
   const challenge = await getLatestChallenge(normalizedEmail, PURPOSE_PASSWORD_RESET);

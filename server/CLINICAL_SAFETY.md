@@ -9,6 +9,8 @@ Add these to `server/.env`:
 ```env
 AI_SERVICE_BASE_URL=https://your-ai-service.example.com
 AI_SERVICE_API_KEY=
+AI_SERVICE_TIMEOUT_SECONDS=60
+AI_SERVICE_ENABLED=true
 MIQORAI_AI_MOCK=false
 ```
 
@@ -17,6 +19,8 @@ MIQORAI_AI_MOCK=false
 | `AI_SERVICE_BASE_URL` | Primary base URL of the deployed FastAPI clinical-safety service, without a trailing slash |
 | `AI_SERVICE_URL` | Legacy alias still supported by the backend |
 | `AI_SERVICE_API_KEY` | Optional bearer/API key forwarded to the AI service when required |
+| `AI_SERVICE_TIMEOUT_SECONDS` | Request timeout for AI service calls in seconds (default `60`, minimum `5`) |
+| `AI_SERVICE_ENABLED` | Set to `false` to disable the AI gate entirely; any other value (or unset) keeps it enabled |
 | `MIQORAI_AI_MOCK` | `true` uses the mock checker instead of the live model |
 
 If neither `AI_SERVICE_BASE_URL` nor `AI_SERVICE_URL` is set and `MIQORAI_AI_MOCK` is not `true`, prescriptions and lab orders proceed without an AI gate.
@@ -112,3 +116,23 @@ Decisions are stored in `clinical_safety_audit_logs` with:
 - Pharmacy dispensing
 
 Only test orders and medication prescriptions trigger the AI service.
+
+## Fail-open vs fail-closed
+
+The gate distinguishes an *unconfigured* service from an *unreachable* one.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLINICAL_SAFETY_REQUIRED` | `false` | `true` blocks prescriptions and lab orders when the clinical-safety service is disabled or unconfigured, instead of letting them through ungated |
+
+Decision matrix:
+
+| Service state | `CLINICAL_SAFETY_REQUIRED=false` (default) | `CLINICAL_SAFETY_REQUIRED=true` |
+|---------------|--------------------------------------------|---------------------------------|
+| Configured and reachable | Model/mock decision applies | Model/mock decision applies |
+| Configured but unreachable or erroring | Blocked: safe fallback alert (`intervention_required: true`), pending action created | Same — blocked with safe fallback alert |
+| Disabled (`AI_SERVICE_ENABLED=false`) or no URL/mock configured | Allowed: order proceeds without a safety gate (fail-open) | Blocked: treated like the unreachable case — safe fallback alert, pending action created (fail-closed) |
+
+In every blocked case the doctor can still override with a documented reason or
+cancel via the pending-action endpoints above. Set `CLINICAL_SAFETY_REQUIRED=true`
+in environments where orders must never bypass the safety review.

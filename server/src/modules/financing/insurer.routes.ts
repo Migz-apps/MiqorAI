@@ -21,6 +21,7 @@ import {
   listInsurerStaff,
   updateInsurerStaffRole,
 } from "../identity/staff.service.js";
+import { requireInsurerPermission } from "../identity/staff-permissions.js";
 import {
   enrollMember,
   generateInsurerReport,
@@ -100,7 +101,7 @@ router.get("/adherence", async (req, res, next) => {
   }
 });
 
-router.get("/fraud/anomalies", async (req, res, next) => {
+router.get("/fraud/anomalies", requireInsurerPermission("fraud"), async (req, res, next) => {
   try {
     const days = req.query.days ? parseInt(String(req.query.days), 10) : 7;
     res.json(await getFraudAnomalies(insurerIdFrom(req.user!), days));
@@ -114,7 +115,7 @@ const claimStatusSchema = z.object({
   notes: z.string().optional(),
 });
 
-router.put("/fraud/:claimId/status", validateBody(claimStatusSchema), async (req, res, next) => {
+router.put("/fraud/:claimId/status", requireInsurerPermission("fraud"), validateBody(claimStatusSchema), async (req, res, next) => {
   try {
     const statusMap: Record<string, ClaimStatus> = {
       investigating: "investigating",
@@ -168,7 +169,7 @@ router.post("/reports/generate", validateBody(reportSchema), async (req, res, ne
   }
 });
 
-router.get("/contract", async (req, res, next) => {
+router.get("/contract", requireInsurerPermission("contracts"), async (req, res, next) => {
   try {
     res.json(await getInsurerContract(insurerIdFrom(req.user!)));
   } catch (err) {
@@ -176,7 +177,7 @@ router.get("/contract", async (req, res, next) => {
   }
 });
 
-router.get("/invoices", async (req, res, next) => {
+router.get("/invoices", requireInsurerPermission("billing"), async (req, res, next) => {
   try {
     res.json(await listInsurerInvoices(insurerIdFrom(req.user!)));
   } catch (err) {
@@ -184,7 +185,7 @@ router.get("/invoices", async (req, res, next) => {
   }
 });
 
-router.post("/invoices/:id/pay", async (req, res, next) => {
+router.post("/invoices/:id/pay", requireInsurerPermission("billing"), async (req, res, next) => {
   try {
     res.json(await payInsurerInvoice(insurerIdFrom(req.user!), param(req.params.id)));
   } catch (err) {
@@ -192,7 +193,7 @@ router.post("/invoices/:id/pay", async (req, res, next) => {
   }
 });
 
-router.get("/invoices/:id/pdf", async (req, res, next) => {
+router.get("/invoices/:id/pdf", requireInsurerPermission("billing"), async (req, res, next) => {
   try {
     res.json(await getInsurerInvoicePdf(insurerIdFrom(req.user!), param(req.params.id), req.user!.sub));
   } catch (err) {
@@ -237,7 +238,7 @@ router.get("/alerts", async (req, res, next) => {
   }
 });
 
-router.get("/providers/risk", async (req, res, next) => {
+router.get("/providers/risk", requireInsurerPermission("fraud"), async (req, res, next) => {
   try {
     res.json(await listProviderRisk(insurerIdFrom(req.user!)));
   } catch (err) {
@@ -245,7 +246,7 @@ router.get("/providers/risk", async (req, res, next) => {
   }
 });
 
-router.get("/audit-logs", async (req, res, next) => {
+router.get("/audit-logs", requireInsurerPermission("audit"), async (req, res, next) => {
   try {
     res.json(
       await listInsurerAuditLogs(
@@ -282,7 +283,7 @@ router.get("/staff", async (req, res, next) => {
   }
 });
 
-router.post("/staff/invite", async (req, res, next) => {
+router.post("/staff/invite", requireInsurerPermission("staff"), async (req, res, next) => {
   try {
     res.status(201).json(await inviteInsurerStaff(insurerIdFrom(req.user!), req.body));
   } catch (err) {
@@ -290,7 +291,7 @@ router.post("/staff/invite", async (req, res, next) => {
   }
 });
 
-router.delete("/staff/:userId", async (req, res, next) => {
+router.delete("/staff/:userId", requireInsurerPermission("staff"), async (req, res, next) => {
   try {
     await deactivateInsurerStaff(insurerIdFrom(req.user!), param(req.params.userId));
     res.status(204).send();
@@ -299,7 +300,7 @@ router.delete("/staff/:userId", async (req, res, next) => {
   }
 });
 
-router.put("/staff/:userId/role", async (req, res, next) => {
+router.put("/staff/:userId/role", requireInsurerPermission("staff"), async (req, res, next) => {
   try {
     res.json(
       await updateInsurerStaffRole(insurerIdFrom(req.user!), param(req.params.userId), req.body.role),
@@ -317,7 +318,7 @@ router.get("/settings", async (req, res, next) => {
   }
 });
 
-router.put("/settings", async (req, res, next) => {
+router.put("/settings", requireInsurerPermission("settings"), async (req, res, next) => {
   try {
     res.json(await updateInsurerSettings(insurerIdFrom(req.user!), req.body));
   } catch (err) {
@@ -325,7 +326,7 @@ router.put("/settings", async (req, res, next) => {
   }
 });
 
-router.get("/api-keys", async (req, res, next) => {
+router.get("/api-keys", requireInsurerPermission("api_keys"), async (req, res, next) => {
   try {
     res.json(await listInsurerApiKeys(insurerIdFrom(req.user!)));
   } catch (err) {
@@ -333,7 +334,7 @@ router.get("/api-keys", async (req, res, next) => {
   }
 });
 
-router.post("/api-keys", async (req, res, next) => {
+router.post("/api-keys", requireInsurerPermission("api_keys"), async (req, res, next) => {
   try {
     res.status(201).json(await createInsurerApiKey(insurerIdFrom(req.user!), req.body.label));
   } catch (err) {
@@ -341,7 +342,7 @@ router.post("/api-keys", async (req, res, next) => {
   }
 });
 
-router.delete("/api-keys/:id", async (req, res, next) => {
+router.delete("/api-keys/:id", requireInsurerPermission("api_keys"), async (req, res, next) => {
   try {
     await revokeInsurerApiKey(insurerIdFrom(req.user!), param(req.params.id));
     res.status(204).send();
@@ -350,7 +351,7 @@ router.delete("/api-keys/:id", async (req, res, next) => {
   }
 });
 
-router.get("/contract/usage", async (req, res, next) => {
+router.get("/contract/usage", requireInsurerPermission("contracts"), async (req, res, next) => {
   try {
     res.json(await getInsurerContractUsage(insurerIdFrom(req.user!)));
   } catch (err) {
@@ -398,7 +399,7 @@ router.post("/adherence/export", async (req, res, next) => {
   }
 });
 
-router.get("/fraud/claims/:claimId", async (req, res, next) => {
+router.get("/fraud/claims/:claimId", requireInsurerPermission("fraud"), async (req, res, next) => {
   try {
     res.json(await getFraudClaimDetail(insurerIdFrom(req.user!), param(req.params.claimId)));
   } catch (err) {
@@ -406,7 +407,7 @@ router.get("/fraud/claims/:claimId", async (req, res, next) => {
   }
 });
 
-router.put("/fraud/bulk-status", async (req, res, next) => {
+router.put("/fraud/bulk-status", requireInsurerPermission("fraud"), async (req, res, next) => {
   try {
     res.json(await bulkUpdateFraudClaims(insurerIdFrom(req.user!), req.body.claim_ids ?? [], req.body.status));
   } catch (err) {
@@ -414,7 +415,7 @@ router.put("/fraud/bulk-status", async (req, res, next) => {
   }
 });
 
-router.post("/fraud/export", async (req, res, next) => {
+router.post("/fraud/export", requireInsurerPermission("fraud"), async (req, res, next) => {
   try {
     res.json(await exportFraudClaims(insurerIdFrom(req.user!), req.user!.sub));
   } catch (err) {
@@ -455,7 +456,7 @@ router.get("/reports/history/:id", async (req, res, next) => {
   }
 });
 
-router.get("/contract/pdf", async (req, res, next) => {
+router.get("/contract/pdf", requireInsurerPermission("contracts"), async (req, res, next) => {
   try {
     res.json(await getInsurerContractPdf(insurerIdFrom(req.user!), req.user!.sub));
   } catch (err) {
@@ -463,7 +464,7 @@ router.get("/contract/pdf", async (req, res, next) => {
   }
 });
 
-router.post("/contract/amendment", async (req, res, next) => {
+router.post("/contract/amendment", requireInsurerPermission("contracts"), async (req, res, next) => {
   try {
     res.json(await requestContractAmendment(insurerIdFrom(req.user!), req.body.notes ?? ""));
   } catch (err) {
@@ -479,7 +480,7 @@ router.put("/alerts/:id/read", async (req, res, next) => {
   }
 });
 
-router.post("/api-keys/:id/rotate", async (req, res, next) => {
+router.post("/api-keys/:id/rotate", requireInsurerPermission("api_keys"), async (req, res, next) => {
   try {
     res.json(await rotateInsurerApiKey(insurerIdFrom(req.user!), param(req.params.id)));
   } catch (err) {
@@ -495,7 +496,7 @@ router.get("/search", async (req, res, next) => {
   }
 });
 
-router.post("/providers/investigate", async (req, res, next) => {
+router.post("/providers/investigate", requireInsurerPermission("fraud"), async (req, res, next) => {
   try {
     res.json(await investigateProvider(insurerIdFrom(req.user!), req.body.provider_name));
   } catch (err) {

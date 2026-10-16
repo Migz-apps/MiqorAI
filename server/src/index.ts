@@ -7,6 +7,7 @@ import { archiveOldAuditLogs } from "./modules/platform/sync.service.js";
 import { ensureUploadDir } from "./shared/services/file.service.js";
 import { seedReferenceDataIfEmpty } from "./shared/services/reference.service.js";
 import { assertEmailDeliveryReady } from "./shared/services/notification.service.js";
+import { startWorkerLoops } from "./worker.js";
 
 async function main() {
   await connectDb();
@@ -23,8 +24,14 @@ async function main() {
     logger.info(`MiqorAI API listening on port ${config.port}`);
   });
 
+  // Combined-process default: the API also runs the worker loops (domain event
+  // outbox + report schedules). Set WORKER_INLINE=false when a dedicated
+  // worker process (npm run start:worker) is deployed alongside the API.
+  const stopWorker = process.env.WORKER_INLINE === "false" ? null : startWorkerLoops();
+
   const shutdown = async (signal: string) => {
     logger.info(`${signal} received — shutting down`);
+    stopWorker?.();
     server.close(async () => {
       await disconnectRedis();
       await disconnectDb();

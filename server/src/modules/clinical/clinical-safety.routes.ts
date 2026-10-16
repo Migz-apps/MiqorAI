@@ -7,6 +7,7 @@ import {
   cancelPendingClinicalAction,
   overridePendingClinicalAction,
 } from "./clinical-safety.service.js";
+import { requireHospitalPermission } from "../identity/staff-permissions.js";
 import { param } from "../../shared/utils/param.js";
 
 const router = Router();
@@ -30,7 +31,7 @@ router.get("/health", async (_req, res, next) => {
   }
 });
 
-router.post("/:pendingActionId/override", validateBody(overrideSchema), async (req, res, next) => {
+router.post("/:pendingActionId/override", requireHospitalPermission("labs"), validateBody(overrideSchema), async (req, res, next) => {
   try {
     const result = await overridePendingClinicalAction(
       param(req.params.pendingActionId),
@@ -50,7 +51,7 @@ router.post("/:pendingActionId/override", validateBody(overrideSchema), async (r
   }
 });
 
-router.post("/:pendingActionId/cancel", async (req, res, next) => {
+router.post("/:pendingActionId/cancel", requireHospitalPermission("labs"), async (req, res, next) => {
   try {
     const result = await cancelPendingClinicalAction(
       param(req.params.pendingActionId),

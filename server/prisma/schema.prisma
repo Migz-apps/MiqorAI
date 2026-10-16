@@ -215,7 +215,11 @@ model User {
   passwordHash        String    @map("password_hash")
   role                UserRole
   displayName         String?   @map("display_name")
+  /// Polymorphic reference: points at a Hospital, Pharmacy or Insurer id depending on
+  /// organizationType, so no FK is possible. Validated in identity (auth/staff services)
+  /// when staff accounts are created or linked to an organization.
   organizationId      String?   @map("organization_id") @db.Uuid
+  /// Discriminator for organizationId ("hospital" | "pharmacy" | "insurer" | "none").
   organizationType    String?   @map("organization_type")
   isActive            Boolean   @default(true) @map("is_active")
   twoFactorEnabled    Boolean   @default(false) @map("two_factor_enabled")
@@ -233,6 +237,11 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   clinicalSafetyActions AiPendingClinicalAction[] @relation("ClinicalSafetyDoctor")
+  recordedMedicalRecords MedicalRecord[] @relation("MedicalRecordRecorder")
+  recordedVisits      Visit[]        @relation("VisitRecorder")
+  grantedAccessGrants AccessGrant[]  @relation("AccessGrantGrantor")
+  visitDrafts         VisitDraft[]
+  patientPreference   PatientPreference?
 
   @@map("users")
 }
@@ -293,6 +302,8 @@ model Patient {
   qrCodeHash            String?  @map("qr_code_hash")
   qrVersion             Int      @default(0) @map("qr_version")
   qrUpdatedAt           DateTime? @map("qr_updated_at")
+  qrPrevCodeHash        String?  @map("qr_prev_code_hash")
+  qrPrevUpdatedAt       DateTime? @map("qr_prev_updated_at")
   isActive              Boolean  @default(true) @map("is_active")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
@@ -313,6 +324,9 @@ model Patient {
   emergencyContacts     EmergencyContact[]
   deletionRequests      DataDeletionRequest[]
   aiPendingClinicalActions AiPendingClinicalAction[]
+  adherenceSnapshots    PatientAdherenceSnapshot[]
+  visitDrafts           VisitDraft[]
+  qrAccessRequests      QrAccessRequest[]
 
   @@map("patients")
 }
@@ -347,6 +361,7 @@ model Hospital {
   notifications      HospitalNotification[]
   subscriptions      HospitalSubscription[]
   aiPendingClinicalActions AiPendingClinicalAction[]
+  visitDrafts        VisitDraft[]
 
   @@map("hospitals")
 }
@@ -387,6 +402,7 @@ model Pharmacy {
   interactionOverrides InteractionOverride[]
   invoices             PharmacyInvoice[]
   disputes             Dispute[]
+  adherenceSnapshots   PatientAdherenceSnapshot[]
 
   @@map("pharmacies")
 }
@@ -466,12 +482,13 @@ model MedicalRecord {
   hospitalId String?    @map("hospital_id") @db.Uuid
   recordType RecordType @map("record_type")
   data       Json
-  recordedBy String     @map("recorded_by") @db.Uuid
+  recordedBy String?    @map("recorded_by") @db.Uuid
   recordedAt DateTime   @default(now()) @map("recorded_at")
   isActive   Boolean    @default(true) @map("is_active")
   createdAt  DateTime   @default(now()) @map("created_at")
   updatedAt  DateTime   @updatedAt @map("updated_at")
   patient    Patient    @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  recorder   User?      @relation("MedicalRecordRecorder", fields: [recordedBy], references: [id], onDelete: SetNull)
 
   @@index([patientId, recordType])
   @@map("medical_records")
@@ -491,13 +508,14 @@ model Visit {
   chiefComplaint String?     @map("chief_complaint")
   diagnosisCodes String[]    @map("diagnosis_codes")
   notes          String?
-  recordedBy     String      @map("recorded_by") @db.Uuid
+  recordedBy     String?     @map("recorded_by") @db.Uuid
   assignedStaffId String?    @map("assigned_staff_id") @db.Uuid
   status         VisitStatus @default(waiting)
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
   patient        Patient     @relation(fields: [patientId], references: [id], onDelete: Restrict)
   hospital       Hospital    @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  recorder       User?       @relation("VisitRecorder", fields: [recordedBy], references: [id], onDelete: SetNull)
   prescriptions  Prescription[]
   labOrders      LabOrder[]
   referrals      Referral[]
@@ -702,6 +720,8 @@ model PatientAdherenceSnapshot {
   overallRate  Decimal  @map("overall_rate") @db.Decimal(5, 2)
   medications  Json
   calculatedAt DateTime @default(now()) @map("calculated_at")
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  pharmacy     Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
 
   @@unique([patientId, pharmacyId])
   @@map("patient_adherence_snapshots")
@@ -805,10 +825,14 @@ model InsurerContract {
 model AccessGrant {
   id             String      @id @default(uuid()) @db.Uuid
   patientId      String      @map("patient_id") @db.Uuid
+  /// Discriminator for granteeId ("hospital" | "pharmacy" | "doctor").
   granteeType    GranteeType @map("grantee_type")
+  /// Polymorphic reference: a Hospital, Pharmacy or User (doctor) id depending on
+  /// granteeType, so no FK is possible. Validated by the grant/scan services when
+  /// a grant is created or exercised.
   granteeId      String      @map("grantee_id") @db.Uuid
   scope          AccessScope @default(full)
-  grantedBy      String      @map("granted_by") @db.Uuid
+  grantedBy      String?     @map("granted_by") @db.Uuid
   grantedAt      DateTime    @default(now()) @map("granted_at")
   expiresAt      DateTime    @map("expires_at")
   isActive       Boolean     @default(true) @map("is_active")
@@ -816,6 +840,7 @@ model AccessGrant {
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
   patient        Patient     @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  grantor        User?       @relation("AccessGrantGrantor", fields: [grantedBy], references: [id], onDelete: SetNull)
   accessLogs     AccessLog[]
 
   @@map("access_grants")
@@ -880,6 +905,9 @@ model AuditLog {
   action         String
   resourceType   String   @map("resource_type")
   resourceId     String?  @map("resource_id")
+  /// Polymorphic reference: the acting user's organization (Hospital, Pharmacy or
+  /// Insurer id, per User.organizationType), so no FK is possible. Copied from the
+  /// authenticated session by the audit middleware.
   organizationId String?  @map("organization_id") @db.Uuid
   ipAddress      String?  @map("ip_address")
   userAgent      String?  @map("user_agent")
@@ -892,14 +920,38 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model AuditLogArchive {
+  id             String   @id @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  userEmail      String?  @map("user_email")
+  action         String
+  resourceType   String   @map("resource_type")
+  resourceId     String?  @map("resource_id")
+  /// Polymorphic reference, copied verbatim from AuditLog.organizationId.
+  organizationId String?  @map("organization_id") @db.Uuid
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  success        Boolean  @default(true)
+  failureReason  String?  @map("failure_reason")
+  createdAt      DateTime @map("created_at")
+  archivedAt     DateTime @default(now()) @map("archived_at")
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs_archive")
+}
+
 model Invitation {
   id             String    @id @default(uuid()) @db.Uuid
   email          String
   role           String
+  /// Polymorphic reference: a Hospital, Pharmacy or Insurer id depending on the
+  /// invited role, so no FK is possible. Validated by the invitation service when
+  /// the invite is issued and again when it is accepted.
   organizationId String?   @map("organization_id") @db.Uuid
   tokenHash      String    @unique @map("token_hash")
   expiresAt      DateTime  @map("expires_at")
   acceptedAt     DateTime? @map("accepted_at")
+  acceptedUserId String?   @map("accepted_user_id") @db.Uuid
   createdAt      DateTime  @default(now()) @map("created_at")
 
   @@map("invitations")
@@ -932,7 +984,10 @@ model OnboardingRequest {
   reviewedBy       String?          @map("reviewed_by") @db.Uuid
   reviewedAt       DateTime?        @map("reviewed_at")
   rejectReason     String?          @map("reject_reason")
+  /// Polymorphic reference: the Hospital, Pharmacy or Insurer created on approval,
+  /// depending on `type`, so no FK is possible. Set by the onboarding approval flow.
   organizationId   String?          @map("organization_id") @db.Uuid
+  passwordHash     String?          @map("password_hash")
   createdAt        DateTime         @default(now()) @map("created_at")
 
   @@map("onboarding_requests")
@@ -985,6 +1040,71 @@ model PlatformSetting {
   value Json
 
   @@map("platform_settings")
+}
+
+model VisitDraft {
+  id           String   @id @default(uuid()) @db.Uuid
+  hospitalId   String   @map("hospital_id") @db.Uuid
+  doctorUserId String   @map("doctor_user_id") @db.Uuid
+  patientId    String   @map("patient_id") @db.Uuid
+  visitId      String?  @map("visit_id") @db.Uuid
+  status       String   @default("active")
+  data         Json
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  hospital     Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  doctor       User     @relation(fields: [doctorUserId], references: [id], onDelete: Cascade)
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([hospitalId, doctorUserId, patientId])
+  @@map("visit_drafts")
+}
+
+model QrAccessRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  patientId      String    @map("patient_id") @db.Uuid
+  /// Polymorphic reference: the requesting organization's Hospital or Pharmacy id,
+  /// depending on `context`, so no FK is possible. Validated by the scan routes.
+  hospitalId     String    @map("hospital_id") @db.Uuid
+  hospitalName   String    @map("hospital_name")
+  hospitalCode   String    @map("hospital_code")
+  requesterId    String    @map("requester_id") @db.Uuid
+  requesterEmail String    @map("requester_email")
+  requesterName  String    @map("requester_name")
+  /// Discriminator for hospitalId ("hospital" | "pharmacy").
+  context        String
+  status         String    @default("pending")
+  expiresAt      DateTime  @map("expires_at")
+  respondedAt    DateTime? @map("responded_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  patient        Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([status])
+  @@map("qr_access_requests")
+}
+
+model OrgSetting {
+  id    String @id @default(uuid()) @db.Uuid
+  scope String
+  orgId String @map("org_id")
+  data  Json
+
+  @@unique([scope, orgId])
+  @@map("org_settings")
+}
+
+model PatientPreference {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @unique @map("user_id") @db.Uuid
+  biometric     Json?
+  notifications Json?
+  prefs         Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("patient_preferences")
 }
 
 model HourlyMetric {
@@ -1189,6 +1309,8 @@ model ReportSchedule {
   frequency  String
   email      String?
   isActive   Boolean  @default(true) @map("is_active")
+  lastRunAt  DateTime? @map("last_run_at")
+  nextRunAt  DateTime? @map("next_run_at")
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@map("report_schedules")

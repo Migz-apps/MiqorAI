@@ -4,6 +4,7 @@ import { prisma } from "../../shared/lib/prisma.js";
 import { authenticate, requireRoles } from "../../shared/middleware/auth.js";
 import { validateBody } from "../../shared/middleware/errorHandler.js";
 import { assertAccessGrant, logPatientAccess } from "../patient/access.service.js";
+import { requireHospitalPermission } from "../identity/staff-permissions.js";
 import { getAiServiceConfig } from "./ai-service.config.js";
 import {
   checkDoctorAction,
@@ -35,7 +36,9 @@ async function requireHospitalContext(user: TokenPayload) {
 }
 
 async function assertHospitalPatientAccess(hospitalId: string, patientId: string, accessorId: string) {
-  await assertAccessGrant(patientId, "hospital", hospitalId);
+  // AI visit endpoints read the full history (medications, labs, diagnoses),
+  // so they require a full-scope grant.
+  await assertAccessGrant(patientId, "hospital", hospitalId, "summary");
   await logPatientAccess({ patientId, accessorId, action: "view_records" });
 }
 
@@ -86,7 +89,7 @@ router.get("/health", async (_req, res) => {
   });
 });
 
-router.post("/relevant-history", validateBody(relevantHistorySchema), async (req, res, next) => {
+router.post("/relevant-history", requireHospitalPermission("visits"), validateBody(relevantHistorySchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const { patientId, visitContext } = req.body;
@@ -104,7 +107,7 @@ router.post("/relevant-history", validateBody(relevantHistorySchema), async (req
   }
 });
 
-router.post("/check-action", validateBody(checkActionSchema), async (req, res, next) => {
+router.post("/check-action", requireHospitalPermission("visits"), validateBody(checkActionSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const { patientId, visitId, action, visitContext } = req.body;
@@ -124,7 +127,7 @@ router.post("/check-action", validateBody(checkActionSchema), async (req, res, n
   }
 });
 
-router.post("/override", validateBody(overrideSchema), async (req, res, next) => {
+router.post("/override", requireHospitalPermission("visits"), validateBody(overrideSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const body = req.body;

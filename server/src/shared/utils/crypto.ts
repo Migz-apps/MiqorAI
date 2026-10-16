@@ -17,8 +17,11 @@ export function signAccessToken(payload: TokenPayload): string {
 }
 
 export function signRefreshToken(userId: string): string {
+  // A unique jti keeps every refresh token distinct: rotation would otherwise
+  // reissue a byte-identical (already revoked) token within the same second.
   return jwt.sign({ sub: userId, type: "refresh" }, config.jwtRefreshSecret, {
     expiresIn: config.jwtRefreshExpires as SignOptions["expiresIn"],
+    jwtid: crypto.randomUUID(),
   });
 }
 

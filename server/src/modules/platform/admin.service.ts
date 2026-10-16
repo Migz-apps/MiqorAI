@@ -3,11 +3,11 @@ import { prisma } from "../../shared/lib/prisma.js";
 import { config } from "../../config.js";
 import { hashPassword, hashToken, randomToken } from "../../shared/utils/crypto.js";
 import { saveExportFile } from "../../shared/services/file.service.js";
-import { sendInvitationEmail } from "../../shared/services/notification.service.js";
+import { sendInvitationEmail, sendOnboardingApprovedEmail, sendOnboardingRejectedEmail } from "../../shared/services/notification.service.js";
 import { writeAuditLog } from "../../shared/services/audit.service.js";
-import { badRequest, notFound } from "../../shared/utils/errors.js";
+import { badRequest, conflict, notFound } from "../../shared/utils/errors.js";
 import { getRedis } from "../../shared/lib/redis.js";
-import { buildPortalUrl } from "../../shared/services/portal-url.service.js";
+import { buildInvitationUrl } from "../identity/invitation.service.js";
 
 export async function getAdminDashboard() {
   const [
@@ -405,7 +405,7 @@ export async function createInvitation(
       expiresAt: new Date(Date.now() + config.invitationExpiryDays * 86400000),
     },
   });
-  const inviteUrl = buildPortalUrl("admin", `/login?invite_token=${token}`);
+  const inviteUrl = await buildInvitationUrl(invitation.organizationId, token);
   await sendInvitationEmail(email, inviteUrl);
   return { invitation_id: invitation.id, invite_url: inviteUrl };
 }
@@ -502,6 +502,7 @@ export async function createOnboardingRequest(data: {
   registration_ref: string;
   location?: string;
   submitted_by_email: string;
+  password?: string;
 }) {
   return prisma.onboardingRequest.create({
     data: {
@@ -510,6 +511,8 @@ export async function createOnboardingRequest(data: {
       registrationRef: data.registration_ref,
       location: data.location,
       submittedByEmail: data.submitted_by_email,
+      // Only the scrypt hash is ever stored; the plaintext is discarded here.
+      passwordHash: data.password ? hashPassword(data.password) : null,
     },
   });
 }
@@ -523,38 +526,172 @@ export async function getNetworkMap() {
   return prisma.networkNode.findMany();
 }
 
+const ONBOARDING_ADMIN_ROLE: Record<OnboardingType, UserRole> = {
+  hospital: UserRole.hospital_admin,
+  pharmacy: UserRole.pharmacy_manager,
+  insurer: UserRole.insurer_admin,
+};
+
+function onboardingOrgCode(registrationRef: string) {
+  return registrationRef.toUpperCase().replace(/\s+/g, "_").slice(0, 32);
+}
+
+async function createOnboardedOrganization(req: {
+  type: OnboardingType;
+  name: string;
+  registrationRef: string;
+  location: string | null;
+  submittedByEmail: string;
+}, reviewerId: string): Promise<string> {
+  const code = onboardingOrgCode(req.registrationRef);
+  const verification = {
+    verified: true,
+    verifiedBy: reviewerId,
+    verifiedAt: new Date(),
+    isActive: true,
+  };
+
+  if (req.type === "hospital") {
+    const dup = await prisma.hospital.findFirst({
+      where: { OR: [{ name: req.name }, { code }, { registrationNumber: req.registrationRef }] },
+    });
+    if (dup) throw conflict("A hospital with this name or code already exists");
+    const hospital = await prisma.hospital.create({
+      data: {
+        code,
+        name: req.name,
+        registrationNumber: req.registrationRef,
+        // Unused by the app, but unique in the schema: derive from the unique code.
+        emailDomain: `${code.toLowerCase()}.miqorai.local`,
+        address: req.location,
+        ...verification,
+      },
+    });
+    return hospital.id;
+  }
+
+  if (req.type === "pharmacy") {
+    const dup = await prisma.pharmacy.findFirst({
+      where: { OR: [{ name: req.name }, { code }, { licenseNumber: req.registrationRef }] },
+    });
+    if (dup) throw conflict("A pharmacy with this name or code already exists");
+    const pharmacy = await prisma.pharmacy.create({
+      data: {
+        code,
+        name: req.name,
+        licenseNumber: req.registrationRef,
+        address: req.location,
+        ...verification,
+      },
+    });
+    return pharmacy.id;
+  }
+
+  const dup = await prisma.insurer.findFirst({
+    where: { OR: [{ name: req.name }, { code }, { registrationNumber: req.registrationRef }] },
+  });
+  if (dup) throw conflict("An insurer with this name or code already exists");
+  const insurer = await prisma.insurer.create({
+    data: {
+      code,
+      name: req.name,
+      registrationNumber: req.registrationRef,
+      address: req.location,
+      isActive: true,
+    },
+  });
+  return insurer.id;
+}
+
+async function createOnboardedAdminUser(
+  req: { type: OnboardingType; submittedByEmail: string; passwordHash: string },
+  organizationId: string,
+) {
+  const email = req.submittedByEmail.toLowerCase();
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) throw conflict("A user with this email already exists");
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      // The hash was produced by the same scrypt util at submission time, so it
+      // is used verbatim as the account's password hash.
+      passwordHash: req.passwordHash,
+      role: ONBOARDING_ADMIN_ROLE[req.type],
+      organizationId,
+      organizationType: req.type,
+    },
+  });
+
+  if (req.type === "hospital") {
+    await prisma.hospitalStaff.create({
+      data: { hospitalId: organizationId, userId: user.id, role: "admin" },
+    });
+  } else if (req.type === "pharmacy") {
+    await prisma.pharmacyStaff.create({
+      data: { pharmacyId: organizationId, userId: user.id, role: "manager" },
+    });
+  } else {
+    await prisma.insurerStaff.create({
+      data: { insurerId: organizationId, userId: user.id, role: "admin" },
+    });
+  }
+
+  return user;
+}
+
 export async function approveOnboardingRequest(id: string, reviewerId: string) {
   const req = await prisma.onboardingRequest.findUnique({ where: { id } });
   if (!req) throw notFound("Onboarding request not found");
+  if (req.status !== "pending") throw badRequest("Onboarding request has already been reviewed");
 
-  if (req.type === "insurer") {
-    const insurer = await prisma.insurer.create({
-      data: {
-        code: req.registrationRef.toUpperCase().replace(/\s/g, "_"),
-        name: req.name,
-        registrationNumber: req.registrationRef,
-        isActive: true,
-      },
-    });
-    await prisma.onboardingRequest.update({
-      where: { id },
-      data: { status: "approved", reviewedBy: reviewerId, reviewedAt: new Date(), organizationId: insurer.id },
-    });
-    return { status: "approved", organization_id: insurer.id };
-  }
+  const organizationId = await createOnboardedOrganization(req, reviewerId);
+  const adminUser = req.passwordHash
+    ? await createOnboardedAdminUser({ type: req.type, submittedByEmail: req.submittedByEmail, passwordHash: req.passwordHash }, organizationId)
+    : null;
 
   await prisma.onboardingRequest.update({
     where: { id },
-    data: { status: "approved", reviewedBy: reviewerId, reviewedAt: new Date() },
+    data: {
+      status: "approved",
+      reviewedBy: reviewerId,
+      reviewedAt: new Date(),
+      organizationId,
+      // The hash has served its purpose (or was absent): never keep it around.
+      passwordHash: null,
+    },
   });
-  return { status: "approved" };
+
+  await prisma.activityFeedEntry.create({
+    data: {
+      kind: "approval",
+      text: `${req.type} onboarding approved: ${req.name}`,
+      actor: "Admin",
+    },
+  });
+
+  await sendOnboardingApprovedEmail(req.submittedByEmail, req.name, req.type, Boolean(adminUser));
+
+  return { status: "approved", organization_id: organizationId, admin_user_id: adminUser?.id ?? null };
 }
 
 export async function rejectOnboardingRequest(id: string, reviewerId: string, reason: string) {
+  const req = await prisma.onboardingRequest.findUnique({ where: { id } });
+  if (!req) throw notFound("Onboarding request not found");
+
   await prisma.onboardingRequest.update({
     where: { id },
-    data: { status: "rejected", reviewedBy: reviewerId, reviewedAt: new Date(), rejectReason: reason },
+    data: {
+      status: "rejected",
+      reviewedBy: reviewerId,
+      reviewedAt: new Date(),
+      rejectReason: reason,
+      passwordHash: null,
+    },
   });
+
+  await sendOnboardingRejectedEmail(req.submittedByEmail, req.name, reason);
+
   return { status: "rejected" };
 }
 

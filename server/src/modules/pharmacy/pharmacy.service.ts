@@ -8,8 +8,9 @@ import type { Request } from "express";
 import { prisma } from "../../shared/lib/prisma.js";
 import { publishEvent } from "../../shared/events.js";
 import { writeAuditLog } from "../../shared/services/audit.service.js";
-import { logPatientAccess } from "../patient/access.service.js";
+import { assertAccessGrant, logPatientAccess } from "../patient/access.service.js";
 import { resolveQrScan, touchPatientData } from "../patient/qr.service.js";
+import { allergyLabel, diagnosisName } from "../clinical/medical-record-payload.js";
 import { badRequest, forbidden, notFound } from "../../shared/utils/errors.js";
 import { sendSms } from "../../shared/services/sms.service.js";
 import { sendEmail } from "../../shared/services/notification.service.js";
@@ -763,29 +764,18 @@ export async function getPharmacyPatient(pharmacyId: string, patientId: string) 
   if (!patient || !patient.isActive) throw notFound("Patient not found");
 
   if (patient.prescriptions.length === 0) {
-    // No prescription relationship with this pharmacy: require an explicit patient grant.
-    const grant = await prisma.accessGrant.findFirst({
-      where: {
-        patientId,
-        granteeType: "pharmacy",
-        granteeId: pharmacyId,
-        isActive: true,
-        expiresAt: { gt: new Date() },
-      },
-    });
-    if (!grant) throw forbidden("No access to this patient");
+    // No prescription relationship with this pharmacy: require an explicit
+    // patient grant covering medications.
+    await assertAccessGrant(patientId, "pharmacy", pharmacyId, "medications");
   }
 
   const allergies = patient.medicalRecords
     .filter((record) => record.recordType === "allergy")
-    .map((record) => {
-      const data = record.data as { name?: string; severity?: string };
-      return data.severity ? `${data.name ?? "Allergy"} (${data.severity})` : String(data.name ?? "Allergy");
-    });
+    .map((record) => allergyLabel(record.data));
 
   const conditions = patient.medicalRecords
     .filter((record) => record.recordType === "diagnosis")
-    .map((record) => String((record.data as { name?: string }).name ?? "Condition"));
+    .map((record) => diagnosisName(record.data));
 
   return {
     id: patient.id,

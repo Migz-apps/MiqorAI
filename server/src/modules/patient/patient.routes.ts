@@ -3,6 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../shared/lib/prisma.js";
 import { disableTwoFactor } from "../identity/twofa.service.js";
+import { revokeAllUserSessions } from "../identity/auth.service.js";
 import { authenticate, requireRoles } from "../../shared/middleware/auth.js";
 import { validateBody } from "../../shared/middleware/errorHandler.js";
 import { saveExportFile } from "../../shared/services/file.service.js";
@@ -623,10 +624,10 @@ router.put("/settings", validateBody(settingsSchema), async (req, res, next) => 
     }
 
     if (body.biometric_enabled !== undefined) {
-      await prisma.platformSetting.upsert({
-        where: { key: `patient_biometric:${patient.userId}` },
-        create: { key: `patient_biometric:${patient.userId}`, value: { enabled: body.biometric_enabled } },
-        update: { value: { enabled: body.biometric_enabled } },
+      await prisma.patientPreference.upsert({
+        where: { userId: patient.userId },
+        create: { userId: patient.userId, biometric: { enabled: body.biometric_enabled } },
+        update: { biometric: { enabled: body.biometric_enabled } },
       });
     }
 
@@ -640,27 +641,20 @@ router.put("/settings", validateBody(settingsSchema), async (req, res, next) => 
     }
 
     if (body.notifications) {
-      await prisma.platformSetting.upsert({
-        where: { key: `patient_notifications:${patient.userId}` },
-        create: { key: `patient_notifications:${patient.userId}`, value: body.notifications },
-        update: { value: body.notifications },
+      await prisma.patientPreference.upsert({
+        where: { userId: patient.userId },
+        create: { userId: patient.userId, notifications: body.notifications },
+        update: { notifications: body.notifications },
       });
     }
 
-    const notifications = body.notifications
-      ? body.notifications
-      : (
-          await prisma.platformSetting.findUnique({
-            where: { key: `patient_notifications:${patient.userId}` },
-          })
-        )?.value ?? {};
-
-    const biometricRow = await prisma.platformSetting.findUnique({
-      where: { key: `patient_biometric:${patient.userId}` },
+    const prefRow = await prisma.patientPreference.findUnique({
+      where: { userId: patient.userId },
     });
+    const notifications = body.notifications ? body.notifications : prefRow?.notifications ?? {};
     const biometricEnabled =
       body.biometric_enabled ??
-      ((biometricRow?.value as { enabled?: boolean } | null)?.enabled ?? false);
+      ((prefRow?.biometric as { enabled?: boolean } | null)?.enabled ?? false);
 
     res.json({
       ...(await getPatientSettings(req.user!.sub)),
@@ -732,6 +726,7 @@ router.delete("/account", validateBody(deleteAccountSchema), async (req, res, ne
         data: { isActive: false },
       }),
     ]);
+    await revokeAllUserSessions(patient.userId);
 
     res.status(204).send();
   } catch (err) {

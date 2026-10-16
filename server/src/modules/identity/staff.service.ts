@@ -1,4 +1,5 @@
 import { PharmacyStaffRole, InsurerStaffRole, UserRole } from "@prisma/client";
+import { revokeAllUserSessions } from "./auth.service.js";
 import { prisma } from "../../shared/lib/prisma.js";
 import { hashPassword, hashToken, randomToken } from "../../shared/utils/crypto.js";
 import { badRequest, notFound } from "../../shared/utils/errors.js";
@@ -35,7 +36,7 @@ export async function invitePharmacyStaff(
       expiresAt: new Date(Date.now() + config.invitationExpiryDays * 86400000),
     },
   });
-  await sendInvitationEmail(input.email, buildPortalUrl("pharmacy", `/login?invite_token=${token}`));
+  await sendInvitationEmail(input.email, buildPortalUrl("pharmacy", `/accept-invite?invite_token=${token}`));
   return { invitation_sent: true };
 }
 
@@ -45,6 +46,7 @@ export async function deactivatePharmacyStaff(pharmacyId: string, userId: string
     data: { isActive: false },
   });
   await prisma.user.updateMany({ where: { id: userId }, data: { isActive: false } });
+  await revokeAllUserSessions(userId);
 }
 
 export async function updatePharmacyStaffRole(pharmacyId: string, userId: string, role: PharmacyStaffRole) {
@@ -82,7 +84,7 @@ export async function inviteInsurerStaff(
       expiresAt: new Date(Date.now() + config.invitationExpiryDays * 86400000),
     },
   });
-  await sendInvitationEmail(input.email, buildPortalUrl("insurance", `/login?invite_token=${token}`));
+  await sendInvitationEmail(input.email, buildPortalUrl("insurance", `/accept-invite?invite_token=${token}`));
   return { invitation_sent: true };
 }
 
@@ -92,6 +94,7 @@ export async function deactivateInsurerStaff(insurerId: string, userId: string) 
     data: { isActive: false },
   });
   await prisma.user.updateMany({ where: { id: userId }, data: { isActive: false } });
+  await revokeAllUserSessions(userId);
 }
 
 export async function updateInsurerStaffRole(insurerId: string, userId: string, role: InsurerStaffRole) {

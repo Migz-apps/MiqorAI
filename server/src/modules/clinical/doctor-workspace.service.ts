@@ -1,4 +1,4 @@
-import { Prisma, RecordType, VisitStatus, type PlatformSetting } from "@prisma/client";
+import { Prisma, RecordType, VisitStatus, type VisitDraft } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { prisma } from "../../shared/lib/prisma.js";
 import { badRequest, forbidden, notFound } from "../../shared/utils/errors.js";
@@ -54,16 +54,6 @@ type StoredDoctorVisitDraft = {
   updated_at: string;
   draft: DoctorVisitDraftInput;
 };
-
-function draftKey(hospitalId: string, doctorId: string, patientId: string, draftId: string) {
-  return `doctor_visit_draft:${hospitalId}:${doctorId}:${patientId}:${draftId}`;
-}
-
-function draftPrefix(hospitalId: string, doctorId: string, patientId?: string) {
-  return patientId
-    ? `doctor_visit_draft:${hospitalId}:${doctorId}:${patientId}:`
-    : `doctor_visit_draft:${hospitalId}:${doctorId}:`;
-}
 
 function sanitizeText(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -129,26 +119,17 @@ function sanitizeDraft(value: unknown): DoctorVisitDraftInput {
   };
 }
 
-function parseDraftRow(row: PlatformSetting): StoredDoctorVisitDraft | null {
-  const raw = row.value as Record<string, unknown>;
-  if (!raw || typeof raw !== "object") return null;
-
-  const id = sanitizeText(raw.id).trim();
-  const patientId = sanitizeText(raw.patient_id).trim();
-  const doctorId = sanitizeText(raw.doctor_id).trim();
-  const hospitalId = sanitizeText(raw.hospital_id).trim();
-  if (!id || !patientId || !doctorId || !hospitalId) return null;
-
+function parseDraftRow(row: VisitDraft): StoredDoctorVisitDraft {
   return {
-    id,
-    patient_id: patientId,
-    doctor_id: doctorId,
-    hospital_id: hospitalId,
-    visit_id: sanitizeText(raw.visit_id).trim() || null,
-    status: raw.status === "completed" ? "completed" : "active",
-    created_at: sanitizeText(raw.created_at) || new Date().toISOString(),
-    updated_at: sanitizeText(raw.updated_at) || new Date().toISOString(),
-    draft: sanitizeDraft(raw.draft),
+    id: row.id,
+    patient_id: row.patientId,
+    doctor_id: row.doctorUserId,
+    hospital_id: row.hospitalId,
+    visit_id: row.visitId,
+    status: row.status === "completed" ? "completed" : "active",
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
+    draft: sanitizeDraft(row.data),
   };
 }
 
@@ -206,12 +187,11 @@ async function getStoredDraft(
   patientId: string,
   draftId: string,
 ) {
-  const row = await prisma.platformSetting.findUnique({
-    where: { key: draftKey(hospitalId, doctorId, patientId, draftId) },
+  const row = await prisma.visitDraft.findFirst({
+    where: { id: draftId, hospitalId, doctorUserId: doctorId, patientId },
   });
-  const draft = row ? parseDraftRow(row) : null;
-  if (!draft) throw notFound("Draft visit not found");
-  return draft;
+  if (!row) throw notFound("Draft visit not found");
+  return parseDraftRow(row);
 }
 
 function parseNumber(value: string) {
@@ -360,9 +340,9 @@ export async function getDoctorPatientWorkspace(
   patientId: string,
 ) {
   const [draftRows, prescriptions, openVisit] = await Promise.all([
-    prisma.platformSetting.findMany({
-      where: { key: { startsWith: draftPrefix(hospitalId, doctorId, patientId) } },
-      orderBy: { key: "asc" },
+    prisma.visitDraft.findMany({
+      where: { hospitalId, doctorUserId: doctorId, patientId },
+      orderBy: { updatedAt: "desc" },
     }),
     prisma.prescription.findMany({
       where: { hospitalId, patientId, prescribedBy: doctorId },
@@ -375,7 +355,7 @@ export async function getDoctorPatientWorkspace(
 
   const activeDrafts = draftRows
     .map(parseDraftRow)
-    .filter((draft): draft is StoredDoctorVisitDraft => Boolean(draft && draft.status === "active"))
+    .filter((draft) => draft.status === "active")
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 
   return {
@@ -408,9 +388,11 @@ export async function getDoctorPatientCensusMeta(
       include: { items: true },
       orderBy: { prescribedAt: "desc" },
     }),
-    prisma.platformSetting.findMany({
+    prisma.visitDraft.findMany({
       where: {
-        key: { startsWith: draftPrefix(hospitalId, doctorId) },
+        hospitalId,
+        doctorUserId: doctorId,
+        patientId: { in: patientIds },
       },
     }),
     prisma.visit.findMany({
@@ -453,7 +435,7 @@ export async function getDoctorPatientCensusMeta(
   const draftByPatientId = new Map<string, { updated_at: string; draft_id: string }>();
   for (const row of draftRows) {
     const draft = parseDraftRow(row);
-    if (!draft || draft.status !== "active" || !patientIds.includes(draft.patient_id)) continue;
+    if (draft.status !== "active") continue;
     const current = draftByPatientId.get(draft.patient_id);
     if (!current || draft.updated_at > current.updated_at) {
       draftByPatientId.set(draft.patient_id, {
@@ -491,8 +473,8 @@ export async function saveDoctorVisitDraft(opts: {
 
   const draftId = opts.draftId || randomUUID();
   const existing = opts.draftId
-    ? await prisma.platformSetting.findUnique({
-        where: { key: draftKey(opts.hospitalId, opts.doctorId, opts.patientId, opts.draftId) },
+    ? await prisma.visitDraft.findFirst({
+        where: { id: opts.draftId, hospitalId: opts.hospitalId, doctorUserId: opts.doctorId, patientId: opts.patientId },
       })
     : null;
   const existingDraft = existing ? parseDraftRow(existing) : null;
@@ -506,30 +488,28 @@ export async function saveDoctorVisitDraft(opts: {
       })
     : await findOpenVisitForDoctor(opts.hospitalId, opts.doctorId, opts.patientId);
 
-  const stored: StoredDoctorVisitDraft = {
-    id: draftId,
-    patient_id: opts.patientId,
-    doctor_id: opts.doctorId,
-    hospital_id: opts.hospitalId,
-    visit_id: linkedVisit?.id ?? existingDraft?.visit_id ?? null,
-    status: "active",
-    created_at: existingDraft?.created_at ?? new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    draft: sanitized,
-  };
+  const visitId = linkedVisit?.id ?? existingDraft?.visit_id ?? null;
+  const row = existing
+    ? await prisma.visitDraft.update({
+        where: { id: draftId },
+        data: {
+          visitId,
+          data: sanitized as unknown as Prisma.InputJsonValue,
+        },
+      })
+    : await prisma.visitDraft.create({
+        data: {
+          id: draftId,
+          hospitalId: opts.hospitalId,
+          doctorUserId: opts.doctorId,
+          patientId: opts.patientId,
+          visitId,
+          status: "active",
+          data: sanitized as unknown as Prisma.InputJsonValue,
+        },
+      });
 
-  await prisma.platformSetting.upsert({
-    where: { key: draftKey(opts.hospitalId, opts.doctorId, opts.patientId, draftId) },
-    create: {
-      key: draftKey(opts.hospitalId, opts.doctorId, opts.patientId, draftId),
-      value: stored as Prisma.InputJsonValue,
-    },
-    update: {
-      value: stored as Prisma.InputJsonValue,
-    },
-  });
-
-  const [enriched] = await enrichDrafts([stored]);
+  const [enriched] = await enrichDrafts([parseDraftRow(row)]);
   return enriched;
 }
 
@@ -541,8 +521,8 @@ export async function deleteDoctorVisitDraft(opts: {
 }) {
   await getStoredDraft(opts.hospitalId, opts.doctorId, opts.patientId, opts.draftId);
 
-  await prisma.platformSetting.delete({
-    where: { key: draftKey(opts.hospitalId, opts.doctorId, opts.patientId, opts.draftId) },
+  await prisma.visitDraft.delete({
+    where: { id: opts.draftId },
   });
 
   return { deleted: true };
@@ -701,8 +681,8 @@ export async function completeDoctorVisitDraft(opts: {
     createdLabs.push(await createLabOrder(opts.hospitalId, opts.doctorId, body));
   }
 
-  await prisma.platformSetting.delete({
-    where: { key: draftKey(opts.hospitalId, opts.doctorId, opts.patientId, opts.draftId) },
+  await prisma.visitDraft.delete({
+    where: { id: opts.draftId },
   });
 
   await touchPatientData(opts.patientId);

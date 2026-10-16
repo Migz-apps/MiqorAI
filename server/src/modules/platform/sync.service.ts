@@ -2,6 +2,7 @@ import { Prisma, SyncOperation, SyncStatus, VisitStatus } from "@prisma/client";
 import { prisma } from "../../shared/lib/prisma.js";
 import { AppError, badRequest, notFound } from "../../shared/utils/errors.js";
 import { touchPatientData } from "../patient/qr.service.js";
+import { logger } from "../../shared/lib/logger.js";
 
 const MAX_RETRIES = 3;
 
@@ -212,10 +213,45 @@ export async function pushSyncBatch(
 
 export async function archiveOldAuditLogs(days: number): Promise<number> {
   const cutoff = new Date(Date.now() - days * 86400000);
-  const result = await prisma.auditLog.deleteMany({
-    where: { createdAt: { lt: cutoff } },
-  });
-  return result.count;
+  const batchSize = 1000;
+  let archived = 0;
+
+  // Copy-then-delete in bounded batches so a crash never loses rows that were
+  // not archived first, and a large backlog never runs in one huge transaction.
+  for (;;) {
+    const batch = await prisma.auditLog.findMany({
+      where: { createdAt: { lt: cutoff } },
+      orderBy: { createdAt: "asc" },
+      take: batchSize,
+    });
+    if (batch.length === 0) break;
+
+    const [copied, deleted] = await prisma.$transaction([
+      prisma.auditLogArchive.createMany({
+        data: batch.map((row) => ({
+          id: row.id,
+          userId: row.userId,
+          userEmail: row.userEmail,
+          action: row.action,
+          resourceType: row.resourceType,
+          resourceId: row.resourceId,
+          organizationId: row.organizationId,
+          ipAddress: row.ipAddress,
+          userAgent: row.userAgent,
+          success: row.success,
+          failureReason: row.failureReason,
+          createdAt: row.createdAt,
+        })),
+        skipDuplicates: true,
+      }),
+      prisma.auditLog.deleteMany({ where: { id: { in: batch.map((row) => row.id) } } }),
+    ]);
+    archived += deleted.count;
+    logger.info(`Audit log archive batch: copied ${copied.count}, deleted ${deleted.count}`);
+    if (batch.length < batchSize) break;
+  }
+
+  return archived;
 }
 
 export async function deleteSyncQueueItem(itemId: string, userId: string) {

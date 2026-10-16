@@ -3,6 +3,8 @@ import { notFound } from "../../shared/utils/errors.js";
 import { saveExportFile } from "../../shared/services/file.service.js";
 import { generatePdfReport, toCsv } from "../../shared/services/report.service.js";
 
+import { allergyLabel, diagnosisName } from "../clinical/medical-record-payload.js";
+
 export async function listPharmacyPatients(pharmacyId: string) {
   const dispensed = await prisma.prescription.findMany({
     where: { pharmacyId, status: "dispensed" },
@@ -40,13 +42,11 @@ export async function listPharmacyPatients(pharmacyId: string) {
 
   for (const record of records) {
     const entry = recordsByPatient.get(record.patientId) ?? { allergies: [], conditions: [] };
-    const data = (record.data ?? {}) as { name?: string; severity?: string };
     if (record.recordType === "allergy") {
-      const label = data.severity ? `${data.name ?? "Allergy"} (${data.severity})` : (data.name ?? "Allergy");
-      entry.allergies.push(String(label));
+      entry.allergies.push(allergyLabel(record.data));
     }
     if (record.recordType === "diagnosis") {
-      entry.conditions.push(String(data.name ?? "Condition"));
+      entry.conditions.push(diagnosisName(record.data));
     }
     recordsByPatient.set(record.patientId, entry);
   }

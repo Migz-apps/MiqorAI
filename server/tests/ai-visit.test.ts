@@ -5,18 +5,18 @@ import { extractMedicalKeywords } from "../src/modules/clinical/ai-visit.service
 describe("AI visit integration", () => {
   const prevEnabled = process.env.AI_SERVICE_ENABLED;
   const prevMock = process.env.MIQORAI_AI_MOCK;
-  const prevUrl = process.env.AI_SERVICE_URL;
+  const prevUrl = process.env.AI_SERVICE_BASE_URL;
 
   beforeEach(() => {
     process.env.AI_SERVICE_ENABLED = "true";
     process.env.MIQORAI_AI_MOCK = "true";
-    process.env.AI_SERVICE_URL = "";
+    process.env.AI_SERVICE_BASE_URL = "";
   });
 
   afterEach(() => {
     process.env.AI_SERVICE_ENABLED = prevEnabled;
     process.env.MIQORAI_AI_MOCK = prevMock;
-    process.env.AI_SERVICE_URL = prevUrl;
+    process.env.AI_SERVICE_BASE_URL = prevUrl;
   });
 
   it("extractMedicalKeywords pulls clinical terms", () => {

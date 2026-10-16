@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { diagnosisName } from "./medical-record-payload.js";
 import { prisma } from "../../shared/lib/prisma.js";
 import { saveExportFile } from "../../shared/services/file.service.js";
 import { generatePdfReport, toCsv } from "../../shared/services/report.service.js";
@@ -150,7 +151,7 @@ export async function getPatientAiSummary(hospitalId: string, patientId: string)
 
   const conditions = patient.medicalRecords
     .filter((r) => r.recordType === "diagnosis")
-    .map((r) => (r.data as { name?: string }).name ?? "Condition")
+    .map((r) => diagnosisName(r.data))
     .join(", ");
   const meds = patient.prescriptions.flatMap((p) => p.items.map((i) => i.drugName)).join(", ");
 

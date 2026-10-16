@@ -6,6 +6,7 @@ import {
   authed,
   getContext,
 } from "./helpers/context.js";
+import { prisma } from "../src/shared/lib/prisma.js";
 
 describe("Hospital endpoints", () => {
   let newVisitId = "";
@@ -237,12 +238,21 @@ describe("Hospital endpoints", () => {
   });
 
   it("POST /api/hospital/staff/invite", async () => {
-    const res = await authed("hospital").post("/api/hospital/staff/invite").send({
+    const res = await authed("hospitalAdmin").post("/api/hospital/staff/invite").send({
       email: `hospital.staff.${Date.now()}@example.com`,
       role: "nurse",
       department: "Emergency",
     });
     expect([200, 201]).toContain(res.status);
+  });
+
+  it("POST /api/hospital/staff/invite is forbidden for doctors", async () => {
+    const res = await authed("hospital").post("/api/hospital/staff/invite").send({
+      email: `hospital.staff.${Date.now()}@example.com`,
+      role: "nurse",
+      department: "Emergency",
+    });
+    expect(res.status).toBe(403);
   });
 
   it("GET /api/hospital/departments", async () => {
@@ -356,8 +366,15 @@ describe("Hospital endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("PUT /api/hospital/settings", async () => {
+  it("PUT /api/hospital/settings is forbidden for clinical staff", async () => {
     const res = await authed("hospital").put("/api/hospital/settings").send({
+      notifications_enabled: true,
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("PUT /api/hospital/settings succeeds for hospital admin", async () => {
+    const res = await authed("hospitalAdmin").put("/api/hospital/settings").send({
       notifications_enabled: true,
     });
     expect(res.status).toBe(200);
@@ -377,6 +394,38 @@ describe("Hospital endpoints", () => {
       gender: "F",
     });
     expect([200, 201]).toContain(res.status);
+  });
+
+  it("POST /api/hospital/patient/register persists the optional identity fields", async () => {
+    const suffix = Date.now().toString().slice(-7);
+    const res = await authed("hospital").post("/api/hospital/patient/register").send({
+      full_name: "Full Fields Patient",
+      phone: `+2546${suffix}1`,
+      national_id: `NID-${suffix}`,
+      insurance_member_id: `INS-${suffix}`,
+      date_of_birth: "1988-02-20",
+      gender: "M",
+      emergency_contact: {
+        name: "Jane Doe",
+        phone: "+250788111222",
+        relationship: "spouse",
+      },
+    });
+    expect([200, 201]).toContain(res.status);
+
+    const patient = await prisma.patient.findUnique({
+      where: { id: res.body.patient_id },
+      include: { emergencyContacts: true },
+    });
+    expect(patient?.nationalId).toBe(`NID-${suffix}`);
+    expect(patient?.insuranceId).toBe(`INS-${suffix}`);
+    expect(patient?.gender).toBe("M");
+    expect(patient?.emergencyContactName).toBe("Jane Doe");
+    expect(patient?.emergencyContactPhone).toBe("+250788111222");
+    const contact = patient?.emergencyContacts[0];
+    expect(contact?.name).toBe("Jane Doe");
+    expect(contact?.phone).toBe("+250788111222");
+    expect(contact?.relationship).toBe("spouse");
   });
 
   it("DELETE /api/hospital/departments/:id", async () => {

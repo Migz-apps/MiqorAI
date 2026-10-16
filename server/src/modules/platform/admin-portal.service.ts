@@ -199,24 +199,34 @@ export async function getTransactionsLedger(limit = 100) {
 
 export async function submitOnboardingExtended(input: {
   type: OnboardingType;
-  name: string;
-  registration_ref: string;
-  location?: string;
-  submitted_by_email: string;
+  organization_name?: string;
+  name?: string;
+  registration_ref?: string;
+  contact_name?: string;
+  email?: string;
+  submitted_by_email?: string;
   phone?: string;
+  address?: string;
+  location?: string;
   password?: string;
   manager_name?: string;
 }) {
+  const name = (input.organization_name ?? input.name ?? "").trim();
+  const registrationRef =
+    input.registration_ref ??
+    name.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 24);
   const { createOnboardingRequest } = await import("./admin.service.js");
   const row = await createOnboardingRequest({
     type: input.type,
-    name: input.name,
-    registration_ref: input.registration_ref,
-    location: input.location,
-    submitted_by_email: input.submitted_by_email,
+    name,
+    registration_ref: registrationRef,
+    location: input.address ?? input.location,
+    submitted_by_email: (input.email ?? input.submitted_by_email)!,
+    password: input.password,
   });
-  if (input.phone && input.password && input.type === "pharmacy") {
-    await setOrgSettings("onboarding_credentials", row.id, {
+  if (input.contact_name || input.phone || input.manager_name) {
+    await setOrgSettings("onboarding_contact", row.id, {
+      contact_name: input.contact_name,
       phone: input.phone,
       manager_name: input.manager_name,
     });

@@ -1,14 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import {
   app,
   PASSWORD,
   authed,
+  currentQrHash,
   getContext,
 } from "./helpers/context.js";
-import { getTestSixDigitCode } from "../src/shared/utils/one-time-code.js";
+import { lastOneTimeCode } from "./helpers/one-time-codes.js";
 import { prisma } from "../src/shared/lib/prisma.js";
 import { hashPassword } from "../src/shared/utils/crypto.js";
+
+// Records the real (random) codes the app generates so OTP steps can submit them.
+vi.mock("../src/shared/utils/one-time-code.js", async (importOriginal) => {
+  const { recordingOneTimeCodeModule } = await import("./helpers/one-time-codes.js");
+  return recordingOneTimeCodeModule(await importOriginal<typeof import("../src/shared/utils/one-time-code.js")>());
+});
 
 describe("Health", () => {
   it("GET /health", async () => {
@@ -18,7 +25,7 @@ describe("Health", () => {
   });
 
   it("reflects allowed browser origins for CORS preflight and requests", async () => {
-    const origin = "https://portal-check.vercel.app";
+    const origin = "http://localhost:5173";
 
     const preflight = await request(app)
       .options("/api/auth/login")
@@ -37,6 +44,15 @@ describe("Health", () => {
     expect(res.status).toBe(200);
     expect(res.headers["access-control-allow-origin"]).toBe(origin);
     expect(res.headers["access-control-allow-credentials"]).toBe("true");
+  });
+
+  it("rejects origins outside the allowlist", async () => {
+    const res = await request(app)
+      .get("/health")
+      .set("Origin", "https://portal-check.vercel.app");
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("CORS_FORBIDDEN");
   });
 });
 
@@ -100,10 +116,19 @@ describe("Auth endpoints", () => {
     expect(res.status).toBe(401);
   });
 
-  it("POST /api/auth/refresh", async () => {
+  it("POST /api/auth/refresh - rotates the refresh token", async () => {
     const res = await request(app).post("/api/auth/refresh").send({ refresh_token: refreshToken });
     expect(res.status).toBe(200);
     expect(res.body.access_token).toBeTruthy();
+    expect(res.body.refresh_token).toBeTruthy();
+    expect(res.body.refresh_token).not.toBe(refreshToken);
+    expect(String(res.headers["set-cookie"])).toContain("miqorai_refresh");
+
+    // The consumed token is revoked: replaying it must fail.
+    const replay = await request(app).post("/api/auth/refresh").send({ refresh_token: refreshToken });
+    expect(replay.status).toBe(401);
+
+    refreshToken = res.body.refresh_token;
   });
 
   it("GET /api/auth/me", async () => {
@@ -134,7 +159,7 @@ describe("Auth endpoints", () => {
   it("POST /api/auth/forgot-password/verify-otp", async () => {
     const res = await request(app)
       .post("/api/auth/forgot-password/verify-otp")
-      .send({ email: "grace.muthoni@example.com", otp: getTestSixDigitCode() });
+      .send({ email: "grace.muthoni@example.com", otp: lastOneTimeCode() });
     expect(res.status).toBe(200);
     expect(res.body.reset_token).toBeTruthy();
     passwordResetToken = res.body.reset_token;
@@ -179,7 +204,7 @@ describe("Auth endpoints", () => {
   it("POST /api/auth/register/verify-otp - new patient", async () => {
     const res = await request(app).post("/api/auth/register/verify-otp").send({
       email: pendingPatientEmail,
-      otp: getTestSixDigitCode(),
+      otp: lastOneTimeCode(),
     });
     expect(res.status).toBe(200);
     expect(res.body.access_token).toBeTruthy();
@@ -320,10 +345,11 @@ describe("Scan endpoints", () => {
     const c = getContext();
     const res = await authed("hospital").post("/api/scan/qr").send({
       patient_id: c.patientId,
-      hash: c.qrHash,
+      hash: await currentQrHash(),
       context: "hospital",
     });
-    expect([200, 400, 403]).toContain(res.status);
+    expect(res.status).toBe(200);
+    expect(res.body.patient_id).toBe(c.patientId);
   });
 });
 

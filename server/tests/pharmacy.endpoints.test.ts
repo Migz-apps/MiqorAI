@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   authed,
+  currentQrHash,
   getContext,
 } from "./helpers/context.js";
 
@@ -210,9 +211,10 @@ describe("Pharmacy endpoints", () => {
     const c = getContext();
     const res = await authed("pharmacy").post("/api/pharmacy/scan/qr").send({
       patient_id: c.patientId,
-      hash: c.qrHash,
+      hash: await currentQrHash(),
     });
-    expect([200, 400, 403]).toContain(res.status);
+    expect(res.status).toBe(200);
+    expect(res.body.patient_id).toBe(c.patientId);
   });
 
   it("GET /api/pharmacy/staff", async () => {
@@ -220,12 +222,12 @@ describe("Pharmacy endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("POST /api/pharmacy/staff/invite", async () => {
+  it("POST /api/pharmacy/staff/invite is forbidden for pharmacists", async () => {
     const res = await authed("pharmacy").post("/api/pharmacy/staff/invite").send({
       email: `pharm.staff.${Date.now()}@example.com`,
       role: "technician",
     });
-    expect([200, 201]).toContain(res.status);
+    expect(res.status).toBe(403);
   });
 
   it("GET /api/pharmacy/settings", async () => {
@@ -233,11 +235,11 @@ describe("Pharmacy endpoints", () => {
     expect(res.status).toBe(200);
   });
 
-  it("PUT /api/pharmacy/settings", async () => {
+  it("PUT /api/pharmacy/settings is forbidden for pharmacists", async () => {
     const res = await authed("pharmacy").put("/api/pharmacy/settings").send({
       auto_verify: false,
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(403);
   });
 
   it("DELETE /api/pharmacy/inventory/:id", async () => {

@@ -85,13 +85,23 @@ If you do not configure SMS and a production path tries to send SMS, that reques
 
 ## 5. Database and Prisma
 
-Run the schema deployment against your target database:
+The schema is managed with Prisma Migrate (`prisma/migrations/`). Deploy pending migrations against your target database:
 
 ```powershell
 cd server
 npx prisma generate
-npx prisma db push
+npx prisma migrate deploy
 ```
+
+**One-time baseline for existing databases:** a database that was previously created with `prisma db push` already contains the schema of the initial migration. Mark it as applied once, before the first `migrate deploy`:
+
+```powershell
+npx prisma migrate resolve --applied 0_init
+```
+
+A brand-new, empty database needs no baseline — `migrate deploy` applies `0_init` and every later migration itself.
+
+For quick local prototyping without migration history, `npm run db:push` (`prisma db push`) still works, but production deploys (`start:render`, Render `preDeployCommand`) use `prisma migrate deploy`.
 
 If you want the existing demo and integration data:
 

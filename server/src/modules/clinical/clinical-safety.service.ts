@@ -11,9 +11,11 @@ import { publishEvent } from "../../shared/events.js";
 import { logger } from "../../shared/lib/logger.js";
 import { auditFromRequest, writeAuditLog } from "../../shared/services/audit.service.js";
 import {
+  CLINICAL_SAFETY_UNAVAILABLE_FALLBACK,
   checkClinicalSafety,
   isAiClinicalSafetyConfigured,
 } from "./ai-clinical-safety.client.js";
+import { config } from "../../config.js";
 import {
   createLabOrder,
   createPrescriptionOrder,
@@ -312,7 +314,9 @@ export async function gateClinicalSafetyOrder(
   | { allowed: true; aiResponse: ClinicalSafetyResponse | null }
   | { allowed: false; response: ClinicalSafetyBlockedResponse }
 > {
-  if (!isAiClinicalSafetyConfigured()) {
+  const aiConfigured = isAiClinicalSafetyConfigured();
+  if (!aiConfigured && !config.clinicalSafetyRequired) {
+    // Fail-open default: without a configured safety service, orders proceed.
     return { allowed: true, aiResponse: null };
   }
 
@@ -330,7 +334,12 @@ export async function gateClinicalSafetyOrder(
     ctx.currentComplaint,
   );
 
-  const aiResponse = await checkClinicalSafety(safetyRequest);
+  // CLINICAL_SAFETY_REQUIRED=true fails closed: an unconfigured or disabled
+  // safety service is treated exactly like an unreachable one, so the order is
+  // blocked as a pending action instead of being allowed through.
+  const aiResponse = aiConfigured
+    ? await checkClinicalSafety(safetyRequest)
+    : { ...CLINICAL_SAFETY_UNAVAILABLE_FALLBACK };
 
   if (!aiResponse.intervention_required) {
     await logClinicalSafetyDecision({
@@ -416,7 +425,12 @@ export async function overridePendingClinicalAction(
   };
 
   // Consent may have been revoked since the action was queued — re-check before executing.
-  await assertAccessGrant(pending.patientId, "hospital", pending.hospitalId);
+  await assertAccessGrant(
+    pending.patientId,
+    "hospital",
+    pending.hospitalId,
+    pending.actionType === ClinicalSafetyActionType.test_order ? "lab_results" : "medications",
+  );
 
   // Claim the pending action atomically BEFORE executing so a double-submit
   // cannot create duplicate orders; revert the claim if execution fails.

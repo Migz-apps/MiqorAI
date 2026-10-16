@@ -3,12 +3,22 @@ import QRCode from "qrcode";
 import { config } from "../../config.js";
 import { prisma } from "../../shared/lib/prisma.js";
 import { logger } from "../../shared/lib/logger.js";
-import { notFound } from "../../shared/utils/errors.js";
+import { AppError, notFound } from "../../shared/utils/errors.js";
 
 /**
- * QR codes auto-regenerate whenever patient clinical data changes
- * or when the current code exceeds QR_REFRESH_SECONDS age.
+ * Rotating patient QR codes.
+ *
+ * A code is valid for QR_TTL_SECONDS from the moment it was generated, plus a
+ * fixed clock-skew grace. Rotation is deliberate: it only happens when the
+ * patient fetches their QR and the current code is past its TTL (or on explicit
+ * regeneration, e.g. at registration). To avoid rejecting a code that was on
+ * screen moments before a rotation, the immediately-previous hash stays
+ * accepted until its own validity window ends.
  */
+
+/** Extra seconds accepted past the TTL to absorb clock skew and scan latency. */
+const QR_GRACE_SECONDS = 90;
+
 export async function regeneratePatientQr(patientId: string): Promise<void> {
   const patient = await prisma.patient.findUnique({ where: { id: patientId } });
   if (!patient) throw notFound("Patient not found");
@@ -23,19 +33,72 @@ export async function regeneratePatientQr(patientId: string): Promise<void> {
       qrCodeHash: hash,
       qrVersion: version,
       qrUpdatedAt: new Date(),
+      // Keep the outgoing code so in-flight scans still resolve.
+      qrPrevCodeHash: patient.qrCodeHash,
+      qrPrevUpdatedAt: patient.qrUpdatedAt,
     },
   });
 
-  logger.debug("QR auto-regenerated", { patientId, version });
+  logger.debug("QR regenerated", { patientId, version });
 }
 
 export function buildQrPayload(patientId: string, hash: string): string {
   return `miqorai://patient/${patientId}?v=${hash}`;
 }
 
+/**
+ * Past half its TTL: the patient's next fetch mints a fresh code, so a code on
+ * screen always has at least half the validity window left. Clients refresh at
+ * TTL/2 intervals, which keeps the displayed code perpetually valid.
+ */
 function isQrStale(updatedAt: Date | null): boolean {
   if (!updatedAt) return true;
-  return Date.now() - updatedAt.getTime() > config.qrRefreshSeconds * 1000;
+  return Date.now() - updatedAt.getTime() > (config.qrTtlSeconds * 1000) / 2;
+}
+
+/** Scans stay valid for the TTL plus the clock-skew grace. */
+function qrValidUntil(updatedAt: Date | null): number {
+  if (!updatedAt) return 0;
+  return updatedAt.getTime() + (config.qrTtlSeconds + QR_GRACE_SECONDS) * 1000;
+}
+
+type QrPatientFields = {
+  qrCodeHash: string | null;
+  qrUpdatedAt: Date | null;
+  qrPrevCodeHash: string | null;
+  qrPrevUpdatedAt: Date | null;
+};
+
+type QrMatch = "current" | "previous" | "expired" | "none";
+
+function matchQrHash(patient: QrPatientFields, hash: string): QrMatch {
+  const now = Date.now();
+  if (patient.qrCodeHash && hash === patient.qrCodeHash) {
+    return now <= qrValidUntil(patient.qrUpdatedAt) ? "current" : "expired";
+  }
+  if (patient.qrPrevCodeHash && hash === patient.qrPrevCodeHash) {
+    return now <= qrValidUntil(patient.qrPrevUpdatedAt) ? "previous" : "expired";
+  }
+  return "none";
+}
+
+function qrExpired(): AppError {
+  return new AppError(
+    "QR_EXPIRED",
+    "QR code expired — ask the patient to refresh their QR code",
+    410,
+  );
+}
+
+/**
+ * Checks a presented hash against the patient's current and previous codes.
+ * Throws QR_EXPIRED (410) when the hash is recognizable but out of window, and
+ * NOT_FOUND (404) when it never belonged to this patient.
+ */
+function assertQrHashValid(patient: QrPatientFields, hash: string): void {
+  const match = matchQrHash(patient, hash);
+  if (match === "expired") throw qrExpired();
+  if (match === "none") throw notFound("Invalid QR code");
 }
 
 export async function getPatientQrImage(patientId: string): Promise<{
@@ -44,6 +107,8 @@ export async function getPatientQrImage(patientId: string): Promise<{
   hash: string;
   version: number;
   generated_at: string;
+  expires_at: string;
+  ttl_seconds: number;
 }> {
   const patient = await prisma.patient.findUnique({ where: { id: patientId } });
   if (!patient || !patient.isActive) throw notFound("Patient not found");
@@ -57,12 +122,15 @@ export async function getPatientQrImage(patientId: string): Promise<{
 
   const payload = buildQrPayload(patientId, refreshed.qrCodeHash);
   const qr_code = await QRCode.toDataURL(payload);
+  const generatedAt = refreshed.qrUpdatedAt ?? new Date();
   return {
     qr_code,
     patient_id: patientId,
     hash: refreshed.qrCodeHash,
     version: refreshed.qrVersion,
-    generated_at: refreshed.qrUpdatedAt?.toISOString() ?? new Date().toISOString(),
+    generated_at: generatedAt.toISOString(),
+    expires_at: new Date(generatedAt.getTime() + config.qrTtlSeconds * 1000).toISOString(),
+    ttl_seconds: config.qrTtlSeconds,
   };
 }
 
@@ -88,12 +156,7 @@ export async function resolveQrScan(
   });
 
   if (!patient || !patient.isActive) throw notFound("Patient not found");
-  if (!patient.qrCodeHash || patient.qrCodeHash !== hash) {
-    throw notFound("Invalid or expired QR code");
-  }
-  if (isQrStale(patient.qrUpdatedAt)) {
-    throw notFound("QR code expired — patient should refresh their app");
-  }
+  assertQrHashValid(patient, hash);
 
   const allergies = await prisma.medicalRecord.findMany({
     where: { patientId, recordType: "allergy", isActive: true },
@@ -122,34 +185,24 @@ export async function validateQrScan(
       isActive: true,
       qrCodeHash: true,
       qrUpdatedAt: true,
+      qrPrevCodeHash: true,
+      qrPrevUpdatedAt: true,
     },
   });
 
   if (!patient || !patient.isActive) throw notFound("Patient not found");
-  if (!patient.qrCodeHash || patient.qrCodeHash !== hash) {
-    throw notFound("Invalid or expired QR code");
-  }
-  if (isQrStale(patient.qrUpdatedAt)) {
-    throw notFound("QR code expired — patient should refresh their app");
-  }
+  assertQrHashValid(patient, hash);
 
   return { patientId: patient.id };
 }
 
-/** Call after any mutation that changes patient medical footprint */
-export async function touchPatientData(patientId: string): Promise<void> {
-  // Rotating on every clinical mutation invalidated QR codes mid-visit and made
-  // the patients row a write hotspot. The QR already expires via QR_REFRESH_SECONDS,
-  // so only rotate here once the current code is past its freshness window.
-  const patient = await prisma.patient.findUnique({
-    where: { id: patientId },
-    select: { qrUpdatedAt: true },
-  });
-  if (!patient) return;
-  const staleAt = patient.qrUpdatedAt
-    ? patient.qrUpdatedAt.getTime() + config.qrRefreshSeconds * 1000
-    : 0;
-  if (Date.now() >= staleAt) {
-    await regeneratePatientQr(patientId);
-  }
+/**
+ * Historical hook called after mutations that change a patient's medical
+ * footprint. It used to rotate the QR code as a side effect, which invalidated
+ * codes that were still on a patient's screen while unrelated writes happened.
+ * Rotation is now deliberate (TTL-driven inside getPatientQrImage), so this is
+ * a no-op kept for call-site compatibility.
+ */
+export async function touchPatientData(_patientId: string): Promise<void> {
+  // Intentionally empty: QR rotation is TTL-based, not mutation-based.
 }

@@ -71,7 +71,11 @@ export const config = {
   encryptionKey: required("ENCRYPTION_KEY"),
   fileSigningSecret: required("FILE_SIGNING_SECRET"),
   qrSecret: required("QR_SECRET"),
-  qrRefreshSeconds: parseInt(process.env.QR_REFRESH_SECONDS ?? "60", 10),
+  // Validity window of a patient QR code. QR_REFRESH_SECONDS is the legacy name.
+  qrTtlSeconds: parseInt(
+    process.env.QR_TTL_SECONDS ?? process.env.QR_REFRESH_SECONDS ?? "300",
+    10,
+  ),
   smtp: {
     host: process.env.SMTP_HOST?.trim() ?? (isProduction ? "" : "localhost"),
     port: parseInt(process.env.SMTP_PORT ?? "1025", 10),
@@ -113,4 +117,8 @@ export const config = {
   aiServiceTimeoutSeconds: parseInt(process.env.AI_SERVICE_TIMEOUT_SECONDS ?? "60", 10),
   aiServiceEnabled: process.env.AI_SERVICE_ENABLED !== "false",
   aiMock: process.env.MIQORAI_AI_MOCK === "true",
+  // When true, prescriptions and lab orders are blocked (pending doctor action)
+  // if the clinical-safety service is disabled or unconfigured, instead of
+  // proceeding without a safety gate.
+  clinicalSafetyRequired: process.env.CLINICAL_SAFETY_REQUIRED === "true",
 };

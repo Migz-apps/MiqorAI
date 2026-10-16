@@ -21,16 +21,22 @@ import { prisma } from "../src/shared/lib/prisma.js";
 import { hashPassword } from "../src/shared/utils/crypto.js";
 import { regeneratePatientQr } from "../src/modules/patient/qr.service.js";
 import {
-  Prisma,
   emailDomain,
   parseBool,
-  parseLooseJson,
+  parseJsonCell,
   parseOptionalDate,
   parseRequiredDate,
   readCsv,
 } from "./csv-utils.js";
 
-const PASSWORD = "MiqorAI123!";
+const PASSWORD = (() => {
+  const fromEnv = process.env.SEED_PASSWORD;
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SEED_PASSWORD must be set when seeding with NODE_ENV=production");
+  }
+  return "MiqorAI123!";
+})();
 const passwordHash = hashPassword(PASSWORD);
 
 const ids = new Map<string, string>();
@@ -267,12 +273,15 @@ function resolveAccessorId(accessorSeedId: string, accessorType: string): string
 
 async function clearDatabase() {
   await prisma.$transaction([
+    prisma.clinicalSafetyAuditLog.deleteMany(),
+    prisma.aiPendingClinicalAction.deleteMany(),
     prisma.inventoryAdjustment.deleteMany(),
     prisma.dispenseEvent.deleteMany(),
     prisma.interactionOverride.deleteMany(),
     prisma.prescriptionItem.deleteMany(),
     prisma.prescription.deleteMany(),
     prisma.labOrder.deleteMany(),
+    prisma.visitDraft.deleteMany(),
     prisma.visit.deleteMany(),
     prisma.referral.deleteMany(),
     prisma.medicalRecord.deleteMany(),
@@ -297,6 +306,11 @@ async function clearDatabase() {
     prisma.onboardingRequest.deleteMany(),
     prisma.networkNode.deleteMany(),
     prisma.platformSetting.deleteMany(),
+    prisma.orgSetting.deleteMany(),
+    prisma.patientPreference.deleteMany(),
+    prisma.qrAccessRequest.deleteMany(),
+    prisma.domainEvent.deleteMany(),
+    prisma.fileAsset.deleteMany(),
     prisma.syncQueue.deleteMany(),
     prisma.invitation.deleteMany(),
     prisma.appointment.deleteMany(),
@@ -313,6 +327,7 @@ async function clearDatabase() {
     prisma.loginAttempt.deleteMany(),
     prisma.reportSchedule.deleteMany(),
     prisma.auditLog.deleteMany(),
+    prisma.auditLogArchive.deleteMany(),
     prisma.refreshToken.deleteMany(),
     prisma.passwordResetToken.deleteMany(),
     prisma.authChallenge.deleteMany(),
@@ -467,6 +482,8 @@ async function seedUsersAndPatients() {
         id: userId,
         email: row.email!.toLowerCase(),
         phone: row.phone || null,
+        // The CSV password_hash column holds the <seed-password> placeholder;
+        // every seeded user gets the hash of the effective seed password.
         passwordHash,
         role: userRole,
         displayName: row.display_name,
@@ -557,14 +574,14 @@ async function seedUsersAndPatients() {
 }
 
 async function seedClinicalAndInsuranceData() {
-  for (const row of readCsv("medical-records.csv")) {
+  for (const row of readCsv("medical_records.csv")) {
     await prisma.medicalRecord.create({
       data: {
         id: idFor(row.record_id!),
         patientId: idFor(row.patient_id!),
         hospitalId: row.hospital_id ? idFor(row.hospital_id) : null,
         recordType: mapRecordType(row.record_type!),
-        data: parseLooseJson(row.data, row.record_id!) as object,
+        data: parseJsonCell(row.data, `medical_records.csv "data" (record ${row.record_id})`) as object,
         recordedBy: idFor(row.recorded_by!),
         recordedAt: parseRequiredDate(row.recorded_at, row.record_id!),
         isActive: parseBool(row.is_active),
@@ -582,8 +599,9 @@ async function seedClinicalAndInsuranceData() {
         visitType: row.visit_type || "consultation",
         reason: row.reason || null,
         priority: row.priority || "normal",
-        vitals: parseLooseJson(row.vitals, row.visit_id!) as object,
-        diagnosisCodes: (parseLooseJson(row.diagnosis_codes, row.visit_id!) as string[]) ?? [],
+        vitals: parseJsonCell(row.vitals, `visits.csv "vitals" (visit ${row.visit_id})`) as object,
+        diagnosisCodes:
+          (parseJsonCell(row.diagnosis_codes, `visits.csv "diagnosis_codes" (visit ${row.visit_id})`) as string[]) ?? [],
         notes: row.notes || null,
         checkedInAt: parseRequiredDate(row.checked_in_at, row.visit_id!),
         checkedOutAt: parseOptionalDate(row.checked_out_at),
@@ -616,7 +634,7 @@ async function seedClinicalAndInsuranceData() {
     });
   }
 
-  for (const row of readCsv("lab-orders.csv")) {
+  for (const row of readCsv("lab_orders.csv")) {
     await prisma.labOrder.create({
       data: {
         id: idFor(row.lab_order_id!),
@@ -627,7 +645,7 @@ async function seedClinicalAndInsuranceData() {
         testCode: row.test_code || null,
         orderedBy: idFor(row.ordered_by!),
         orderedAt: parseRequiredDate(row.ordered_at, row.lab_order_id!),
-        results: parseLooseJson(row.results, row.lab_order_id!) as object,
+        results: parseJsonCell(row.results, `lab_orders.csv "results" (order ${row.lab_order_id})`) as object,
         resultsAvailableAt: parseOptionalDate(row.completed_at),
         status: mapLabStatus(row.status!),
       },
@@ -686,13 +704,16 @@ async function seedClinicalAndInsuranceData() {
         patientId: idFor(row.patient_id!),
         pharmacyId,
         overallRate: row.overall_rate || "0",
-        medications: parseLooseJson(row.medications, row.snapshot_id!) as object,
+        medications: parseJsonCell(
+          row.medications,
+          `patients_adherence_snapshots.csv "medications" (snapshot ${row.snapshot_id})`,
+        ) as object,
         calculatedAt: parseRequiredDate(row.calculated_at, row.snapshot_id!),
       },
     });
   }
 
-  for (const row of readCsv("savings_record.csv")) {
+  for (const row of readCsv("savings_records.csv")) {
     await prisma.savingsRecord.create({
       data: {
         id: idFor(row.saving_id!),
@@ -749,14 +770,29 @@ async function seedClinicalAndInsuranceData() {
     ],
   });
 
-  // Per-user settings from seed_data/platform_settings.csv (was never read before).
+  // Per-user settings from seed_data/platform_settings.csv land in patient_preferences.
   for (const row of readCsv("platform_settings.csv")) {
     if (!row.setting_key || !row.setting_value) continue;
-    const key = row.setting_key.replace(/USR\d+/g, (m) => idFor(m));
-    await prisma.platformSetting.upsert({
-      where: { key },
-      create: { key, value: parseLooseJson(row.setting_value, row.setting_id ?? key) as Prisma.InputJsonValue },
-      update: { value: parseLooseJson(row.setting_value, row.setting_id ?? key) as Prisma.InputJsonValue },
+    const match = row.setting_key.match(/^(patient_prefs|patient_biometric):(USR\d+)$/);
+    if (!match) continue; // remaining keys (patient_privacy, two_factor_enabled) have no reader
+    const userId = idFor(match[2]!);
+    const value = parseJsonCell(
+      row.setting_value,
+      `platform_settings.csv "setting_value" (row ${row.setting_id ?? row.setting_key})`,
+    ) as Record<string, unknown>;
+    const data =
+      match[1] === "patient_biometric"
+        ? { biometric: value as Prisma.InputJsonValue }
+        : {
+            prefs: value as Prisma.InputJsonValue,
+            ...(value.notifications !== undefined
+              ? { notifications: value.notifications as Prisma.InputJsonValue }
+              : {}),
+          };
+    await prisma.patientPreference.upsert({
+      where: { userId },
+      create: { userId, ...data },
+      update: data,
     });
   }
 

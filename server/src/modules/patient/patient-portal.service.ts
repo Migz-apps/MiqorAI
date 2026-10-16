@@ -11,30 +11,28 @@ import { hashPassword, randomToken } from "../../shared/utils/crypto.js";
 import { forbidden, notFound } from "../../shared/utils/errors.js";
 
 export async function getPatientSettings(userId: string) {
-  const [biometric, notifications, prefs, user] = await Promise.all([
-    prisma.platformSetting.findUnique({ where: { key: `patient_biometric:${userId}` } }),
-    prisma.platformSetting.findUnique({ where: { key: `patient_notifications:${userId}` } }),
-    prisma.platformSetting.findUnique({ where: { key: `patient_prefs:${userId}` } }),
+  const [pref, user] = await Promise.all([
+    prisma.patientPreference.findUnique({ where: { userId } }),
     prisma.user.findUnique({ where: { id: userId }, select: { twoFactorEnabled: true } }),
   ]);
-  const prefsVal = (prefs?.value as Record<string, unknown>) ?? {};
+  const prefsVal = (pref?.prefs as Record<string, unknown>) ?? {};
   return {
-    biometric_enabled: (biometric?.value as { enabled?: boolean })?.enabled ?? false,
+    biometric_enabled: (pref?.biometric as { enabled?: boolean } | null)?.enabled ?? false,
     two_factor_enabled: user?.twoFactorEnabled ?? false,
-    notifications: notifications?.value ?? {},
+    notifications: pref?.notifications ?? {},
     language: prefsVal.language ?? "en",
     theme: prefsVal.theme ?? "system",
   };
 }
 
 export async function updatePatientPrefs(userId: string, input: { language?: string; theme?: string }) {
-  const key = `patient_prefs:${userId}`;
-  const existing = (await prisma.platformSetting.findUnique({ where: { key } }))?.value as Record<string, unknown> ?? {};
+  const existing =
+    ((await prisma.patientPreference.findUnique({ where: { userId } }))?.prefs as Record<string, unknown>) ?? {};
   const value = { ...existing, ...input };
-  await prisma.platformSetting.upsert({
-    where: { key },
-    create: { key, value: value as Prisma.InputJsonValue },
-    update: { value: value as Prisma.InputJsonValue },
+  await prisma.patientPreference.upsert({
+    where: { userId },
+    create: { userId, prefs: value as Prisma.InputJsonValue },
+    update: { prefs: value as Prisma.InputJsonValue },
   });
   return value;
 }

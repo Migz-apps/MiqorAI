@@ -1,5 +1,7 @@
-import jwt from "jsonwebtoken";
+﻿import jwt from "jsonwebtoken";
 import { UserRole } from "@prisma/client";
+import { parseDurationMs } from "../../shared/utils/duration.js";
+import { invalidateUserActiveCache } from "../../shared/middleware/auth.js";
 import { config } from "../../config.js";
 import { prisma } from "../../shared/lib/prisma.js";
 import {
@@ -56,7 +58,7 @@ async function createSession(user: {
     data: {
       userId: user.id,
       tokenHash: hashToken(refreshToken),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + parseDurationMs(config.jwtRefreshExpires)),
     },
   });
 
@@ -117,6 +119,23 @@ export async function refreshAccessToken(refreshToken: string) {
   const user = await prisma.user.findUnique({ where: { id: sub } });
   if (!user || !user.isActive) throw unauthorized("User inactive");
 
+  // Rotation: the presented token is single-use. Revoking it before issuing a
+  // replacement means a replayed token always gets a 401.
+  const revoked = await prisma.refreshToken.updateMany({
+    where: { id: stored.id, revoked: false },
+    data: { revoked: true },
+  });
+  if (revoked.count === 0) throw unauthorized("Invalid refresh token");
+
+  const newRefreshToken = signRefreshToken(user.id);
+  await prisma.refreshToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: hashToken(newRefreshToken),
+      expiresAt: new Date(Date.now() + parseDurationMs(config.jwtRefreshExpires)),
+    },
+  });
+
   return {
     access_token: signAccessToken({
       sub: user.id,
@@ -125,7 +144,18 @@ export async function refreshAccessToken(refreshToken: string) {
       organizationId: user.organizationId,
       organizationType: user.organizationType,
     }),
+    refresh_token: newRefreshToken,
   };
+}
+
+/** Revokes every active refresh token a user holds and drops the cached
+ * isActive flag. Call whenever an account is deactivated. */
+export async function revokeAllUserSessions(userId: string): Promise<void> {
+  await prisma.refreshToken.updateMany({
+    where: { userId, revoked: false },
+    data: { revoked: true },
+  });
+  await invalidateUserActiveCache(userId);
 }
 
 export async function logoutUser(refreshToken: string, accessToken?: string) {
@@ -229,22 +259,11 @@ export async function forgotPassword(email: string) {
   const normalizedEmail = normalizeEmailInput(email);
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user || user.role !== UserRole.patient) return;
-  const token = randomToken();
-  await prisma.passwordResetToken.deleteMany({
-    where: { userId: user.id, usedAt: null },
-  });
-  await prisma.passwordResetToken.create({
-    data: {
-      userId: user.id,
-      tokenHash: hashToken(token),
-      expiresAt: new Date(Date.now() + config.passwordResetExpiresMinutes * 60_000),
-    },
-  });
   try {
-    await createPatientPasswordResetChallenge(user.email, token);
+    await createPatientPasswordResetChallenge(user.email);
   } catch {
     // Swallow cooldown errors: the response must be identical whether or not the
-    // account exists (anti-enumeration). The previous code/token remain valid.
+    // account exists (anti-enumeration). The previous code remains valid.
   }
 }
 
@@ -259,11 +278,20 @@ export async function changePassword(userId: string, currentPassword: string, ne
   if (!verifyPassword(currentPassword, user.passwordHash)) {
     throw badRequest("Current password is incorrect");
   }
-  await prisma.user.update({
-    where: { id: userId },
-    data: { passwordHash: hashPassword(newPassword) },
-  });
-  return { changed: true };
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashPassword(newPassword) },
+    }),
+    prisma.refreshToken.updateMany({
+      where: { userId, revoked: false },
+      data: { revoked: true },
+    }),
+  ]);
+  // The request carries no refresh token to spare, so every session is revoked;
+  // a fresh pair keeps the current client signed in.
+  const session = await createSession(user);
+  return { changed: true, ...session };
 }
 
 export async function verifyForgotPasswordOtp(email: string, otp: string) {

@@ -132,6 +132,10 @@ MiqorAI_finetune/dataset/*.jsonl
 miqorai-ai-service/model/**/*
 !miqorai-ai-service/model/**/.gitkeep
 !miqorai-ai-service/model/**/README*
+!miqorai-ai-service/model/miqorai-qwen1.5-0.5b-lora-json-v3/adapter_model.safetensors
+
+# Hugging Face deploy workspace (separate git history)
+hf-space-publish/
 
 # -----------------------------------------------------------------------------
 # Expo / React Native (mobile_patient)

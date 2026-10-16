@@ -250,7 +250,9 @@ describe("Admin endpoints", () => {
     const c = getContext();
     if (!c.onboardingRequestId) return;
     const res = await authed("admin").post(`/api/admin/onboarding/${c.onboardingRequestId}/approve`);
-    expect([200, 400]).toContain(res.status);
+    // 400 when the request was already reviewed; 409 when the organization
+    // already exists (both happen on repeat runs against an existing database).
+    expect([200, 400, 409]).toContain(res.status);
   });
 
   it("GET /api/admin/patients", async () => {

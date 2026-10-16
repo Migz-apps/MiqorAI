@@ -12,6 +12,8 @@ import { publishEvent } from "../../shared/events.js";
 import { authenticate, requireRoles } from "../../shared/middleware/auth.js";
 import { validateBody } from "../../shared/middleware/errorHandler.js";
 import { assertAccessGrant, logPatientAccess } from "../patient/access.service.js";
+import type { GrantResource } from "../patient/access.service.js";
+import { requireHospitalPermission } from "../identity/staff-permissions.js";
 import { getPatientQrImage, touchPatientData } from "../patient/qr.service.js";
 import { sendInvitationEmail } from "../../shared/services/notification.service.js";
 import {
@@ -27,6 +29,7 @@ import { buildPortalUrl } from "../../shared/services/portal-url.service.js";
 import { assignVisitStaff, createDepartment, findPriorLabTest, generateHospitalReport, generateVisitRecordFromDraft, getExtendedHospitalAnalytics, getHospitalBilling, getPatientAiSummary, listDepartments, listHospitalLabs, listHospitalNotifications, listHospitalPrescriptions, listHospitalReports, markNotificationRead, updateDepartment, updateVisitPriority } from "./hospital-insights.service.js";
 import { getHospitalSettings, updateHospitalSettings } from "../financing/insurer-enrichment.service.js";
 import { publicHospitalStaffSignup } from "../identity/public-signup.service.js";
+import { revokeAllUserSessions } from "../identity/auth.service.js";
 import { getSystemHealth } from "../platform/admin.service.js";
 import {
   buildLabOrderGateContext,
@@ -79,8 +82,13 @@ async function requireHospitalContext(user: TokenPayload) {
   return { hospitalId: user.organizationId, userId: user.sub, staff };
 }
 
-async function assertHospitalPatientAccess(hospitalId: string, patientId: string, accessorId: string) {
-  await assertAccessGrant(patientId, "hospital", hospitalId);
+async function assertHospitalPatientAccess(
+  hospitalId: string,
+  patientId: string,
+  accessorId: string,
+  resource: GrantResource = "summary",
+) {
+  await assertAccessGrant(patientId, "hospital", hospitalId, resource);
   await logPatientAccess({
     patientId,
     accessorId,
@@ -103,10 +111,18 @@ const registerPatientSchema = z.object({
   phone: z.string().min(8),
   national_id: z.string().optional(),
   insurance_id: z.string().optional(),
+  insurance_member_id: z.string().optional(),
   date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   gender: z.string().optional(),
   emergency_contact_name: z.string().optional(),
   emergency_contact_phone: z.string().optional(),
+  emergency_contact: z
+    .object({
+      name: z.string().min(1),
+      phone: z.string().min(1),
+      relationship: z.string().min(1),
+    })
+    .optional(),
   allergies: z.array(z.object({ name: z.string(), severity: z.string().optional() })).optional(),
 });
 
@@ -377,7 +393,7 @@ router.get("/patients/search", async (req, res, next) => {
   }
 });
 
-router.post("/checkin", validateBody(checkinSchema), async (req, res, next) => {
+router.post("/checkin", requireHospitalPermission("checkin"), validateBody(checkinSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     let patientId = req.body.patient_id as string | undefined;
@@ -418,7 +434,7 @@ router.post("/checkin", validateBody(checkinSchema), async (req, res, next) => {
   }
 });
 
-router.post("/patient/register", validateBody(registerPatientSchema), async (req, res, next) => {
+router.post("/patient/register", requireHospitalPermission("registration"), validateBody(registerPatientSchema), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     const body = req.body;
@@ -450,12 +466,24 @@ router.post("/patient/register", validateBody(registerPatientSchema), async (req
         lastName,
         dateOfBirth: new Date(body.date_of_birth),
         nationalId: body.national_id,
-        insuranceId: body.insurance_id,
+        insuranceId: body.insurance_member_id ?? body.insurance_id,
         gender: body.gender,
-        emergencyContactName: body.emergency_contact_name,
-        emergencyContactPhone: body.emergency_contact_phone,
+        emergencyContactName: body.emergency_contact?.name ?? body.emergency_contact_name,
+        emergencyContactPhone: body.emergency_contact?.phone ?? body.emergency_contact_phone,
       },
     });
+
+    if (body.emergency_contact) {
+      await prisma.emergencyContact.create({
+        data: {
+          patientId: patient.id,
+          name: body.emergency_contact.name,
+          phone: body.emergency_contact.phone,
+          relationship: body.emergency_contact.relationship,
+          isPrimary: true,
+        },
+      });
+    }
 
     if (body.allergies?.length) {
       for (const allergy of body.allergies) {
@@ -493,7 +521,7 @@ router.post("/patient/register", validateBody(registerPatientSchema), async (req
   }
 });
 
-router.get("/patient/:id", async (req, res, next) => {
+router.get("/patient/:id", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -519,7 +547,7 @@ router.get("/patient/:id", async (req, res, next) => {
   }
 });
 
-router.post("/visit/:visitId/vitals", validateBody(vitalsSchema), async (req, res, next) => {
+router.post("/visit/:visitId/vitals", requireHospitalPermission("vitals"), validateBody(vitalsSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const visit = await prisma.visit.findFirst({
@@ -552,7 +580,7 @@ router.post("/visit/:visitId/vitals", validateBody(vitalsSchema), async (req, re
   }
 });
 
-router.put("/visit/:visitId/diagnosis", validateBody(diagnosisSchema), async (req, res, next) => {
+router.put("/visit/:visitId/diagnosis", requireHospitalPermission("diagnosis"), validateBody(diagnosisSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const visit = await prisma.visit.findFirst({
@@ -607,12 +635,12 @@ router.put("/visit/:visitId/diagnosis", validateBody(diagnosisSchema), async (re
   }
 });
 
-router.post("/prescription", validateBody(prescriptionSchema), async (req, res, next) => {
+router.post("/prescription", requireHospitalPermission("prescriptions"), validateBody(prescriptionSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const body = req.body;
 
-    await assertHospitalPatientAccess(hospitalId, body.patient_id, userId);
+    await assertHospitalPatientAccess(hospitalId, body.patient_id, userId, "medications");
 
     const items = normalizePrescriptionItems(body);
     if (!items.length) throw badRequest("At least one prescription item required");
@@ -633,12 +661,12 @@ router.post("/prescription", validateBody(prescriptionSchema), async (req, res, 
   }
 });
 
-router.post("/lab-order", validateBody(labOrderSchema), async (req, res, next) => {
+router.post("/lab-order", requireHospitalPermission("labs"), validateBody(labOrderSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const body = req.body;
 
-    await assertHospitalPatientAccess(hospitalId, body.patient_id, userId);
+    await assertHospitalPatientAccess(hospitalId, body.patient_id, userId, "lab_results");
 
     const gate = await gateClinicalSafetyOrder(
       buildLabOrderGateContext(hospitalId, userId, body),
@@ -690,6 +718,7 @@ router.get("/checkins/today", async (req, res, next) => {
 
 router.put(
   "/checkin/:visitId/status",
+  requireHospitalPermission("checkin"),
   validateBody(visitStatusSchema),
   async (req, res, next) => {
     try {
@@ -716,7 +745,7 @@ router.put(
   },
 );
 
-router.get("/referrals", async (req, res, next) => {
+router.get("/referrals", requireHospitalPermission("referrals"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     const referrals = await prisma.referral.findMany({
@@ -735,7 +764,7 @@ router.get("/referrals", async (req, res, next) => {
   }
 });
 
-router.post("/referral", validateBody(referralSchema), async (req, res, next) => {
+router.post("/referral", requireHospitalPermission("referrals"), validateBody(referralSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const body = req.body;
@@ -787,7 +816,7 @@ router.get("/staff", async (req, res, next) => {
   }
 });
 
-router.post("/staff/invite", validateBody(staffInviteSchema), async (req, res, next) => {
+router.post("/staff/invite", requireHospitalPermission("staff"), validateBody(staffInviteSchema), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     const body = req.body;
@@ -803,7 +832,7 @@ router.post("/staff/invite", validateBody(staffInviteSchema), async (req, res, n
       },
     });
 
-    const inviteUrl = buildPortalUrl("hospital", `/login?invite_token=${token}`);
+    const inviteUrl = buildPortalUrl("hospital", `/accept-invite?invite_token=${token}`);
     await sendInvitationEmail(body.email, inviteUrl);
 
     res.status(201).json({
@@ -815,7 +844,7 @@ router.post("/staff/invite", validateBody(staffInviteSchema), async (req, res, n
   }
 });
 
-router.delete("/staff/:userId", async (req, res, next) => {
+router.delete("/staff/:userId", requireHospitalPermission("staff"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     const staff = await prisma.hospitalStaff.findFirst({
@@ -827,6 +856,7 @@ router.delete("/staff/:userId", async (req, res, next) => {
       prisma.hospitalStaff.update({ where: { id: staff.id }, data: { isActive: false } }),
       prisma.user.update({ where: { id: staff.userId }, data: { isActive: false } }),
     ]);
+    await revokeAllUserSessions(staff.userId);
 
     res.status(204).send();
   } catch (err) {
@@ -834,7 +864,7 @@ router.delete("/staff/:userId", async (req, res, next) => {
   }
 });
 
-router.put("/staff/:userId/role", validateBody(staffRoleSchema), async (req, res, next) => {
+router.put("/staff/:userId/role", requireHospitalPermission("staff"), validateBody(staffRoleSchema), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     const staff = await prisma.hospitalStaff.findFirst({
@@ -973,7 +1003,7 @@ router.get("/analytics/extended", async (req, res, next) => {
   }
 });
 
-router.get("/patient/:id/workspace", async (req, res, next) => {
+router.get("/patient/:id/workspace", requireHospitalPermission("visits"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -986,7 +1016,7 @@ router.get("/patient/:id/workspace", async (req, res, next) => {
   }
 });
 
-router.put("/patient/:id/visit-draft", validateBody(saveVisitDraftSchema), async (req, res, next) => {
+router.put("/patient/:id/visit-draft", requireHospitalPermission("visits"), validateBody(saveVisitDraftSchema), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -1008,7 +1038,7 @@ router.put("/patient/:id/visit-draft", validateBody(saveVisitDraftSchema), async
   }
 });
 
-router.post("/patient/:id/visit-draft/:draftId/complete", async (req, res, next) => {
+router.post("/patient/:id/visit-draft/:draftId/complete", requireHospitalPermission("visits"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -1029,7 +1059,7 @@ router.post("/patient/:id/visit-draft/:draftId/complete", async (req, res, next)
   }
 });
 
-router.delete("/patient/:id/visit-draft/:draftId", async (req, res, next) => {
+router.delete("/patient/:id/visit-draft/:draftId", requireHospitalPermission("visits"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -1050,7 +1080,7 @@ router.delete("/patient/:id/visit-draft/:draftId", async (req, res, next) => {
   }
 });
 
-router.get("/patients/census", async (req, res, next) => {
+router.get("/patients/census", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     res.json(
@@ -1067,7 +1097,7 @@ router.get("/patients/census", async (req, res, next) => {
   }
 });
 
-router.get("/patient/:id/qr", async (req, res, next) => {
+router.get("/patient/:id/qr", requireHospitalPermission("patients"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -1078,7 +1108,7 @@ router.get("/patient/:id/qr", async (req, res, next) => {
   }
 });
 
-router.post("/visit/:visitId/checkout", async (req, res, next) => {
+router.post("/visit/:visitId/checkout", requireHospitalPermission("visits"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     res.json(await completeVisitCheckout(hospitalId, param(req.params.visitId), req.body));
@@ -1087,32 +1117,32 @@ router.post("/visit/:visitId/checkout", async (req, res, next) => {
   }
 });
 
-router.post("/prescription/check-allergies", async (req, res, next) => {
+router.post("/prescription/check-allergies", requireHospitalPermission("prescriptions"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
-    await assertHospitalPatientAccess(hospitalId, String(req.body.patient_id), userId);
+    await assertHospitalPatientAccess(hospitalId, String(req.body.patient_id), userId, "medications");
     res.json(await checkPrescriptionAllergies(req.body.patient_id, req.body.drug_names ?? []));
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/labs/trends", async (req, res, next) => {
+router.get("/labs/trends", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const trendPatientId = req.query.patient_id ? String(req.query.patient_id) : undefined;
-    if (trendPatientId) await assertHospitalPatientAccess(hospitalId, trendPatientId, userId);
+    if (trendPatientId) await assertHospitalPatientAccess(hospitalId, trendPatientId, userId, "lab_results");
     res.json(await getLabTrends(hospitalId, trendPatientId));
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/patient/:id/labs/trends", async (req, res, next) => {
+router.get("/patient/:id/labs/trends", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
-    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+    await assertHospitalPatientAccess(hospitalId, patientId, userId, "lab_results");
     res.json(await getLabTrends(hospitalId, patientId));
   } catch (err) {
     next(err);
@@ -1271,7 +1301,7 @@ router.post("/reports/generate", async (req, res, next) => {
   }
 });
 
-router.get("/prescriptions", async (req, res, next) => {
+router.get("/prescriptions", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     res.json(await listHospitalPrescriptions(hospitalId));
@@ -1280,7 +1310,7 @@ router.get("/prescriptions", async (req, res, next) => {
   }
 });
 
-router.get("/labs", async (req, res, next) => {
+router.get("/labs", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     res.json(await listHospitalLabs(hospitalId));
@@ -1289,7 +1319,7 @@ router.get("/labs", async (req, res, next) => {
   }
 });
 
-router.get("/patient/:id/summary", async (req, res, next) => {
+router.get("/patient/:id/summary", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -1300,14 +1330,14 @@ router.get("/patient/:id/summary", async (req, res, next) => {
   }
 });
 
-router.get("/patient/:id/lab-prior", async (req, res, next) => {
+router.get("/patient/:id/lab-prior", requireHospitalPermission("clinical_records"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
     const testName = String(req.query.test_name ?? "").trim();
     if (!testName) throw badRequest("test_name query parameter required");
 
-    await assertHospitalPatientAccess(hospitalId, patientId, userId);
+    await assertHospitalPatientAccess(hospitalId, patientId, userId, "lab_results");
 
     const prior = await findPriorLabTest(patientId, testName);
     res.json({ found: !!prior, prior });
@@ -1316,7 +1346,7 @@ router.get("/patient/:id/lab-prior", async (req, res, next) => {
   }
 });
 
-router.post("/patient/:id/visit-record", async (req, res, next) => {
+router.post("/patient/:id/visit-record", requireHospitalPermission("visits"), async (req, res, next) => {
   try {
     const { hospitalId, userId } = await requireHospitalContext(req.user!);
     const patientId = param(req.params.id);
@@ -1329,7 +1359,7 @@ router.post("/patient/:id/visit-record", async (req, res, next) => {
   }
 });
 
-router.put("/visit/:visitId/assign", async (req, res, next) => {
+router.put("/visit/:visitId/assign", requireHospitalPermission("visits"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     res.json(
@@ -1340,7 +1370,7 @@ router.put("/visit/:visitId/assign", async (req, res, next) => {
   }
 });
 
-router.put("/visit/:visitId/priority", async (req, res, next) => {
+router.put("/visit/:visitId/priority", requireHospitalPermission("visits"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     res.json(await updateVisitPriority(hospitalId, param(req.params.visitId), req.body.priority));
@@ -1358,7 +1388,7 @@ router.get("/settings", async (req, res, next) => {
   }
 });
 
-router.put("/settings", async (req, res, next) => {
+router.put("/settings", requireHospitalPermission("settings"), async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     res.json(await updateHospitalSettings(hospitalId, req.body));

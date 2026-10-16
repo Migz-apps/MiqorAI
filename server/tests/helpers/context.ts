@@ -3,7 +3,7 @@ import { createApp } from "../../src/app.js";
 import { connectDb, disconnectDb, prisma } from "../../src/shared/lib/prisma.js";
 
 export const app = createApp();
-export const PASSWORD = "MiqorAI123!";
+export const PASSWORD = process.env.SEED_PASSWORD ?? "MiqorAI123!";
 
 export type Role = "admin" | "patient" | "hospital" | "hospitalAdmin" | "pharmacy" | "insurer";
 
@@ -33,7 +33,6 @@ export interface TestContext {
   dependentPatientId: string;
   familyMemberId: string;
   emergencyContactId: string;
-  qrHash: string;
   toHospitalId: string;
 }
 
@@ -160,7 +159,6 @@ export async function initTestContext(): Promise<TestContext> {
     dependentPatientId: dependent?.id ?? "",
     familyMemberId: family?.id ?? "",
     emergencyContactId: emergency?.id ?? "",
-    qrHash: patient.qrCodeHash ?? "",
     toHospitalId: hospitalAlt.id,
   };
 
@@ -190,6 +188,19 @@ export function expectSuccess(status: number): void {
 
 function bearer(role: Role): string {
   return `Bearer ${getContext().tokens[role]}`;
+}
+
+/**
+ * Fetches the patient's current QR hash right before a scan. A hash captured at
+ * context init can rotate past its TTL while the suite runs, so scans must not
+ * reuse it.
+ */
+export async function currentQrHash(): Promise<string> {
+  const res = await authed("patient").get("/api/patient/qr-code");
+  if (res.status !== 200) {
+    throw new Error(`QR fetch failed: ${res.status} ${JSON.stringify(res.body)}`);
+  }
+  return String(res.body.hash);
 }
 
 export function authed(role: Role) {
