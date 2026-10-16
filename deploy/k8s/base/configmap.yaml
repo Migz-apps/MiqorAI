@@ -13,6 +13,8 @@ data:
   PLATFORM_TIMEZONE: "Africa/Kigali"
   # Forced exit after SIGTERM; keep below terminationGracePeriodSeconds (40s).
   SHUTDOWN_TIMEOUT_MS: "10000"
+  # One proxy hop (the ingress controller) sits in front of the API.
+  TRUST_PROXY: "1"
   # Background loops (domain-event outbox + report schedules) run ONLY in the
   # dedicated worker Deployment. The API must not run them inline, otherwise
   # every API replica would also poll the outbox (src/index.ts starts the loops

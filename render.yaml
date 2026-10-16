@@ -71,6 +71,8 @@ envVarGroups:
         value: Africa/Kigali
       - key: SHUTDOWN_TIMEOUT_MS
         value: "10000"
+      - key: TRUST_PROXY
+        value: "1"
       - key: AUDIT_ARCHIVE_DAYS
         value: "365"
       - key: AI_SERVICE_BASE_URL
@@ -101,7 +103,7 @@ services:
     buildCommand: npm ci --include=dev && npm run build
     preDeployCommand: npx prisma migrate deploy
     startCommand: npm run start
-    healthCheckPath: /health
+    healthCheckPath: /health/ready
     autoDeployTrigger: checksPass
     envVars:
       - fromGroup: miqorai-shared
