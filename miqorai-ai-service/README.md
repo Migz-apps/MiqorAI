@@ -11,6 +11,8 @@ app_port: 8000
 
 FastAPI microservice that serves the fine-tuned **Qwen/Qwen1.5-0.5B-Chat** LoRA adapter for MiqorAI clinical safety checks.
 
+> `hf-space-publish/` is a generated deploy copy of this service. Edit files here and run `scripts/sync-hf-space.ps1` from the repository root to update it.
+
 The service stays dormant until a doctor attempts to order a test or prescribe medication. Your backend sends patient context; the service returns a **validated JSON safety alert**.
 
 ## Architecture
@@ -85,7 +87,18 @@ ADAPTER_PATH=model/miqorai-qwen1.5-0.5b-lora-json-v3
 USE_4BIT=true
 MAX_NEW_TOKENS=160
 DEBUG_RAW_MODEL_OUTPUT=false
+AI_SERVICE_API_KEY=
+CORS_ORIGINS=
 ```
+
+- `AI_SERVICE_API_KEY` — when set, every inference endpoint requires
+  `Authorization: Bearer <key>`. When empty, the endpoints are **unauthenticated**
+  and the service logs a prominent warning at startup. Always set it before
+  exposing the service beyond localhost.
+- `CORS_ORIGINS` — comma-separated list of browser origins allowed to call the
+  API cross-origin. Empty (the default) disables CORS entirely: the backend
+  calls this service server-to-server, which needs no CORS. Wildcard origins
+  are never combined with credentialed requests.
 
 ## Endpoints
 
@@ -205,16 +218,17 @@ curl -X POST http://localhost:8000/clinical-safety/check/mock \
 
 ```bash
 cd miqorai-ai-service
-docker build -t miqorai-ai-service .
+docker build --build-arg GPU=1 -t miqorai-ai-service .
 docker run --gpus all -p 8000:8000 miqorai-ai-service
 ```
 
 Copy the adapter into `model/miqorai-qwen1.5-0.5b-lora-json-v3/` before building.
 
-For GPU-enabled Docker images, install the optional GPU requirements during build:
+For GPU-enabled Docker images, install the optional GPU requirements during build
+(`--build-arg GPU=1` installs `bitsandbytes`, which 4-bit loading requires):
 
 ```bash
-docker build -t miqorai-ai-service .
+docker build --build-arg GPU=1 -t miqorai-ai-service .
 docker run --gpus all -e USE_4BIT=true -p 8000:8000 miqorai-ai-service
 ```
 

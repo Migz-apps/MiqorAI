@@ -1,0 +1,9 @@
+# Keep the build context small: only app/, model/ and requirements files are copied.
+**/__pycache__
+**/*.pyc
+.git
+.gitattributes
+.gitignore
+.venv
+tests
+*.md

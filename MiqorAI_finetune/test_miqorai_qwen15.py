@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Load MiqorAI JSON QLoRA adapter and run 5 clinical safety inference tests.
+Load MiqorAI JSON QLoRA adapter and run clinical safety inference tests.
 Includes JSON extraction, repair, validation, and safe fallbacks.
+
+Each test case carries an expected clinical outcome (intervention_required,
+and severity/alert title where deterministic). The summary reports JSON
+validity and clinical correctness separately.
 """
 
 from __future__ import annotations
@@ -95,6 +99,11 @@ CURRENT COMPLAINT: Persistent fatigue
 DOCTOR ATTEMPTED ACTION:
 type: test_order
 item: CBC""",
+        "expected": {
+            "intervention_required": True,
+            "alert_title": "Recent Similar Test Found",
+            "severity": "high",
+        },
     },
     {
         "name": "penicillin_allergy",
@@ -130,6 +139,11 @@ CURRENT COMPLAINT: Bacterial pharyngitis
 DOCTOR ATTEMPTED ACTION:
 type: medication_order
 item: amoxicillin 500mg TID for 7 days""",
+        "expected": {
+            "intervention_required": True,
+            "alert_title": "Medication Allergy Alert",
+            "severity": "critical",
+        },
     },
     {
         "name": "nsaid_risk_in_ckd",
@@ -166,6 +180,11 @@ CURRENT COMPLAINT: Bilateral knee pain
 DOCTOR ATTEMPTED ACTION:
 type: medication_order
 item: ibuprofen 400mg TID""",
+        "expected": {
+            "intervention_required": True,
+            "alert_title": "Medication Safety Alert",
+            "severity": "high",
+        },
     },
     {
         "name": "justified_repeat_ct_trauma",
@@ -210,6 +229,11 @@ CURRENT COMPLAINT: Worsening headache and vomiting after head injury
 DOCTOR ATTEMPTED ACTION:
 type: test_order
 item: CT head with contrast""",
+        "expected": {
+            "intervention_required": False,
+            "alert_title": "No Blocking Alert",
+            "severity": "low",
+        },
     },
     {
         "name": "medication_interaction_warning",
@@ -246,6 +270,11 @@ CURRENT COMPLAINT: Acute gout flare right first MTP
 DOCTOR ATTEMPTED ACTION:
 type: medication_order
 item: ibuprofen 600mg TID for 5 days""",
+        "expected": {
+            "intervention_required": True,
+            "alert_title": "Medication Interaction Alert",
+            "severity": "high",
+        },
     },
 ]
 
@@ -411,6 +440,33 @@ def parse_and_repair_json(raw_output: str) -> tuple[dict[str, Any], bool]:
     return create_fallback_payload(raw_output), True
 
 
+def evaluate_clinical_expectations(
+    payload: dict[str, Any],
+    expected: dict[str, Any],
+    used_fallback: bool,
+) -> tuple[bool, dict[str, bool], list[str]]:
+    """Compare the parsed payload against the expected clinical outcome.
+
+    A fallback payload never counts as clinically correct: it is a repair
+    artifact, not a model prediction. String fields are compared
+    case-insensitively; intervention_required must be a real boolean.
+    """
+    field_results: dict[str, bool] = {}
+    mismatches: list[str] = []
+    for key, expected_value in expected.items():
+        actual = payload.get(key)
+        if used_fallback:
+            match = False
+        elif isinstance(expected_value, bool):
+            match = isinstance(actual, bool) and actual == expected_value
+        else:
+            match = str(actual).strip().lower() == str(expected_value).strip().lower()
+        field_results[key] = match
+        if not match:
+            mismatches.append(f"{key}: expected {expected_value!r}, got {actual!r}")
+    return all(field_results.values()), field_results, mismatches
+
+
 def passes_json_validation(payload: dict[str, Any]) -> tuple[bool, list[str]]:
     problems: list[str] = []
     for key in REQUIRED_JSON_KEYS:
@@ -468,10 +524,15 @@ def main() -> None:
     print(f"Loading adapter + tokenizer from: {output_dir.resolve()}")
     model, tokenizer = load_model_and_tokenizer(model_id, output_dir, args.use_4bit)
 
-    passed = 0
+    total = len(TEST_CASES)
+    valid_json = 0
+    clinically_correct = 0
+    field_totals: dict[str, int] = {}
+    field_hits: dict[str, int] = {}
+
     for i, case in enumerate(TEST_CASES, start=1):
         print(f"\n{'#' * 70}")
-        print(f"TEST {i}/5: {case['name']}")
+        print(f"TEST {i}/{total}: {case['name']}")
         print(f"{'#' * 70}")
 
         raw_output = generate_response(model, tokenizer, case["user"], max_new_tokens=args.max_new_tokens)
@@ -484,19 +545,40 @@ def main() -> None:
 
         ok, problems = passes_json_validation(repaired_payload)
         if ok and not used_fallback:
-            passed += 1
-            status = "PASS"
+            valid_json += 1
+            json_status = "PASS"
         elif ok and used_fallback:
             # A fallback payload means the model output could NOT be parsed —
             # that is a model failure, not a pass.
-            status = "FAIL - model output unparseable (fallback payload used)"
+            json_status = "FAIL - model output unparseable (fallback payload used)"
         else:
-            status = f"FAIL - {', '.join(problems)}"
+            json_status = f"FAIL - {', '.join(problems)}"
 
-        print(f"\nVALIDATION STATUS: {status}")
+        expected = case.get("expected", {})
+        clinical_ok, field_results, mismatches = evaluate_clinical_expectations(
+            repaired_payload, expected, used_fallback
+        )
+        for key, matched in field_results.items():
+            field_totals[key] = field_totals.get(key, 0) + 1
+            if matched:
+                field_hits[key] = field_hits.get(key, 0) + 1
+        if clinical_ok and ok and not used_fallback:
+            clinically_correct += 1
+            clinical_status = "PASS"
+        elif used_fallback:
+            clinical_status = "FAIL - fallback payload is not a model prediction"
+        else:
+            clinical_status = f"FAIL - {'; '.join(mismatches) or 'invalid JSON'}"
+
+        print(f"\nJSON VALIDATION STATUS: {json_status}")
+        print(f"CLINICAL OUTCOME STATUS: {clinical_status}")
 
     print(f"\n{'=' * 70}")
-    print(f"Tests completed: {len(TEST_CASES)} | Valid JSON responses: {passed}/{len(TEST_CASES)}")
+    print(f"Tests completed: {total}")
+    print(f"Valid JSON responses: {valid_json}/{total}")
+    print(f"Clinically correct responses: {clinically_correct}/{total}")
+    for key in sorted(field_totals):
+        print(f"  Field accuracy - {key}: {field_hits.get(key, 0)}/{field_totals[key]}")
     print(f"{'=' * 70}")
 
 

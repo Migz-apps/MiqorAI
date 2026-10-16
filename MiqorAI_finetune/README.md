@@ -84,7 +84,7 @@ Each line is a JSON object:
 ## System message (fixed)
 
 ```
-You are MiqorAI, a clinical safety assistant. You help doctors detect duplicate tests, medication allergies, drug interactions, medication risk, and clinically justified overrides. You do not replace the doctor. You provide concise safety alerts.
+You are MiqorAI. You must output ONLY valid JSON matching the required schema. Do not output prose, markdown, explanations, repeated fields, or malformed JSON.
 ```
 
 ---
@@ -94,10 +94,10 @@ You are MiqorAI, a clinical safety assistant. You help doctors detect duplicate 
 | Role | Content |
 |------|---------|
 | **system** | Message above |
-| **user** | Demographics, allergies, conditions, meds, recent visits, complaint, doctor action |
-| **assistant** | `ALERT TITLE`, `SEVERITY`, `REASONING`, `DOCTOR OPTIONS` |
+| **user** | Demographics, allergies, conditions, meds, recent visits, complaint, doctor action, required JSON schema |
+| **assistant** | A single JSON object: `alert_title`, `severity`, `reasoning`, `ai_search_result`, `doctor_options`, `intervention_required` |
 
-**Split:** **80% train / 20% eval** (shuffled, seed=42).
+**Split:** script default **80% train / 20% eval** (`--train_ratio 0.8`, shuffled, seed=42). The run that produced the shipped adapter (`miqorai-qwen1.5-0.5b-lora-json-v3`) used `--train_ratio 0.9` (90/10) — see its `training_meta.json`.
 
 ---
 
@@ -116,7 +116,7 @@ You are MiqorAI, a clinical safety assistant. You help doctors detect duplicate 
 
 | Parameter | Value |
 |-----------|-------|
-| max_seq_length | 2048 |
+| max_seq_length | 1024 |
 | num_train_epochs | 2 |
 | per_device_train_batch_size | 1 |
 | gradient_accumulation_steps | 8 |
@@ -143,19 +143,19 @@ Upload your 10 `.jsonl` files into `dataset/` (or mount as Kaggle Dataset).
 ```bash
 python train_miqorai_qwen15.py \
   --data_dir ./dataset \
-  --output_dir ./miqorai-qwen15-adapter
+  --output_dir ./miqorai-qwen15-json-adapter
 ```
 
 The script prints:
 - Number of patients loaded
-- Number of training examples created
+- Number of synthetic format examples and training examples created
 - Train/eval split sizes
 - **2 formatted examples** before training starts
 
 ### 5. Test (5 fixed scenarios)
 ```bash
 python test_miqorai_qwen15.py \
-  --adapter_dir ./miqorai-qwen15-adapter
+  --adapter_dir ./miqorai-qwen15-json-adapter
 ```
 
 Tests:
@@ -167,7 +167,7 @@ Tests:
 
 ### 6. Save output (Kaggle)
 ```bash
-cp -r miqorai-qwen15-adapter /kaggle/working/
+cp -r miqorai-qwen15-json-adapter /kaggle/working/
 ```
 Then **Save Version** → **Save & Run All** to persist the adapter.
 
@@ -180,8 +180,8 @@ cd MiqorAI_finetune
 pip install -r requirements.txt
 
 # Place .jsonl files in dataset/
-python train_miqorai_qwen15.py --data_dir ./dataset --output_dir ./miqorai-qwen15-adapter
-python test_miqorai_qwen15.py --adapter_dir ./miqorai-qwen15-adapter
+python train_miqorai_qwen15.py --data_dir ./dataset --output_dir ./miqorai-qwen15-json-adapter
+python test_miqorai_qwen15.py --adapter_dir ./miqorai-qwen15-json-adapter
 ```
 
 Requires NVIDIA GPU with CUDA for practical training (QLoRA 4-bit).
@@ -194,19 +194,19 @@ Requires NVIDIA GPU with CUDA for practical training (QLoRA 4-bit).
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--data_dir` | `./dataset` | Folder with `.jsonl` files |
-| `--output_dir` | `./miqorai-qwen15-adapter` | Adapter output path |
+| `--output_dir` | `./miqorai-qwen15-json-adapter` | Adapter output path |
 | `--model_id` | `Qwen/Qwen1.5-0.5B-Chat` | Base model |
-| `--max_seq_length` | 2048 | Max tokens |
+| `--max_seq_length` | 1024 | Max tokens |
 | `--num_train_epochs` | 2 | Epochs |
-| `--train_ratio` | 0.8 | Train fraction (rest = eval) |
+| `--train_ratio` | 0.8 | Train fraction (rest = eval); the shipped adapter run used 0.9 |
 | `--seed` | 42 | Shuffle seed |
 
 ### `test_miqorai_qwen15.py`
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--adapter_dir` | `./miqorai-qwen15-adapter` | Trained adapter |
-| `--max_new_tokens` | 384 | Generation length |
-| `--temperature` | 0.2 | Sampling temperature |
+| `--adapter_dir` (alias of `--output_dir`) | `./miqorai-qwen15-json-adapter` | Trained adapter |
+| `--max_new_tokens` | 160 | Generation length |
+| `--use_4bit` | true | 4-bit quantized loading (`--no-use_4bit` to disable) |
 
 ---
 
@@ -216,7 +216,7 @@ Requires NVIDIA GPU with CUDA for practical training (QLoRA 4-bit).
 |-------|-----|
 | `No .jsonl files found` | Add files to `dataset/` |
 | `No training examples created` | Ensure each patient has `ai_training_action_cases` array |
-| CUDA OOM | Already using 4-bit; reduce `max_seq_length` to 1024 |
+| CUDA OOM | Already using 4-bit; reduce `max_seq_length` (e.g. to 512) |
 | `bitsandbytes` error on CPU | Use Kaggle GPU runtime |
 | Slow first run | HuggingFace downloads ~1GB model weights |
 

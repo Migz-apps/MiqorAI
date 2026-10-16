@@ -34,6 +34,11 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s", settings.app_name)
+    if not settings.ai_service_api_key.strip():
+        logger.warning(
+            "SECURITY: AI_SERVICE_API_KEY is not set — all inference endpoints are "
+            "UNAUTHENTICATED. Set AI_SERVICE_API_KEY before exposing this service."
+        )
     try:
         load_inference_runtime()
         logger.info("Clinical safety model ready")
@@ -50,13 +55,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[origin.strip() for origin in settings.cors_origins.split(",")],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS is only enabled when origins are configured; the backend calls this
+# service server-to-server, so no cross-origin access is needed by default.
+# A wildcard origin is never combined with credentialed requests.
+_cors_origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials="*" not in _cors_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 async def require_api_key(authorization: str | None = Header(default=None)) -> None:

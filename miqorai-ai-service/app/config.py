@@ -23,7 +23,10 @@ class Settings(BaseSettings):
     no_repeat_ngram_size: int = 4
 
     debug_raw_model_output: bool = False
-    cors_origins: str = "*"
+    # Comma-separated browser origins allowed to call the API cross-origin.
+    # Empty (default) disables CORS entirely: the backend calls this service
+    # server-to-server, which needs no cross-origin access.
+    cors_origins: str = ""
     # When set (env AI_SERVICE_API_KEY), every inference endpoint requires
     # "Authorization: Bearer <key>". Empty keeps the service open (dev/demo).
     ai_service_api_key: str = ""

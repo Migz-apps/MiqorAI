@@ -113,7 +113,7 @@ Patient portal: http://localhost:5173/login
 
 ### Hospital (doctor)
 
-1. Log in as `dr.amara@example.com` / `SCH001` / `MiqorAI123!`
+1. Log in as `dr.amara@example.com` / `SCH001` / `<SEED_PASSWORD>`
 2. Open a patient (e.g. Grace Muthoni after QR / search).
 3. Confirm tabs: **Patient Profile**, **Add Visit** only by default.
 4. Start **Add Visit** — enter chief complaint, symptoms, assessment.
@@ -123,7 +123,7 @@ Patient portal: http://localhost:5173/login
 
 ### Patient
 
-1. Log in as `grace.muthoni@example.com` / `MiqorAI123!`
+1. Log in as `grace.muthoni@example.com` / `<SEED_PASSWORD>`
 2. Go to **Share Access**.
 3. Confirm doctors/hospitals show with correct names (not "Unknown").
 4. Click **Revoke** — access should be removed; error shown if API fails.

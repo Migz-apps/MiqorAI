@@ -1,3 +1,10 @@
+"""Deterministic rule engine for the visit-support endpoints.
+
+The relevant-history and check-action helpers in this module apply fixed
+keyword-matching rules over the submitted patient context. They do not run
+model inference; responses carry method="rule_based" to make that explicit.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Literal
@@ -54,6 +61,7 @@ class RelevantHistoryItem(BaseModel):
 class RelevantHistoryResponse(BaseModel):
     relevantHistory: list[RelevantHistoryItem] = Field(default_factory=list)
     confidence: float = 0.0
+    method: Literal["rule_based"] = "rule_based"
 
 
 class ActionPayload(BaseModel):
@@ -104,6 +112,7 @@ class CheckActionResponse(BaseModel):
     ) = None
     alternatives: list[str] = Field(default_factory=list)
     requiresOverrideReason: bool = False
+    method: Literal["rule_based"] = "rule_based"
 
 
 def _score(entry: HistoryEntry, keywords: list[str]) -> int:
@@ -114,6 +123,7 @@ def _score(entry: HistoryEntry, keywords: list[str]) -> int:
 
 
 def build_relevant_history(request: RelevantHistoryRequest) -> RelevantHistoryResponse:
+    """Rank prior encounters by deterministic keyword overlap with the visit context."""
     keywords = request.keywords or []
     if not keywords:
         context_blob = " ".join(
@@ -155,6 +165,7 @@ def build_relevant_history(request: RelevantHistoryRequest) -> RelevantHistoryRe
 
 
 def build_check_action(request: CheckActionRequest) -> CheckActionResponse:
+    """Apply fixed keyword rules (allergy, duplicate test, watch-list drugs) to the action."""
     name = request.action.name.lower()
     for allergy in request.patientProfile.allergies:
         normalized_allergy = allergy.strip().lower()

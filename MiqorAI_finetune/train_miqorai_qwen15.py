@@ -13,13 +13,19 @@ import inspect
 import json
 import random
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
 import torch
 from datasets import Dataset
 from peft import LoraConfig, prepare_model_for_kbit_training
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    DataCollatorForSeq2Seq,
+)
 from trl import SFTConfig, SFTTrainer
 
 SYSTEM_MESSAGE = (
@@ -318,17 +324,76 @@ def _synthetic_example(user: str, assistant: str) -> list[dict[str, str]]:
     ]
 
 
-def _synthetic_context(complaint: str, action_type: str, item: str) -> str:
-    return (
-        f"CURRENT COMPLAINT: {complaint}\n"
-        f"DOCTOR ATTEMPTED ACTION:\n"
-        f"type: {action_type}\n"
-        f"item: {item}"
+SYNTHETIC_REFERENCE_DATE = date(2026, 6, 20)
+
+
+def _synthetic_visit_block(
+    visit_date: str,
+    tests_ordered: str = "—",
+    medications_given: str = "—",
+    context: str = "—",
+) -> str:
+    """Build one visit block with the same line layout as format_visit_block."""
+    return "\n".join(
+        [
+            f"- Date: {visit_date}",
+            "  Facility: District Hospital",
+            "  Reason for visit: Prior encounter",
+            f"  Chief complaint/context: {context}",
+            f"  Tests ordered: {tests_ordered}",
+            "  Test results: —",
+            "  Diagnoses/assessments: —",
+            f"  Medications started/given: {medications_given}",
+            "  Procedures/interventions: —",
+            "  Outcome: —",
+        ]
     )
 
 
+def _synthetic_context(
+    complaint: str,
+    action_type: str,
+    item: str,
+    allergies: list[str] | None = None,
+    conditions: list[str] | None = None,
+    medications: list[str] | None = None,
+    visit_blocks: list[str] | None = None,
+) -> str:
+    """Build a synthetic prompt context with the same sections as format_user_message.
+
+    Every fact a synthetic target response asserts (allergy, current medication,
+    chronic condition, prior order) must be passed in here so the prompt contains it.
+    """
+    lines = [
+        "ALLERGIES:",
+        *([f"- {entry}" for entry in allergies] if allergies else ["- None documented"]),
+        "",
+        "CHRONIC CONDITIONS:",
+        *([f"- {entry}" for entry in conditions] if conditions else ["- None documented"]),
+        "",
+        "CURRENT MEDICATIONS:",
+        *([f"- {entry}" for entry in medications] if medications else ["- None documented"]),
+        "",
+        "RECENT VISITS:",
+    ]
+    if visit_blocks:
+        lines.extend(visit_blocks)
+    else:
+        lines.append("- No recent visits documented")
+    lines.extend(
+        [
+            "",
+            f"CURRENT COMPLAINT: {complaint}",
+            "DOCTOR ATTEMPTED ACTION:",
+            f"type: {action_type}",
+            f"item: {item}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def build_synthetic_format_examples() -> list[list[dict[str, str]]]:
-    """Ten perfect JSON examples per alert type (50 total)."""
+    """Perfect JSON examples per alert type, each grounded in its own prompt context."""
     examples: list[list[dict[str, str]]] = []
 
     duplicate_rows = [
@@ -392,20 +457,39 @@ def build_synthetic_format_examples() -> list[list[dict[str, str]]]:
         ("Suspected DVT progression", "repeat lower extremity ultrasound", "venous ultrasound", "worsening leg swelling"),
     ]
 
+    negative_rows = [
+        ("Sore throat", "medication_order", "amoxicillin 500mg TID", "no documented allergies"),
+        ("Fatigue", "test_order", "CBC", "no recent matching test in the visit history"),
+        ("Hypertension review", "medication_order", "amlodipine 5mg daily", "no interacting current medications documented"),
+        ("Knee pain", "medication_order", "ibuprofen 400mg TID", "no documented renal disease or other contraindication"),
+        ("Dysuria", "test_order", "urinalysis", "no recent matching test in the visit history"),
+    ]
+
     for complaint, test, severity, days_since in duplicate_rows:
-        user = _synthetic_context(complaint, "test_order", test)
+        ordered_date = (SYNTHETIC_REFERENCE_DATE - timedelta(days=days_since)).isoformat()
+        user = _synthetic_context(
+            complaint,
+            "test_order",
+            test,
+            visit_blocks=[_synthetic_visit_block(ordered_date, tests_ordered=test, context=complaint)],
+        )
         assistant = build_json_assistant(
             "Recent Similar Test Found",
             severity,
-            f"A {test} was ordered recently; repeating it now may be unnecessary without clinical change.",
-            {"match_type": "duplicate_test", "test": test, "days_since": days_since},
+            f"A {test} was already ordered on {ordered_date}; repeating it now may be unnecessary without clinical change.",
+            {"match_type": "duplicate_test", "test": test, "last_ordered": ordered_date},
             ["Cancel duplicate order and review prior result", "Proceed with override and document clinical change"],
             True,
         )
         examples.append(_synthetic_example(user, assistant))
 
     for complaint, drug, allergen, severity in allergy_rows:
-        user = _synthetic_context(complaint, "medication_order", drug)
+        user = _synthetic_context(
+            complaint,
+            "medication_order",
+            drug,
+            allergies=[f"{allergen} | reaction: documented | severity: {severity} | documented: —"],
+        )
         assistant = build_json_assistant(
             "Medication Allergy Alert",
             severity,
@@ -417,7 +501,12 @@ def build_synthetic_format_examples() -> list[list[dict[str, str]]]:
         examples.append(_synthetic_example(user, assistant))
 
     for complaint, drug, drug_a, drug_b, risk in interaction_rows:
-        user = _synthetic_context(complaint, "medication_order", drug)
+        user = _synthetic_context(
+            complaint,
+            "medication_order",
+            drug,
+            medications=[drug_a],
+        )
         assistant = build_json_assistant(
             "Medication Interaction Alert",
             "high",
@@ -429,7 +518,12 @@ def build_synthetic_format_examples() -> list[list[dict[str, str]]]:
         examples.append(_synthetic_example(user, assistant))
 
     for complaint, drug, medication, condition, risk in risk_rows:
-        user = _synthetic_context(complaint, "medication_order", drug)
+        user = _synthetic_context(
+            complaint,
+            "medication_order",
+            drug,
+            conditions=[f"{condition} | diagnosed: — | status: active"],
+        )
         assistant = build_json_assistant(
             "Medication Safety Alert",
             "high",
@@ -442,7 +536,18 @@ def build_synthetic_format_examples() -> list[list[dict[str, str]]]:
 
     for complaint, item, test_or_drug, reason in override_rows:
         action_type = "test_order" if "IV" not in item and "mg" not in item else "medication_order"
-        user = _synthetic_context(complaint, action_type, item)
+        prior_date = (SYNTHETIC_REFERENCE_DATE - timedelta(days=10)).isoformat()
+        prior_visit = (
+            _synthetic_visit_block(prior_date, tests_ordered=test_or_drug, context=complaint)
+            if action_type == "test_order"
+            else _synthetic_visit_block(prior_date, medications_given=test_or_drug, context=complaint)
+        )
+        user = _synthetic_context(
+            f"{complaint} — {reason}",
+            action_type,
+            item,
+            visit_blocks=[prior_visit],
+        )
         key = "test" if action_type == "test_order" else "drug"
         assistant = build_json_assistant(
             "No Blocking Alert",
@@ -450,6 +555,18 @@ def build_synthetic_format_examples() -> list[list[dict[str, str]]]:
             f"Repeat or continued therapy is clinically justified because of {reason}.",
             {"match_type": "justified_override", key: test_or_drug, "reason": reason},
             ["Proceed and document clinical indication", "Defer if symptoms improve rapidly"],
+            False,
+        )
+        examples.append(_synthetic_example(user, assistant))
+
+    for complaint, action_type, item, basis in negative_rows:
+        user = _synthetic_context(complaint, action_type, item)
+        assistant = build_json_assistant(
+            "No Blocking Alert",
+            "low",
+            f"No documented risk factor matches the attempted order: {basis}.",
+            {"match_type": "no_risk_found", "basis": basis},
+            ["Proceed with the order", "Reassess if new history becomes available"],
             False,
         )
         examples.append(_synthetic_example(user, assistant))
@@ -501,8 +618,19 @@ def messages_to_text(tokenizer: AutoTokenizer, messages: list[dict[str, str]]) -
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
 
 
+def messages_to_prompt_text(tokenizer: AutoTokenizer, messages: list[dict[str, str]]) -> str:
+    """Render only the system+user turns, ending at the assistant generation marker."""
+    return tokenizer.apply_chat_template(messages[:-1], tokenize=False, add_generation_prompt=True)
+
+
 def build_text_dataset(tokenizer: AutoTokenizer, message_examples: list[list[dict[str, str]]]) -> Dataset:
-    rows = [{"text": messages_to_text(tokenizer, messages)} for messages in message_examples]
+    rows = [
+        {
+            "text": messages_to_text(tokenizer, messages),
+            "prompt_text": messages_to_prompt_text(tokenizer, messages),
+        }
+        for messages in message_examples
+    ]
     return Dataset.from_list(rows)
 
 
@@ -531,13 +659,30 @@ def filter_kwargs(target: type, kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 def tokenize_text_dataset(tokenizer: AutoTokenizer, dataset: Dataset, max_seq_length: int) -> Dataset:
+    """Tokenize full conversations and mask prompt tokens out of the loss.
+
+    The prompt-only rendering (with the generation marker appended) is a string
+    prefix of the full text, so its token count marks where the assistant
+    completion starts. Labels are -100 up to that boundary and real token ids
+    for the completion, so the loss is computed on the completion only.
+    """
+
     def tokenize_batch(batch: dict[str, list[str]]) -> dict[str, Any]:
         tokenized = tokenizer(
             batch["text"],
             truncation=True,
             max_length=max_seq_length,
         )
-        tokenized["labels"] = [row[:] for row in tokenized["input_ids"]]
+        prompt_tokenized = tokenizer(
+            batch["prompt_text"],
+            truncation=True,
+            max_length=max_seq_length,
+        )
+        labels: list[list[int]] = []
+        for input_ids, prompt_ids in zip(tokenized["input_ids"], prompt_tokenized["input_ids"]):
+            boundary = min(len(prompt_ids), len(input_ids))
+            labels.append([-100] * boundary + input_ids[boundary:])
+        tokenized["labels"] = labels
         return tokenized
 
     return dataset.map(tokenize_batch, batched=True, remove_columns=dataset.column_names)
@@ -555,7 +700,6 @@ def build_sft_trainer(
     sft_config_params = inspect.signature(SFTConfig.__init__).parameters
     trainer_params = inspect.signature(SFTTrainer.__init__).parameters
 
-    config_supports_text_field = "dataset_text_field" in sft_config_params
     config_supports_max_seq_length = "max_seq_length" in sft_config_params
     config_supports_max_length = "max_length" in sft_config_params
     trainer_supports_max_seq_length = "max_seq_length" in trainer_params
@@ -585,9 +729,6 @@ def build_sft_trainer(
     elif "evaluation_strategy" in sft_config_params:
         training_kwargs["evaluation_strategy"] = "epoch" if has_eval else "no"
 
-    if config_supports_text_field:
-        training_kwargs["dataset_text_field"] = "text"
-
     max_length_handled = False
     if config_supports_max_seq_length:
         training_kwargs["max_seq_length"] = args.max_seq_length
@@ -598,9 +739,9 @@ def build_sft_trainer(
 
     training_args = SFTConfig(**filter_kwargs(SFTConfig, training_kwargs))
 
-    need_manual_tokenize = not config_supports_text_field and "text" in train_ds.column_names
-    if need_manual_tokenize:
-        print("TRL SFTConfig has no dataset_text_field; tokenizing datasets manually.")
+    # Pre-tokenize with prompt masking so the loss covers only assistant completions;
+    # SFTTrainer accepts already-tokenized datasets and skips its own text processing.
+    if "text" in train_ds.column_names:
         train_ds = tokenize_text_dataset(tokenizer, train_ds, args.max_seq_length)
         if has_eval and eval_ds is not None:
             eval_ds = tokenize_text_dataset(tokenizer, eval_ds, args.max_seq_length)
@@ -611,6 +752,8 @@ def build_sft_trainer(
         "args": training_args,
         "train_dataset": train_ds,
         "peft_config": LORA_CONFIG,
+        # Pads inputs and pads labels with -100, preserving the prompt mask.
+        "data_collator": DataCollatorForSeq2Seq(tokenizer, label_pad_token_id=-100),
     }
 
     if "processing_class" in trainer_params:
