@@ -21,7 +21,7 @@ export const AuthShell = ({ children }: { children: React.ReactNode }) => (
       <div className="relative space-y-md max-w-md animate-fade-up">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-foreground/10 backdrop-blur text-[11px] font-medium">
           <span className="h-1.5 w-1.5 rounded-full bg-success" />
-          Trusted by 14 insurers across East Africa
+          Analytics for insurers on the MiqorAI network
         </div>
         <h2 className="text-3xl font-bold leading-tight">
           See every shilling<br />MiqorAI saves you.
@@ -32,9 +32,9 @@ export const AuthShell = ({ children }: { children: React.ReactNode }) => (
         </p>
         <div className="grid grid-cols-3 gap-sm pt-md">
           {[
-            { icon: TrendingUp, k: "KSh 1.2M", v: "Saved this month" },
-            { icon: Eye, k: "12,847", v: "Duplicates blocked" },
-            { icon: ShieldCheck, k: "3.4×", v: "ROI" },
+            { icon: TrendingUp, k: "Savings", v: "Duplicate-test audits" },
+            { icon: Eye, k: "Fraud", v: "Anomaly detection" },
+            { icon: ShieldCheck, k: "Adherence", v: "Outcome monitoring" },
           ].map(s => (
             <div key={s.k} className="rounded-md bg-primary-foreground/10 p-sm backdrop-blur border border-primary-foreground/10">
               <s.icon className="h-3.5 w-3.5 opacity-80 mb-1" />

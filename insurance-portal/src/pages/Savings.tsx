@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Skeleton } from "@miqorai/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@miqorai/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+} from "@miqorai/ui/table";
+import { Badge } from "@miqorai/ui/badge";
 import { Download, Search, ArrowUpDown, FlaskConical, Microscope, Boxes } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,

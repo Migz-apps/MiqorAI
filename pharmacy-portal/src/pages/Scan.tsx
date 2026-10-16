@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { QRScanner } from "@/components/miqorai/QRScanner";
 import { ScanLine } from "lucide-react";
 
@@ -23,7 +23,7 @@ export default function Scan() {
         <CardHeader className="pb-sm"><CardTitle className="h3">Tips</CardTitle></CardHeader>
         <CardContent className="text-sm text-text-secondary space-y-2">
           <p>· Hold the patient phone 15-25 cm from the camera; let the QR fill the box.</p>
-          <p>· If the QR is damaged, type the patient ID (PT-…) or prescription ID (RX-…) in the field below.</p>
+          <p>· If the camera fails, paste the code shown under the patient's QR, or type a prescription ID (RX-…), in the field below.</p>
           <p>· An allergy alert will appear in red on the prescription page if relevant.</p>
         </CardContent>
       </Card>

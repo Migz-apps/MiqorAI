@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@miqorai/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import type { PatientSafetyProfile as SafetyProfile } from "@/lib/types";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 

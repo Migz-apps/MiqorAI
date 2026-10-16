@@ -45,7 +45,7 @@ export function Landing() {
         <div className="relative mx-auto max-w-7xl px-6 py-20 md:py-28 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
-              <FiZap size={12} /> Now live across East Africa
+              <FiZap size={12} /> Your health record, in your hands
             </span>
             <h1 className="mt-5 text-4xl md:text-6xl font-bold leading-tight tracking-tight">
               Your medical records.<br />
@@ -86,23 +86,6 @@ export function Landing() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="border-y border-border bg-muted/40">
-        <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-6 px-6 py-10">
-          {[
-            ["50K+", "Active patients"],
-            ["1,200+", "Partner clinics"],
-            ["99.99%", "Uptime"],
-            ["256-bit", "Encryption"],
-          ].map(([n, l]) => (
-            <div key={l} className="text-center">
-              <div className="text-3xl font-bold text-primary">{n}</div>
-              <div className="text-sm text-muted-foreground mt-1">{l}</div>
-            </div>
-          ))}
         </div>
       </section>
 

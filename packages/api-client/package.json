@@ -1,0 +1,22 @@
+{
+  "name": "@miqorai/api-client",
+  "private": true,
+  "license": "UNLICENSED",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./messages": "./src/messages.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^20.0.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

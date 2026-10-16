@@ -2,15 +2,15 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@miqorai/ui/input";
+import { Button } from "@miqorai/ui/button";
+import { Card, CardContent } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+} from "@miqorai/ui/dialog";
+import { Label } from "@miqorai/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@miqorai/ui/select";
 import { hospitalApi, referenceApi } from "@/lib/api/hospital";
 import { mapCensusPatient, mapDrug, mapIcd } from "@/lib/mappers";
 

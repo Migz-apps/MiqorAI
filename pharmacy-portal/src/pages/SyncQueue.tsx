@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { loadSyncQueue, retrySyncItem, syncKeys, useSync } from "@/store/sync";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
 import { RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 

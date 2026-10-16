@@ -99,6 +99,8 @@ export const hospitalApi = {
   },
   exportAudit: () => api<{ download_url: string }>("/api/hospital/audit-logs/export", { method: "POST", body: "{}" }),
   settings: () => api<Record<string, unknown>>("/api/hospital/settings"),
+  updateSettings: (body: Record<string, unknown>) =>
+    api<Record<string, unknown>>("/api/hospital/settings", { method: "PUT", body: JSON.stringify(body) }),
   systemHealth: () => api<Record<string, unknown>>("/api/hospital/system/health"),
 };
 

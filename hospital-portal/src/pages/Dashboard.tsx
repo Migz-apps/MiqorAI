@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { QRScanner } from "@/components/miqorai/QRScanner";
 import { CheckInList } from "@/components/miqorai/CheckInList";
 import { PageHeader } from "@/components/miqorai/PageHeader";

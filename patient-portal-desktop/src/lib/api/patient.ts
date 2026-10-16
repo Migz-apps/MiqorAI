@@ -105,6 +105,9 @@ export type QrResponse = {
   qr_code: string;
   hash: string;
   version: number;
+  generated_at?: string;
+  expires_at?: string;
+  ttl_seconds?: number;
 };
 
 export const patientKeys = {

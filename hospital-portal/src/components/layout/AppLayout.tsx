@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@miqorai/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 import { OfflineBanner } from "@/components/shared/OfflineBanner";

@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Clock, ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@miqorai/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
 import { useWaitlist } from "@/store/waitlist";
 import { mapVisitStatus } from "@/lib/mappers";
 

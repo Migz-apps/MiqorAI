@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { QRScanner } from "@/components/miqorai/QRScanner";
 import { StatusBadge } from "@/components/miqorai/StatusBadge";
 import { ScanLine, Pill, Package, AlertTriangle, TrendingUp, Activity } from "lucide-react";
 import { useAuth } from "@/store/auth";
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@miqorai/ui/badge";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapAdherenceTrend, mapInventoryItem } from "@/lib/api/mappers";

@@ -8,12 +8,12 @@ import { useAuth } from "@/lib/auth";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/hospitals", label: "Hospitals", icon: Hospital, badge: 3 },
+  { to: "/hospitals", label: "Hospitals", icon: Hospital },
   { to: "/pharmacies", label: "Pharmacies", icon: Pill },
   { to: "/insurers", label: "Insurers", icon: ShieldCheck },
   { to: "/patients", label: "Patients", icon: Users },
   { to: "/transactions", label: "Transactions", icon: Receipt },
-  { to: "/disputes", label: "Disputes", icon: AlertTriangle, badge: 2 },
+  { to: "/disputes", label: "Disputes", icon: AlertTriangle },
   { to: "/compliance", label: "Compliance", icon: FileLock2 },
   { to: "/billing", label: "Billing", icon: Wallet },
   { to: "/system", label: "System", icon: Activity },
@@ -52,7 +52,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-thin">
         <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Operations</div>
         <ul className="space-y-1">
-          {nav.map(({ to, label, icon: Icon, badge }) => {
+          {nav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? path === "/" : path.startsWith(to);
             return (
               <li key={to}>
@@ -67,11 +67,6 @@ export function Sidebar() {
                 >
                   <Icon className={cn("size-4", active && "text-primary")} />
                   <span className="flex-1">{label}</span>
-                  {badge ? (
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-destructive/20 text-destructive border border-destructive/40">
-                      {badge}
-                    </span>
-                  ) : null}
                 </Link>
               </li>
             );

@@ -1,14 +1,13 @@
-import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { useAuth } from "@/store/auth";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster as Sonner } from "@miqorai/ui/sonner";
+import { TooltipProvider } from "@miqorai/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RoleRoute } from "@/components/layout/RoleRoute";
 
 import Login from "./pages/Login";
+import AcceptInvite from "./pages/AcceptInvite";
 import Dashboard from "./pages/Dashboard";
 import Savings from "./pages/Savings";
 import Adherence from "./pages/Adherence";
@@ -23,20 +22,14 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const SessionRestore = () => {
-  const restoreSession = useAuth((s) => s.restoreSession);
-  useEffect(() => { void restoreSession(); }, [restoreSession]);
-  return null;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <SessionRestore />
     <TooltipProvider>
-      <Sonner />
+      <Sonner infoClassName="group-[.toast]:border-insurer/20 group-[.toast]:bg-insurer-light/60" />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />

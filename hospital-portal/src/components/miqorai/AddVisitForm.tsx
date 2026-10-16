@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Save, CheckCircle2, X, Search, Sparkles, FlaskConical } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
+import { Textarea } from "@miqorai/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@miqorai/ui/select";
+import { Badge } from "@miqorai/ui/badge";
 import { referenceApi, hospitalApi } from "@/lib/api/hospital";
 import { aiApi, toVisitContext, type CheckActionResponse } from "@/lib/api/ai";
 import { mapIcd } from "@/lib/mappers";

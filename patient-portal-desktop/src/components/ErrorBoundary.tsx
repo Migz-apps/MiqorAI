@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { logoutApi } from "@/lib/api/client";
 
 type Props = { children: ReactNode };
 type State = { error: Error | null };
@@ -30,8 +31,10 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
                 onClick={() => {
                   localStorage.removeItem("miqorai-patient-auth");
-                  localStorage.removeItem("miqorai-patient-tokens");
-                  window.location.href = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/login`;
+                  // Ends the cookie session too, so the next load does not restore it.
+                  void logoutApi().finally(() => {
+                    window.location.href = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/login`;
+                  });
                 }}
               >
                 Clear session & go to login

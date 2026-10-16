@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
+import { Skeleton } from "@miqorai/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@miqorai/ui/table";
 import { FileText, Download, MessageSquare, CheckCircle2, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/miqorai/PageHeader";
 import { ProgressBar } from "@/components/miqorai/ProgressBar";
@@ -20,8 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+} from "@miqorai/ui/dialog";
+import { Textarea } from "@miqorai/ui/textarea";
 
 function dateStr(d: string | Date): string {
   return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);

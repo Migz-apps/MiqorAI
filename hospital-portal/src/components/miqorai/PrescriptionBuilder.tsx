@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Pill, Search, AlertTriangle, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@miqorai/ui/select";
+import { Alert, AlertDescription } from "@miqorai/ui/alert";
 import { referenceApi, hospitalApi, type PrescriptionAllergyCheckResponse } from "@/lib/api/hospital";
 import { aiApi, toVisitContext, type CheckActionResponse } from "@/lib/api/ai";
 import { mapDrug, mapDrugInteraction } from "@/lib/mappers";
@@ -29,7 +29,7 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
   const [frequency, setFrequency] = useState("1x daily");
   const [duration, setDuration] = useState("30 days");
   const [pharmacyId, setPharmacyId] = useState("");
-  const [aiAlert, setAiAlert] = useState<CheckActionResponse | null>(null);
+  const [ruleAlert, setRuleAlert] = useState<CheckActionResponse | null>(null);
   const [pendingRx, setPendingRx] = useState<Record<string, unknown> | null>(null);
 
   const { data: drugs = [] } = useQuery({
@@ -157,7 +157,7 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
     setSearch("");
     setPharmacyId("");
     setPendingRx(null);
-    setAiAlert(null);
+    setRuleAlert(null);
   };
 
   const buildAllergyAlert = (
@@ -234,7 +234,7 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
     );
     if (localAllergyConflict || !allergyCheck.safe) {
       setPendingRx(null);
-      setAiAlert(buildAllergyAlert(selectedDrug, allergyCheck.conflicts));
+      setRuleAlert(buildAllergyAlert(selectedDrug, allergyCheck.conflicts));
       return;
     }
 
@@ -254,7 +254,7 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
     const draft = visitDraft ?? { chief: "", symptoms: "", assessment: "", diagnoses: [] };
 
     try {
-      const aiResult = await aiApi.checkAction({
+      const ruleResult = await aiApi.checkAction({
         patientId: patient.id,
         action: {
           type: "PRESCRIPTION",
@@ -265,13 +265,14 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
         },
         visitContext: toVisitContext(draft),
       });
-      if (aiResult.hasAlert) {
+      if (ruleResult.hasAlert) {
         setPendingRx(payload);
-        setAiAlert(aiResult);
+        setRuleAlert(ruleResult);
         return;
       }
     } catch {
-      // Continue without AI gate if the service is unavailable.
+      // The rule-based advisory check is fail-open; prescriptions are still
+      // gated server-side by clinical safety.
     }
 
     finalizePrescription(payload);
@@ -279,14 +280,14 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
 
   const proceedAfterAlert = async (overrideReason?: string) => {
     if (!pendingRx) return;
-    if (aiAlert?.requiresOverrideReason && overrideReason) {
+    if (ruleAlert?.requiresOverrideReason && overrideReason) {
       await aiApi.override({
         patientId: patient.id,
         actionType: "PRESCRIPTION",
         actionName: String(pendingRx.medication ?? ""),
-        aiAlertType: aiAlert.alertType,
-        aiSeverity: aiAlert.severity,
-        aiMessage: aiAlert.message,
+        aiAlertType: ruleAlert.alertType,
+        aiSeverity: ruleAlert.severity,
+        aiMessage: ruleAlert.message,
         overrideReason,
       }).catch(() => undefined);
     }
@@ -442,17 +443,17 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
         <Send className="h-4 w-4 mr-2" /> Prescribe and send to pharmacy
       </Button>
 
-      {aiAlert && (
+      {ruleAlert && (
         <AiActionAlertDialog
           open
-          alert={aiAlert}
+          alert={ruleAlert}
           onCancel={() => {
-            setAiAlert(null);
+            setRuleAlert(null);
             setPendingRx(null);
           }}
-          onProceed={aiAlert.alertType === "ALLERGY_CONTRAINDICATION" ? undefined : (reason) => void proceedAfterAlert(reason)}
-          allowProceed={aiAlert.alertType !== "ALLERGY_CONTRAINDICATION"}
-          closeLabel={aiAlert.alertType === "ALLERGY_CONTRAINDICATION" ? "Choose another medication" : undefined}
+          onProceed={ruleAlert.alertType === "ALLERGY_CONTRAINDICATION" ? undefined : (reason) => void proceedAfterAlert(reason)}
+          allowProceed={ruleAlert.alertType !== "ALLERGY_CONTRAINDICATION"}
+          closeLabel={ruleAlert.alertType === "ALLERGY_CONTRAINDICATION" ? "Choose another medication" : undefined}
         />
       )}
     </div>

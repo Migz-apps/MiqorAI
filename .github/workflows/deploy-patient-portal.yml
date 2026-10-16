@@ -5,6 +5,9 @@ on:
     branches: [master, main]
     paths:
       - "patient-portal-desktop/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/deploy-patient-portal.yml"
   workflow_dispatch:
 
@@ -20,9 +23,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: patient-portal-desktop
     steps:
       - uses: actions/checkout@v4
 
@@ -30,16 +30,22 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: patient-portal-desktop/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npm run typecheck -w patient-portal-desktop
+
+      - name: Lint
+        run: npm run lint -w patient-portal-desktop
+
+      - name: Test
+        run: npm test -w patient-portal-desktop
 
       - name: Build
-        run: npm run build
+        run: npm run build -w patient-portal-desktop
         env:
           VITE_BASE: /MiqorAI/
           VITE_API_URL: https://miqorai.onrender.com

@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
+import { Switch } from "@miqorai/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
+} from "@miqorai/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+} from "@miqorai/ui/select";
 import { Building2, Plus } from "lucide-react";
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapDepartment, mapStaffMember } from "@/lib/mappers";

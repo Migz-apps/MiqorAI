@@ -4,11 +4,12 @@ import { persist } from "zustand/middleware";
 import type { Role } from "@/lib/types";
 import {
   ApiError,
+  clearSession,
   getMe,
-  loadTokens,
   loginApi,
   logoutApi,
-  saveTokens,
+  onSessionExpired,
+  restoreSession as restoreApiSession,
   type MeResponse,
 } from "@/lib/api/client";
 import { mapStaffRole } from "@/lib/api/insurer";
@@ -25,15 +26,18 @@ type Session = {
 
 type AuthState = {
   session: Session | null;
+  /** False until the cookie-based session restore on page load has settled. */
+  ready: boolean;
   failedAttempts: number;
   lockoutUntil: number | null;
   login: (insurerCode: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
-  switchRole: (role: Role) => void;
 };
 
-function mapRole(me: MeResponse): Role {
+let restoreInFlight: Promise<void> | null = null;
+
+export function mapRole(me: MeResponse): Role {
   if (me.role === "insurer_admin" || me.staff_role === "admin") return "admin";
   if (me.staff_role) return mapStaffRole(me.staff_role);
   return "analyst";
@@ -55,6 +59,7 @@ export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
       session: null,
+      ready: false,
       failedAttempts: 0,
       lockoutUntil: null,
       login: async (insurerCode, email, password) => {
@@ -69,6 +74,7 @@ export const useAuth = create<AuthState>()(
             failedAttempts: 0,
             lockoutUntil: null,
             session: sessionFromMe(me, insurerCode.trim()),
+            ready: true,
           });
           return { ok: true };
         } catch (err) {
@@ -91,23 +97,28 @@ export const useAuth = create<AuthState>()(
         await logoutApi();
         set({ session: null });
       },
-      restoreSession: async () => {
-        if (!loadTokens()) return;
-        try {
-          const me = await getMe();
-          const prev = get().session;
-          set({
-            session: sessionFromMe(me, prev?.insurerCode ?? me.insurer_code ?? ""),
+      restoreSession: () => {
+        // One restore per page load; concurrent guards share it.
+        if (get().ready) return Promise.resolve();
+        if (!restoreInFlight) {
+          restoreInFlight = (async () => {
+            try {
+              if (!(await restoreApiSession())) {
+                set({ session: null, ready: true });
+                return;
+              }
+              const me = await getMe();
+              const prev = get().session;
+              set({ session: sessionFromMe(me, prev?.insurerCode ?? me.insurer_code ?? ""), ready: true });
+            } catch {
+              clearSession();
+              set({ session: null, ready: true });
+            }
+          })().finally(() => {
+            restoreInFlight = null;
           });
-        } catch {
-          saveTokens(null);
-          set({ session: null });
         }
-      },
-      switchRole: (role) => {
-        const s = get().session;
-        if (!s) return;
-        set({ session: { ...s, role } });
+        return restoreInFlight;
       },
     }),
     {
@@ -116,6 +127,9 @@ export const useAuth = create<AuthState>()(
     },
   ),
 );
+
+// A refresh that fails mid-session drops the session so route guards redirect to login.
+onSessionExpired(() => useAuth.setState({ session: null }));
 
 export const PERMISSIONS = {
   analyst:   { viewDashboard: true, viewSavings: true, viewAdherence: true, viewFraud: false, runReports: true,  exportData: true,  viewMembers: true, viewContract: false, viewBilling: false, manageStaff: false, viewAudit: false, manageSettings: false },

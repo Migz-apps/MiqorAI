@@ -1,6 +1,15 @@
 import type { Patient, Role, Rx, RxItem, RxStatus, Staff, StockItem } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 
+const PHARMACY_ROLES: Role[] = ["cashier", "technician", "pharmacist", "manager"];
+
+export function mapStaffRole(role: string | null | undefined): Role {
+  if (role === "pharmacy_manager") return "manager";
+  if (PHARMACY_ROLES.includes(role as Role)) return role as Role;
+  // Unknown roles fall back to the least-privileged role.
+  return "cashier";
+}
+
 type ApiHospital = { id?: string; name?: string } | string | null | undefined;
 
 type ApiRxItem = {
@@ -258,7 +267,7 @@ export function mapStaffMember(s: {
     id: s.user_id,
     name: s.display_name ?? s.email.split("@")[0],
     email: s.email,
-    role: s.role as Role,
+    role: mapStaffRole(s.role),
     active: s.active,
     lastActive: s.last_login
       ? formatDistanceToNow(new Date(s.last_login), { addSuffix: true })

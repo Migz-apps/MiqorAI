@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
 import { FormAlert } from "@/components/FormAlert";
 import { MESSAGES } from "@/lib/user-messages";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@miqorai/ui/input-otp";
 
 type Mode = "login" | "signup";
 type PasswordResetStage = "request" | "verify" | "complete";

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@miqorai/ui/badge";
 import { cn } from "@/lib/utils";
 
 const palette = {

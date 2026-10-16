@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
+import { Input } from "@miqorai/ui/input";
 import { Search } from "lucide-react";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapPatientListItem } from "@/lib/api/mappers";

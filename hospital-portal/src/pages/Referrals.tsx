@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Label } from "@miqorai/ui/label";
+import { Textarea } from "@miqorai/ui/textarea";
+import { Badge } from "@miqorai/ui/badge";
 import { Send } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@miqorai/ui/select";
 import { hospitalApi, referenceApi } from "@/lib/api/hospital";
 import { mapCensusPatient, mapDepartment, mapIcd, mapReferral } from "@/lib/mappers";
 import { useAuth } from "@/store/auth";

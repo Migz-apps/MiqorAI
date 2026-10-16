@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -8,7 +9,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@miqorai/ui/sonner";
+import { useAuth } from "@/lib/auth";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -33,7 +35,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
 
@@ -116,11 +118,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const ready = useAuth((s) => s.ready);
+  const restoreSession = useAuth((s) => s.restoreSession);
+
+  // Effects never run during SSR, so the cookie restore happens in the browser only.
+  // Pages mount after it settles: no request goes out before the session is known.
+  useEffect(() => {
+    void restoreSession();
+  }, [restoreSession]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <Outlet />
+      <Toaster theme="dark" />
+      {ready ? (
+        <Outlet />
+      ) : (
+        <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+          Restoring session…
+        </div>
+      )}
     </QueryClientProvider>
   );
 }

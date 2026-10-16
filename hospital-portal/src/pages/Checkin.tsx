@@ -1,20 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { QRScanner } from "@/components/miqorai/QRScanner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+} from "@miqorai/ui/select";
+import { Badge } from "@miqorai/ui/badge";
 import { ScanLine, UserPlus, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapDepartment, mapPatientFromApi } from "@/lib/mappers";
 import { useWaitlist } from "@/store/waitlist";
-import { useSync } from "@/store/sync";
 import type { Department, Priority } from "@/lib/types";
 import { toast } from "@/lib/notify";
 
@@ -22,7 +21,6 @@ export default function Checkin() {
   const nav = useNavigate();
   const add = useWaitlist(s => s.add);
   const entries = useWaitlist(s => s.entries);
-  const enqueue = useSync(s => s.enqueue);
 
   const [patientId, setPatientId] = useState<string | null>(null);
   const [department, setDepartment] = useState<Department>("General");
@@ -54,7 +52,6 @@ export default function Checkin() {
       const entry = await add({
         patientId: patient.id, department, priority, status: "waiting", reason: reason || undefined,
       });
-      enqueue({ type: "check-in", patientName: patient.name });
       toast.success(`${patient.name} checked in to ${department}`);
       nav(`/stickers?visit=${entry.id}`);
     } catch {

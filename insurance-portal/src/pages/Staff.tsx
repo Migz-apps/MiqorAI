@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
+import { Skeleton } from "@miqorai/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@miqorai/ui/table";
 import { UserPlus, Mail } from "lucide-react";
 import { PageHeader } from "@/components/miqorai/PageHeader";
 import { insurerApi, insurerKeys, mapStaffRow, toBackendStaffRole } from "@/lib/api/insurer";
@@ -17,10 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+} from "@miqorai/ui/dialog";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@miqorai/ui/select";
 import type { Role } from "@/lib/types";
 import { toast } from "@/lib/notify";
 

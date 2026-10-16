@@ -1,14 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut, Wifi, WifiOff, RefreshCw, ChevronDown, Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
 import { useAuth, ROLE_LABEL, ROLE_TRACK } from "@/store/auth";
 import { useSync, loadSyncQueue, syncKeys } from "@/store/sync";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@miqorai/ui/dropdown-menu";
 import type { Role } from "@/lib/types";
 
 const trackPill: Record<ReturnType<typeof getTrack>, string> = {

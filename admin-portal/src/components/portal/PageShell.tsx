@@ -8,6 +8,7 @@ export function PageShell({
   title, subtitle, children,
 }: { title: string; subtitle?: string; children: React.ReactNode }) {
   const session = useAuth((s) => s.session);
+  const ready = useAuth((s) => s.ready);
   const restoreSession = useAuth((s) => s.restoreSession);
   const navigate = useNavigate();
 
@@ -16,15 +17,15 @@ export function PageShell({
   }, [restoreSession]);
 
   useEffect(() => {
-    if (!session) {
+    if (ready && !session) {
       navigate({ to: "/login", replace: true });
     }
-  }, [session, navigate]);
+  }, [ready, session, navigate]);
 
-  if (!session) {
+  if (!ready || !session) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-        Redirecting to sign in…
+        {ready ? "Redirecting to sign in…" : "Restoring session…"}
       </div>
     );
   }

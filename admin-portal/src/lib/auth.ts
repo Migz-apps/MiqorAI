@@ -1,7 +1,15 @@
 import { create } from "zustand";
 import { MESSAGES } from "./user-messages";
 import { persist } from "zustand/middleware";
-import { ApiError, getMe, loadTokens, loginApi, logoutApi, saveTokens } from "./api/client";
+import {
+  ApiError,
+  clearSession,
+  getMe,
+  loginApi,
+  logoutApi,
+  onSessionExpired,
+  restoreSession as restoreApiSession,
+} from "./api/client";
 
 type Session = {
   email: string;
@@ -10,15 +18,25 @@ type Session = {
 
 type AuthState = {
   session: Session | null;
+  /** False until the cookie-based session restore on page load has settled. */
+  ready: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
 };
 
+/** Only platform super admins may use this portal. */
+export function isPortalRole(role: string | undefined): boolean {
+  return role === "super_admin";
+}
+
+let restoreInFlight: Promise<void> | null = null;
+
 export const useAuth = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       session: null,
+      ready: false,
       login: async (email, password) => {
         const trimmedEmail = email.trim();
         if (!trimmedEmail.includes("@") || password.length < 4) {
@@ -26,11 +44,12 @@ export const useAuth = create<AuthState>()(
         }
         try {
           const me = await loginApi(trimmedEmail, password);
-          if (me.role !== "super_admin") {
-            saveTokens(null);
+          if (!isPortalRole(me.role)) {
+            // End the server session too, so the refresh cookie cannot restore it.
+            await logoutApi();
             return { ok: false, error: MESSAGES.auth.invalidCredentials };
           }
-          set({ session: { email: me.email, loggedInAt: Date.now() } });
+          set({ session: { email: me.email, loggedInAt: Date.now() }, ready: true });
           return { ok: true };
         } catch (err) {
           const msg =
@@ -44,23 +63,33 @@ export const useAuth = create<AuthState>()(
         await logoutApi();
         set({ session: null });
       },
-      restoreSession: async () => {
-        if (!loadTokens()) {
-          // Tokens gone (expired/cleared) — a persisted session without tokens
-          // renders a shell where every call 401s. Drop it so guards redirect.
-          set({ session: null });
-          return;
+      restoreSession: () => {
+        // One restore per page load; every page shell shares it.
+        if (get().ready) return Promise.resolve();
+        if (!restoreInFlight) {
+          restoreInFlight = (async () => {
+            try {
+              if (!(await restoreApiSession())) {
+                set({ session: null, ready: true });
+                return;
+              }
+              const me = await getMe();
+              if (!isPortalRole(me.role)) throw new Error("not admin");
+              set({ session: { email: me.email, loggedInAt: Date.now() }, ready: true });
+            } catch {
+              clearSession();
+              set({ session: null, ready: true });
+            }
+          })().finally(() => {
+            restoreInFlight = null;
+          });
         }
-        try {
-          const me = await getMe();
-          if (me.role !== "super_admin") throw new Error("not admin");
-          set({ session: { email: me.email, loggedInAt: Date.now() } });
-        } catch {
-          saveTokens(null);
-          set({ session: null });
-        }
+        return restoreInFlight;
       },
     }),
-    { name: "MiqorAI-admin-auth" },
+    { name: "MiqorAI-admin-auth", partialize: (s) => ({ session: s.session }) },
   ),
 );
+
+// A refresh that fails mid-session drops the session so the page shell redirects to login.
+onSessionExpired(() => useAuth.setState({ session: null }));

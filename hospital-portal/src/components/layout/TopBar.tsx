@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { LogOut, Wifi, WifiOff, RefreshCw, ChevronDown, HelpCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
 import { useAuth, ROLE_LABEL, ROLE_TRACK } from "@/store/auth";
 import { useSync } from "@/store/sync";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@miqorai/ui/dropdown-menu";
 import type { Role } from "@/lib/types";
 import { NotificationCenter } from "@/components/shared/NotificationCenter";
 import { GlobalSearchTrigger } from "@/components/shared/GlobalSearch";

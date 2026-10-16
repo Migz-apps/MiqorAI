@@ -4,10 +4,10 @@ import {
   TrendingUp, Users, Activity, ShieldAlert, Download, Share2, ArrowRight,
   FileBarChart2, CalendarDays, Sparkles,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
+import { Skeleton } from "@miqorai/ui/skeleton";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";

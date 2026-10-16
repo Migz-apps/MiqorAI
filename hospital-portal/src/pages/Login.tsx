@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Building2, Stethoscope } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
 import { FormAlert } from "@/components/shared/FormAlert";
 import { useAuth } from "@/store/auth";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { MESSAGES } from "@/lib/user-messages";
 import { useAuthHydrated } from "@/hooks/useAuthHydrated";
-import { loadTokens } from "@/lib/api/client";
+import { hasSession } from "@/lib/api/client";
 import { AuthLoading } from "@/components/shared/AuthLoading";
 
 export default function Login() {
@@ -25,7 +25,7 @@ export default function Login() {
 
   if (!hydrated) return <AuthLoading />;
 
-  if (session && loadTokens()) return <Navigate to="/dashboard" replace />;
+  if (session && hasSession()) return <Navigate to="/dashboard" replace />;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from "react";
 import { Bell, Check, CheckCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
 import {
   Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@miqorai/ui/popover";
 import { useNotifications } from "@/store/notifications";
 import { useAuth } from "@/store/auth";
 

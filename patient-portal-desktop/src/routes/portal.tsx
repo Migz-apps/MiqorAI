@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FiHome, FiFileText, FiShare2, FiUsers, FiUser, FiLogOut, FiMenu,
   FiMaximize2, FiPlus, FiTrash2, FiAlertTriangle, FiCalendar,
@@ -7,7 +7,7 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "@/lib/auth";
 import { downloadFile } from "@/lib/api/client";
-import { patientApi, type AccessGrant, type AccessLogItem, type AccessRequest, type FamilyMember, type MedicalRecord, type PatientDashboard, type PatientSettings, type EmergencyContact } from "@/lib/api/patient";
+import { patientApi, type AccessGrant, type AccessLogItem, type AccessRequest, type FamilyMember, type MedicalRecord, type PatientDashboard, type PatientSettings, type EmergencyContact, type QrResponse } from "@/lib/api/patient";
 import { Modal } from "@/components/Modal";
 import { useToast } from "@/components/Toast";
 import { MESSAGES } from "@/lib/user-messages";
@@ -126,7 +126,9 @@ export default function PortalPage() {
 function HomeTab({ user }: { user: { id: string; name: string } }) {
   const { toast } = useToast();
   const [dash, setDash] = useState<PatientDashboard | null>(null);
-  const [qr, setQr] = useState<string | null>(null);
+  const [qr, setQr] = useState<QrResponse | null>(null);
+  const [qrRefreshing, setQrRefreshing] = useState(false);
+  const [qrSecondsLeft, setQrSecondsLeft] = useState<number | null>(null);
   const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [enlarge, setEnlarge] = useState(false);
 
@@ -134,23 +136,56 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
     patientApi.accessRequests().then(setRequests).catch(() => setRequests([]));
   };
 
+  const loadQr = useCallback(() => {
+    setQrRefreshing(true);
+    patientApi.qrCode()
+      .then(setQr)
+      .catch(() => undefined)
+      .finally(() => setQrRefreshing(false));
+  }, []);
+
   useEffect(() => {
-    Promise.all([patientApi.dashboard(), patientApi.qrCode()])
-      .then(([d, q]) => { setDash(d); setQr(q.qr_code); })
-      .catch(() => undefined);
+    patientApi.dashboard().then(setDash).catch(() => undefined);
+    loadQr();
     loadRequests();
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") loadRequests();
     }, 5000);
+    // Refresh the code when the tab becomes visible or the window regains
+    // focus, so an idle tab never shows an expired QR.
     const onVisible = () => {
-      if (document.visibilityState === "visible") loadRequests();
+      if (document.visibilityState === "visible") {
+        loadRequests();
+        loadQr();
+      }
     };
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
-  }, []);
+  }, [loadQr]);
+
+  // Re-fetch at half the server TTL while visible, and keep a countdown to the
+  // renewal point so the patient can see their code stays fresh.
+  useEffect(() => {
+    if (!qr) return;
+    const ttlMs = (qr.ttl_seconds ?? 300) * 1000;
+    const expiresAt = qr.expires_at ? new Date(qr.expires_at).getTime() : Date.now() + ttlMs;
+    const renewAt = expiresAt - ttlMs / 2;
+    const secondsToRenew = () => Math.max(0, Math.ceil((renewAt - Date.now()) / 1000));
+    setQrSecondsLeft(secondsToRenew());
+    const tick = window.setInterval(() => setQrSecondsLeft(secondsToRenew()), 1000);
+    const refresh = window.setTimeout(() => {
+      if (document.visibilityState === "visible") loadQr();
+    }, Math.max(5_000, renewAt - Date.now()));
+    return () => {
+      window.clearInterval(tick);
+      window.clearTimeout(refresh);
+    };
+  }, [qr, loadQr]);
 
   const respondToRequest = async (id: string, decision: "approve" | "deny") => {
     if (decision === "approve") {
@@ -209,8 +244,13 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
         <div className="lg:col-span-1 rounded-xl bg-card border border-border p-6 flex flex-col items-center">
           <div className="text-sm font-medium text-muted-foreground">Your medical QR</div>
           <div className="mt-4 rounded-xl bg-white p-4 border border-border min-h-[180px] grid place-items-center">
-            {qr ? <img src={qr} alt="Medical QR code" className="w-[180px] h-[180px]" /> : <span className="text-xs text-muted-foreground">Loading…</span>}
+            {qr ? <img src={qr.qr_code} alt="Medical QR code" className="w-[180px] h-[180px]" /> : <span className="text-xs text-muted-foreground">Loading…</span>}
           </div>
+          {qr && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              {qrRefreshing ? "Refreshing…" : qrSecondsLeft !== null ? `Renews in ${qrSecondsLeft}s` : null}
+            </div>
+          )}
           <div className="mt-3 font-mono text-xs text-muted-foreground">{user.id}</div>
           <button onClick={() => setEnlarge(true)} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
             <FiMaximize2 size={14} /> Enlarge QR
@@ -274,7 +314,12 @@ function HomeTab({ user }: { user: { id: string; name: string } }) {
 
       <Modal open={enlarge} onClose={() => setEnlarge(false)} title="Your Medical QR" size="md">
         <div className="grid place-items-center">
-          {qr && <img src={qr} alt="Medical QR code enlarged" className="rounded-xl border border-border max-w-[320px]" />}
+          {qr && <img src={qr.qr_code} alt="Medical QR code enlarged" className="rounded-xl border border-border max-w-[320px]" />}
+          {qr && qrSecondsLeft !== null && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              {qrRefreshing ? "Refreshing…" : `Renews in ${qrSecondsLeft}s`}
+            </div>
+          )}
           <div className="mt-4 font-mono text-sm">{user.id}</div>
         </div>
       </Modal>

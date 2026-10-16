@@ -20,7 +20,10 @@ npm run preview
 
 ## Docker
 
+Images are built from the repository root with the shared portal Dockerfile
+(see `deploy/k8s/README.md`):
+
 ```bash
-docker build -t MiqorAI-admin-portal .
-docker run -p 8083:8083 -e PORT=8083 MiqorAI-admin-portal
+docker build -f deploy/docker/portal.Dockerfile --build-arg PORTAL=admin-portal   --build-arg VITE_API_URL=https://api.miqorai.com -t miqorai-admin-portal .
+docker run -p 8080:8080 -e API_ORIGIN=https://api.miqorai.com miqorai-admin-portal
 ```

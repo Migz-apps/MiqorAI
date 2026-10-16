@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@miqorai/ui/badge";
 import { Clock, CheckCircle2, Package, PauseCircle, XCircle, ShieldCheck } from "lucide-react";
 import type { RxStatus } from "@/lib/types";
 

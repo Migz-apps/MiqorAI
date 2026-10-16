@@ -9,73 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TransactionsRouteImport } from './routes/transactions'
-import { Route as SystemRouteImport } from './routes/system'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as PharmaciesRouteImport } from './routes/pharmacies'
-import { Route as PatientsRouteImport } from './routes/patients'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as InsurersRouteImport } from './routes/insurers'
-import { Route as HospitalsRouteImport } from './routes/hospitals'
-import { Route as HelpRouteImport } from './routes/help'
-import { Route as DisputesRouteImport } from './routes/disputes'
-import { Route as ComplianceRouteImport } from './routes/compliance'
-import { Route as BillingRouteImport } from './routes/billing'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
+import { Route as BillingRouteImport } from './routes/billing'
+import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as DisputesRouteImport } from './routes/disputes'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as HospitalsRouteImport } from './routes/hospitals'
+import { Route as InsurersRouteImport } from './routes/insurers'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PatientsRouteImport } from './routes/patients'
+import { Route as PharmaciesRouteImport } from './routes/pharmacies'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SystemRouteImport } from './routes/system'
+import { Route as TransactionsRouteImport } from './routes/transactions'
 
-const TransactionsRoute = TransactionsRouteImport.update({
-  id: '/transactions',
-  path: '/transactions',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SystemRoute = SystemRouteImport.update({
-  id: '/system',
-  path: '/system',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PharmaciesRoute = PharmaciesRouteImport.update({
-  id: '/pharmacies',
-  path: '/pharmacies',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PatientsRoute = PatientsRouteImport.update({
-  id: '/patients',
-  path: '/patients',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InsurersRoute = InsurersRouteImport.update({
-  id: '/insurers',
-  path: '/insurers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HospitalsRoute = HospitalsRouteImport.update({
-  id: '/hospitals',
-  path: '/hospitals',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HelpRoute = HelpRouteImport.update({
-  id: '/help',
-  path: '/help',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DisputesRoute = DisputesRouteImport.update({
-  id: '/disputes',
-  path: '/disputes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComplianceRoute = ComplianceRouteImport.update({
-  id: '/compliance',
-  path: '/compliance',
+const AcceptInviteRoute = AcceptInviteRouteImport.update({
+  id: '/accept-invite',
+  path: '/accept-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BillingRoute = BillingRouteImport.update({
@@ -83,14 +39,65 @@ const BillingRoute = BillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ComplianceRoute = ComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DisputesRoute = DisputesRouteImport.update({
+  id: '/disputes',
+  path: '/disputes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HospitalsRoute = HospitalsRouteImport.update({
+  id: '/hospitals',
+  path: '/hospitals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsurersRoute = InsurersRouteImport.update({
+  id: '/insurers',
+  path: '/insurers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PatientsRoute = PatientsRouteImport.update({
+  id: '/patients',
+  path: '/patients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PharmaciesRoute = PharmaciesRouteImport.update({
+  id: '/pharmacies',
+  path: '/pharmacies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SystemRoute = SystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransactionsRoute = TransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/billing': typeof BillingRoute
   '/compliance': typeof ComplianceRoute
   '/disputes': typeof DisputesRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/billing': typeof BillingRoute
   '/compliance': typeof ComplianceRoute
   '/disputes': typeof DisputesRoute
@@ -122,6 +130,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accept-invite': typeof AcceptInviteRoute
   '/billing': typeof BillingRoute
   '/compliance': typeof ComplianceRoute
   '/disputes': typeof DisputesRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accept-invite'
     | '/billing'
     | '/compliance'
     | '/disputes'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accept-invite'
     | '/billing'
     | '/compliance'
     | '/disputes'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accept-invite'
     | '/billing'
     | '/compliance'
     | '/disputes'
@@ -185,6 +197,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcceptInviteRoute: typeof AcceptInviteRoute
   BillingRoute: typeof BillingRoute
   ComplianceRoute: typeof ComplianceRoute
   DisputesRoute: typeof DisputesRoute
@@ -201,81 +214,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/transactions': {
-      id: '/transactions'
-      path: '/transactions'
-      fullPath: '/transactions'
-      preLoaderRoute: typeof TransactionsRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/system': {
-      id: '/system'
-      path: '/system'
-      fullPath: '/system'
-      preLoaderRoute: typeof SystemRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pharmacies': {
-      id: '/pharmacies'
-      path: '/pharmacies'
-      fullPath: '/pharmacies'
-      preLoaderRoute: typeof PharmaciesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/patients': {
-      id: '/patients'
-      path: '/patients'
-      fullPath: '/patients'
-      preLoaderRoute: typeof PatientsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/insurers': {
-      id: '/insurers'
-      path: '/insurers'
-      fullPath: '/insurers'
-      preLoaderRoute: typeof InsurersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hospitals': {
-      id: '/hospitals'
-      path: '/hospitals'
-      fullPath: '/hospitals'
-      preLoaderRoute: typeof HospitalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/help': {
-      id: '/help'
-      path: '/help'
-      fullPath: '/help'
-      preLoaderRoute: typeof HelpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/disputes': {
-      id: '/disputes'
-      path: '/disputes'
-      fullPath: '/disputes'
-      preLoaderRoute: typeof DisputesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compliance': {
-      id: '/compliance'
-      path: '/compliance'
-      fullPath: '/compliance'
-      preLoaderRoute: typeof ComplianceRouteImport
+    '/accept-invite': {
+      id: '/accept-invite'
+      path: '/accept-invite'
+      fullPath: '/accept-invite'
+      preLoaderRoute: typeof AcceptInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/billing': {
@@ -285,11 +235,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BillingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/compliance': {
+      id: '/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/disputes': {
+      id: '/disputes'
+      path: '/disputes'
+      fullPath: '/disputes'
+      preLoaderRoute: typeof DisputesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hospitals': {
+      id: '/hospitals'
+      path: '/hospitals'
+      fullPath: '/hospitals'
+      preLoaderRoute: typeof HospitalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insurers': {
+      id: '/insurers'
+      path: '/insurers'
+      fullPath: '/insurers'
+      preLoaderRoute: typeof InsurersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/patients': {
+      id: '/patients'
+      path: '/patients'
+      fullPath: '/patients'
+      preLoaderRoute: typeof PatientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pharmacies': {
+      id: '/pharmacies'
+      path: '/pharmacies'
+      fullPath: '/pharmacies'
+      preLoaderRoute: typeof PharmaciesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/system': {
+      id: '/system'
+      path: '/system'
+      fullPath: '/system'
+      preLoaderRoute: typeof SystemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -297,6 +317,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcceptInviteRoute: AcceptInviteRoute,
   BillingRoute: BillingRoute,
   ComplianceRoute: ComplianceRoute,
   DisputesRoute: DisputesRoute,

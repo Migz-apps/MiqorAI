@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Input } from "@miqorai/ui/input";
+import { Badge } from "@miqorai/ui/badge";
+import { Skeleton } from "@miqorai/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@miqorai/ui/table";
 import { Search, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/miqorai/PageHeader";
 import { insurerApi, insurerKeys, mapAuditEntry } from "@/lib/api/insurer";

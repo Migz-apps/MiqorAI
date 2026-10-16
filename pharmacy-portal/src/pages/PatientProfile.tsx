@@ -1,8 +1,8 @@
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
+import { Button } from "@miqorai/ui/button";
 import { ArrowLeft, Phone, AlertTriangle, Activity } from "lucide-react";
 import { StatusBadge } from "@/components/miqorai/StatusBadge";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";

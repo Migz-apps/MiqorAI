@@ -1,13 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster as Sonner } from "@miqorai/ui/sonner";
+import { TooltipProvider } from "@miqorai/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RoleRoute } from "@/components/layout/RoleRoute";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AcceptInvite from "./pages/AcceptInvite";
 import Dashboard from "./pages/Dashboard";
 import Scan from "./pages/Scan";
 import Prescriptions from "./pages/Prescriptions";
@@ -29,11 +30,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Sonner />
+      <Sonner infoClassName="group-[.toast]:border-pharmacy/20 group-[.toast]:bg-pharmacy-light/60" />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />

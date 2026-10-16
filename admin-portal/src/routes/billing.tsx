@@ -45,10 +45,10 @@ function BillingPage() {
   return (
     <PageShell title="Revenue & Billing" subtitle="Track every shilling flowing through MiqorAI">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="MRR" value={fmtKsh(revenue?.mrr ?? 0)} delta={23} icon={Wallet} accent="success" />
-        <StatCard label="ARR" value={fmtKsh(revenue?.arr ?? 0)} delta={18} icon={TrendingUp} accent="primary" />
-        <StatCard label="Total To Date" value={fmtKsh(revenue?.total_revenue ?? dash?.total_savings ?? 0)} delta={12} icon={FileText} accent="purple" />
-        <StatCard label="Invoices" value={String(invoices.length)} delta={4} icon={TrendingUp} accent="pink" />
+        <StatCard label="MRR" value={fmtKsh(revenue?.mrr ?? 0)} icon={Wallet} accent="success" />
+        <StatCard label="ARR" value={fmtKsh(revenue?.arr ?? 0)} icon={TrendingUp} accent="primary" />
+        <StatCard label="Total To Date" value={fmtKsh(revenue?.total_revenue ?? dash?.total_savings ?? 0)} icon={FileText} accent="purple" />
+        <StatCard label="Invoices" value={String(invoices.length)} icon={TrendingUp} accent="pink" />
       </div>
 
       <div className="rounded-xl border border-border bg-card-gradient p-5 shadow-[var(--shadow-card)]">

@@ -1,11 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
+import { Skeleton } from "@miqorai/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+} from "@miqorai/ui/table";
 import { Activity, AlertTriangle, Phone, Download, MessageSquare } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
@@ -167,7 +167,7 @@ export default function Adherence() {
                       : <Badge variant="outline" className="bg-success/10 text-success border-success/30">On track</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" className="h-7 text-xs text-insurer">View â†’</Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs text-insurer">View →</Button>
                   </TableCell>
                 </TableRow>
               ))}

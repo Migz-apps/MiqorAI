@@ -5,8 +5,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@miqorai/ui/dialog";
+import { Button } from "@miqorai/ui/button";
 import { AlertTriangle } from "lucide-react";
 import type { PriorLabMatch } from "@/lib/types";
 

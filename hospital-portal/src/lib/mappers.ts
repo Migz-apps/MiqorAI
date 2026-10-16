@@ -69,11 +69,12 @@ function mapGender(g?: string | null): Patient["gender"] {
   return "Other";
 }
 
-function mapStaffRole(role: string): Role {
+export function mapStaffRole(role: string): Role {
   const r = role.toLowerCase().replace(/-/g, "_");
   if (r === "hospital_admin" || r === "admin") return "admin";
   if (ALL_ROLES.includes(r as Role)) return r as Role;
-  return "doctor";
+  // Unknown roles fall back to the least-privileged role.
+  return "receptionist";
 }
 
 function mapPrescriptionStatus(s: string): Prescription["status"] {
@@ -287,7 +288,7 @@ export function mapStaffMember(row: Record<string, unknown>): StaffMember {
   return {
     id: String(row.id),
     name: String(row.name ?? row.email ?? "Staff"),
-    role: mapStaffRole(String(row.role ?? "doctor")),
+    role: mapStaffRole(String(row.role ?? "receptionist")),
     email: String(row.email ?? ""),
     department: row.department ? (String(row.department) as Department) : undefined,
     active: Boolean(row.active ?? true),

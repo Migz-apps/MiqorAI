@@ -1,14 +1,15 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import {
   ApiError,
+  clearSession,
   completePatientSignupApi,
-  loadTokens,
   loginApi,
   logoutApi,
+  onSessionExpired,
   requestForgotPasswordApi,
   resendForgotPasswordOtpApi,
   resetPasswordApi,
-  saveTokens,
+  restoreSession,
   verifyForgotPasswordOtpApi,
 } from "./api/client";
 import { patientApi, profileToUser, type ProfileResponse } from "./api/patient";
@@ -65,21 +66,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     (async () => {
       try {
-        if (loadTokens()) {
+        localStorage.removeItem(KEY);
+        if (await restoreSession()) {
           const profile = await patientApi.profile();
           persist(toUser(profile));
         } else {
-          localStorage.removeItem(KEY);
           setUser(null);
         }
       } catch {
-        saveTokens(null);
-        localStorage.removeItem(KEY);
+        clearSession();
         setUser(null);
       } finally {
         setAuthReady(true);
       }
     })();
+    // A refresh that fails mid-session signs the user out of the UI.
+    return onSessionExpired(() => setUser(null));
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       persist(toUser(profile));
       return true;
     } catch {
-      saveTokens(null);
+      clearSession();
       return false;
     }
   };
@@ -121,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       persist(toUser(profile));
       return true;
     } catch {
-      saveTokens(null);
+      clearSession();
       return false;
     }
   };

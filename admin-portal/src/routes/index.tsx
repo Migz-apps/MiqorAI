@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/portal/PageShell";
 import { StatCard } from "@/components/portal/StatCard";
@@ -9,7 +9,6 @@ import { PendingApprovals } from "@/components/portal/PendingApprovals";
 import { adminApi, adminKeys } from "@/lib/api/admin";
 import { downloadFile } from "@/lib/api/client";
 import { fmtKsh } from "@/lib/format";
-import { useAuth } from "@/lib/auth";
 import { toast } from "@/lib/notify";
 import {
   Wallet, Hospital, Pill, Users, Zap, FileText, ShieldCheck, UserPlus,
@@ -20,12 +19,6 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => {
-    const session = useAuth.getState().session;
-    if (!session) {
-      throw redirect({ to: "/login" });
-    }
-  },
   head: () => ({
     meta: [
       { title: "Dashboard · MiqorAI Management" },
@@ -83,10 +76,10 @@ function Dashboard() {
       <HeroBanner dash={dash} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Savings" value={fmtKsh(dash.total_savings)} delta={23} icon={Wallet} accent="success" />
-        <StatCard label="Hospitals Live" value={String(dash.total_hospitals)} delta={5} deltaLabel="this week" icon={Hospital} accent="primary" />
-        <StatCard label="Pharmacies" value={String(dash.total_pharmacies)} delta={3} deltaLabel="this week" icon={Pill} accent="purple" />
-        <StatCard label="Patients" value={dash.total_patients.toLocaleString()} delta={10} deltaLabel="this month" icon={Users} accent="pink" />
+        <StatCard label="Total Savings" value={fmtKsh(dash.total_savings)} icon={Wallet} accent="success" />
+        <StatCard label="Hospitals Live" value={String(dash.total_hospitals)} icon={Hospital} accent="primary" />
+        <StatCard label="Pharmacies" value={String(dash.total_pharmacies)} icon={Pill} accent="purple" />
+        <StatCard label="Patients" value={dash.total_patients.toLocaleString()} icon={Users} accent="pink" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -134,6 +127,14 @@ function HeroBanner({ dash }: { dash: Awaited<ReturnType<typeof adminApi.dashboa
     }
   };
 
+  const health = dash.system_health;
+  const allUp =
+    health &&
+    health.api_gateway?.status === "up" &&
+    health.database?.status === "up" &&
+    health.redis?.status === "up" &&
+    (health.sync_queue?.pending ?? 0) <= 50;
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border bg-card-gradient p-6 lg:p-7 shadow-[var(--shadow-card)]">
       <div className="absolute inset-0 grid-bg opacity-40" />
@@ -142,9 +143,15 @@ function HeroBanner({ dash }: { dash: Awaited<ReturnType<typeof adminApi.dashboa
 
       <div className="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div className="space-y-3 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-success/30 bg-success/10 text-success text-[11px] font-mono">
-            <span className="size-1.5 rounded-full bg-success pulse-dot text-success" />
-            ALL SYSTEMS NOMINAL
+          <div
+            className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-[11px] font-mono ${
+              allUp
+                ? "border-success/30 bg-success/10 text-success"
+                : "border-warning/30 bg-warning/10 text-warning"
+            }`}
+          >
+            <span className={`size-1.5 rounded-full pulse-dot ${allUp ? "bg-success text-success" : "bg-warning text-warning"}`} />
+            {allUp ? "ALL SYSTEMS NOMINAL" : "SYSTEM DEGRADED"}
             <span className="text-muted-foreground">·</span>
             <Calendar className="size-3" /> {today}
           </div>

@@ -33,6 +33,10 @@ export default defineConfig({
       server: {
         entry: "server",
       },
+      // Emit dist/client/_shell.html so the portal can be served as a static SPA.
+      spa: {
+        enabled: true,
+      },
     }),
     viteReact(),
   ],

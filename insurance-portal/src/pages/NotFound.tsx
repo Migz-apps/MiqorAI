@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Building2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@miqorai/ui/button";
 
 export default function NotFound() {
   return (

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
 import { aiApi, toVisitContext } from "@/lib/api/ai";
 import type { VisitDraftState } from "@/lib/types";
 import { FileText, Sparkles } from "lucide-react";
@@ -47,7 +47,7 @@ export const RelevantHistoryPanel = ({ patientId, draft, analyzeToken }: Props) 
     <Card>
       <CardHeader className="pb-sm flex flex-row items-center justify-between gap-sm">
         <CardTitle className="h3 flex items-center gap-sm">
-          <FileText className="h-4 w-4 text-primary" /> Relevant history
+          <FileText className="h-4 w-4 text-primary" /> Suggested history (rule-based)
         </CardTitle>
         <Button
           type="button"

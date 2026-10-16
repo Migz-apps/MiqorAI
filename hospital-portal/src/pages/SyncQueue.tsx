@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { RefreshCw, CheckCircle2, AlertCircle, Wifi, WifiOff, Trash2, FileText, Pill, Activity, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
+} from "@miqorai/ui/dialog";
 import { useSync } from "@/store/sync";
 import { toast } from "@/lib/notify";
 import type { SyncItem } from "@/lib/types";
@@ -18,10 +18,10 @@ const typeIcon = {
   registration: FileText,
 } as const;
 
-const iconFor = (type: string) => iconFor(type) ?? FileText;
+const iconFor = (type: string) => typeIcon[type as keyof typeof typeIcon] ?? FileText;
 
 export default function SyncQueue() {
-  const { online, queue, syncAll, setOnline, retry, resolve, remove } = useSync();
+  const { online, queue, syncAll, retry, resolve, remove } = useSync();
   const [conflict, setConflict] = useState<SyncItem | null>(null);
   const pending = queue.filter(q => q.status === "pending");
   const conflicts = queue.filter(q => q.status === "conflict");
@@ -39,12 +39,12 @@ export default function SyncQueue() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-md">
         <div>
           <h1 className="h1">Sync Queue</h1>
-          <p className="body text-text-secondary">Records created offline are queued here until synced.</p>
+          <p className="body text-text-secondary">Queued records waiting to be processed — retry failures and resolve conflicts.</p>
         </div>
         <div className="flex items-center gap-sm flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setOnline(!online)}>
-            {online ? <><Wifi className="h-4 w-4 mr-1" /> Go offline</> : <><WifiOff className="h-4 w-4 mr-1" /> Go online</>}
-          </Button>
+          <Badge variant="outline" className={online ? "gap-1 border-success/30 text-success bg-success/10" : "gap-1 border-secondary/40 text-secondary bg-secondary/10"}>
+            {online ? <><Wifi className="h-3 w-3" /> Online</> : <><WifiOff className="h-3 w-3" /> Offline</>}
+          </Badge>
           <Button onClick={onSync} disabled={!online || pending.length === 0} className="bg-primary hover:bg-primary/90">
             <RefreshCw className="h-4 w-4 mr-2" /> Sync now ({pending.length})
           </Button>
@@ -116,9 +116,9 @@ export default function SyncQueue() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-sm">
             <div className="rounded-md border p-sm">
-              <div className="text-xs text-text-secondary mb-xs">Your offline version</div>
+              <div className="text-xs text-text-secondary mb-xs">Your queued version</div>
               <div className="text-sm font-medium">Created {conflict?.createdAt}</div>
-              <div className="text-xs text-text-secondary mt-xs">Local edit on this device</div>
+              <div className="text-xs text-text-secondary mt-xs">Waiting in the sync queue</div>
             </div>
             <div className="rounded-md border p-sm bg-background-grey">
               <div className="text-xs text-text-secondary mb-xs">Server version</div>

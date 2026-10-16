@@ -9,14 +9,11 @@ type SyncState = {
   loading: boolean;
   load: () => Promise<void>;
   setOnline: (v: boolean) => void;
-  enqueue: (item: Omit<SyncItem, "id" | "status" | "createdAt">) => void;
   syncAll: () => Promise<{ synced: number; conflicts: number }>;
   retry: (id: string) => Promise<void>;
   resolve: (id: string, choice: "mine" | "server") => Promise<void>;
   remove: (id: string) => Promise<void>;
 };
-
-const stamp = () => new Date().toISOString().slice(0, 16).replace("T", " ");
 
 export const useSync = create<SyncState>((set, get) => ({
   online: typeof navigator !== "undefined" ? navigator.onLine : true,
@@ -34,13 +31,6 @@ export const useSync = create<SyncState>((set, get) => ({
     }
   },
   setOnline: (v) => set({ online: v }),
-  enqueue: (item) =>
-    set({
-      queue: [
-        ...get().queue,
-        { ...item, id: `SQ${Date.now()}`, status: "pending", createdAt: stamp() },
-      ],
-    }),
   syncAll: async () => {
     if (!get().online) return { synced: 0, conflicts: 0 };
     const pending = get().queue.filter(q => q.status === "pending");

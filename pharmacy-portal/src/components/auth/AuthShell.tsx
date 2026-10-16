@@ -25,9 +25,9 @@ export const AuthShell = ({ children }: { children: React.ReactNode }) => (
         </p>
         <div className="grid grid-cols-3 gap-sm pt-md">
           {[
-            { k: "12k+", v: "Prescriptions/mo" },
-            { k: "98%",  v: "Accuracy"        },
-            { k: "<2s",  v: "QR verify"       },
+            { k: "Rx",        v: "Digital prescriptions" },
+            { k: "QR",        v: "Patient verification"  },
+            { k: "Adherence", v: "Refill tracking"       },
           ].map(s => (
             <div key={s.k} className="rounded-md bg-primary-foreground/10 p-sm backdrop-blur">
               <div className="text-lg font-bold">{s.k}</div>

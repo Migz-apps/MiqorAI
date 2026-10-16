@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@miqorai/ui/button";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput,
   CommandItem, CommandList,
-} from "@/components/ui/command";
+} from "@miqorai/ui/command";
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapSearchPatient } from "@/lib/mappers";
 import { useNavigate } from "react-router-dom";

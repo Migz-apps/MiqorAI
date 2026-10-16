@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, BarChart, Bar, CartesianGrid } from "recharts";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@miqorai/ui/badge";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapAdherenceTrend, mapPatientListItem } from "@/lib/api/mappers";
 import { pharmacyKeys } from "@/store/rx";

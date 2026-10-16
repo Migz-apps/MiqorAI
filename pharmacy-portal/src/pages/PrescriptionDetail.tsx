@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
 import { StatusBadge } from "@/components/miqorai/StatusBadge";
 import {
   AlertTriangle, ArrowLeft, ShieldCheck, Package, CheckCircle2, PauseCircle,
@@ -13,9 +13,9 @@ import { useAuth, can } from "@/store/auth";
 import { toast } from "@/lib/notify";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+} from "@miqorai/ui/dialog";
+import { Textarea } from "@miqorai/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@miqorai/ui/select";
 import {
   dispenseRx,
   holdRx,

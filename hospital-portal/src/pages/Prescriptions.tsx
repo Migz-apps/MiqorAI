@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
 import { Link } from "react-router-dom";
 import { hospitalApi, referenceApi } from "@/lib/api/hospital";
 import { mapPrescriptionListItem } from "@/lib/mappers";

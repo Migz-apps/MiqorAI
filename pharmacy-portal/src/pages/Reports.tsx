@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from "recharts";
-import { Button } from "@/components/ui/button";
+import { Button } from "@miqorai/ui/button";
 import { Download, FileText } from "lucide-react";
 import { downloadFile } from "@/lib/api/client";
 import { pharmacyApi } from "@/lib/api/pharmacy";

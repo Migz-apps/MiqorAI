@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { TrendingUp, Users, Activity, Pill } from "lucide-react";
 import { hospitalApi } from "@/lib/api/hospital";
 

@@ -1,15 +1,18 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
+import { Separator } from "@miqorai/ui/separator";
+import { Badge } from "@miqorai/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@miqorai/ui/dialog";
 import { useAuth } from "@/store/auth";
 import { hospitalApi } from "@/lib/api/hospital";
-import { Shield, Bell, Building2, KeyRound, LogOut } from "lucide-react";
+import { ApiError, changePasswordApi } from "@/lib/api/client";
+import { Shield, Building2, KeyRound, LogOut } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { useNavigate } from "react-router-dom";
 
@@ -17,26 +20,74 @@ export default function Settings() {
   const session = useAuth(s => s.session)!;
   const logout = useAuth(s => s.logout);
   const nav = useNavigate();
-  const [name, setName] = useState(session.name);
-  const [email, setEmail] = useState(session.email ?? "");
-  const [notifVisits, setNotifVisits] = useState(true);
-  const [notifSync, setNotifSync] = useState(true);
-  const [notifDigest, setNotifDigest] = useState(false);
-  const [twoFA, setTwoFA] = useState(false);
+  const queryClient = useQueryClient();
+  const isAdmin = session.role === "admin";
 
   const { data: hospitalSettings } = useQuery({
     queryKey: ["hospital", "settings"],
     queryFn: () => hospitalApi.settings(),
   });
 
-  const hospitalName = String(hospitalSettings?.name ?? session.hospitalName);
-  const hospitalCity = String(hospitalSettings?.city ?? hospitalSettings?.location ?? "—");
+  const [hospitalName, setHospitalName] = useState("");
+  const [hospitalCity, setHospitalCity] = useState("");
+
+  useEffect(() => {
+    if (!hospitalSettings) return;
+    setHospitalName(String(hospitalSettings.name ?? session.hospitalName ?? ""));
+    setHospitalCity(String(hospitalSettings.city ?? hospitalSettings.location ?? ""));
+  }, [hospitalSettings, session.hospitalName]);
+
+  const saveHospital = useMutation({
+    mutationFn: () =>
+      hospitalApi.updateSettings({
+        ...(hospitalSettings ?? {}),
+        name: hospitalName.trim(),
+        city: hospitalCity.trim(),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["hospital", "settings"] });
+      toast.success("Hospital settings saved");
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Could not save settings"),
+  });
+
+  // Change-password dialog state
+  const [pwOpen, setPwOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [newPw2, setNewPw2] = useState("");
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSaving, setPwSaving] = useState(false);
+
+  const closePwDialog = () => {
+    setPwOpen(false);
+    setCurrentPw("");
+    setNewPw("");
+    setNewPw2("");
+    setPwError(null);
+  };
+
+  const submitPasswordChange = async () => {
+    setPwError(null);
+    if (newPw.length < 8) { setPwError("New password must be at least 8 characters."); return; }
+    if (newPw !== newPw2) { setPwError("New passwords do not match."); return; }
+    setPwSaving(true);
+    try {
+      await changePasswordApi(currentPw, newPw);
+      closePwDialog();
+      toast.success("Password changed. Other sessions were signed out.");
+    } catch (err) {
+      setPwError(err instanceof ApiError ? err.message : "Could not change the password.");
+    } finally {
+      setPwSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-lg max-w-[900px] mx-auto">
       <div>
         <h1 className="h1">Settings</h1>
-        <p className="body text-text-secondary">Manage your account, security, and preferences.</p>
+        <p className="body text-text-secondary">Manage your account, security, and hospital details.</p>
       </div>
 
       <Card>
@@ -50,17 +101,13 @@ export default function Settings() {
             </div>
             <div>
               <div className="font-medium">{session.name}</div>
+              <div className="text-xs text-text-secondary">{session.email ?? "—"}</div>
               <Badge variant="outline" className="capitalize mt-1">{session.role}</Badge>
             </div>
           </div>
-          <Separator />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
-            <div className="space-y-xs"><Label>Full name</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-            <div className="space-y-xs"><Label>Email</Label><Input value={email} onChange={e => setEmail(e.target.value)} /></div>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={() => toast.success("Profile updated")} className="bg-primary hover:bg-primary/90">Save changes</Button>
-          </div>
+          <p className="text-xs text-text-secondary">
+            Your name and email come from your staff account. Ask your hospital admin to update them.
+          </p>
         </CardContent>
       </Card>
 
@@ -69,35 +116,12 @@ export default function Settings() {
           <CardTitle className="h3 flex items-center gap-sm"><KeyRound className="h-4 w-4 text-primary" /> Security</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          <Row label="Two-factor authentication" desc="Require a code from your authenticator app on sign-in.">
-            <Switch checked={twoFA} onCheckedChange={v => { setTwoFA(v); toast.success(v ? "2FA enabled" : "2FA disabled"); }} />
-          </Row>
-          <Separator />
           <Row label="Active session" desc={`Signed in ${new Date(session.loggedInAt).toLocaleString()} · auto sign-out after 8h`}>
             <Button variant="outline" size="sm" onClick={async () => { await logout(); nav("/login"); }}><LogOut className="h-4 w-4 mr-1" /> Sign out</Button>
           </Row>
           <Separator />
-          <Row label="Change password" desc="You'll be sent a confirmation email.">
-            <Button variant="outline" size="sm" onClick={() => toast.success("Password reset email sent")}>Send link</Button>
-          </Row>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-sm">
-          <CardTitle className="h3 flex items-center gap-sm"><Bell className="h-4 w-4 text-primary" /> Notifications</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-md">
-          <Row label="New patient check-ins" desc="Get notified when a patient is checked in.">
-            <Switch checked={notifVisits} onCheckedChange={setNotifVisits} />
-          </Row>
-          <Separator />
-          <Row label="Sync conflicts" desc="Alert me when offline records conflict on sync.">
-            <Switch checked={notifSync} onCheckedChange={setNotifSync} />
-          </Row>
-          <Separator />
-          <Row label="Daily digest" desc="A morning summary of your patient load.">
-            <Switch checked={notifDigest} onCheckedChange={setNotifDigest} />
+          <Row label="Change password" desc="Changing it signs out your other sessions.">
+            <Button variant="outline" size="sm" onClick={() => setPwOpen(true)}>Change password</Button>
           </Row>
         </CardContent>
       </Card>
@@ -106,12 +130,74 @@ export default function Settings() {
         <CardHeader className="pb-sm">
           <CardTitle className="h3 flex items-center gap-sm"><Building2 className="h-4 w-4 text-primary" /> Hospital</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-sm text-sm">
-          <Row label="Hospital" desc={hospitalName}><Badge variant="outline" className="font-mono">{session.hospitalCode}</Badge></Row>
+        <CardContent className="space-y-md">
+          <Row label="Hospital code" desc="Assigned by MiqorAI — used by staff to sign in.">
+            <Badge variant="outline" className="font-mono">{session.hospitalCode}</Badge>
+          </Row>
           <Separator />
-          <Row label="Location" desc={hospitalCity}><span className="text-xs text-text-secondary">Read-only</span></Row>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
+            <div className="space-y-xs">
+              <Label>Hospital name</Label>
+              <Input value={hospitalName} onChange={e => setHospitalName(e.target.value)} disabled={!isAdmin} />
+            </div>
+            <div className="space-y-xs">
+              <Label>City</Label>
+              <Input value={hospitalCity} onChange={e => setHospitalCity(e.target.value)} disabled={!isAdmin} />
+            </div>
+          </div>
+          {isAdmin ? (
+            <div className="flex justify-end">
+              <Button
+                onClick={() => saveHospital.mutate()}
+                disabled={saveHospital.isPending}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {saveHospital.isPending ? "Saving…" : "Save changes"}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-text-secondary">
+              Only hospital administrators can change these settings.
+            </p>
+          )}
         </CardContent>
       </Card>
+
+      <Dialog open={pwOpen} onOpenChange={(o) => { if (!o) closePwDialog(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change password</DialogTitle>
+            <DialogDescription>
+              Enter your current password and choose a new one. Other sessions will be signed out.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-md">
+            <div className="space-y-xs">
+              <Label htmlFor="current-pw">Current password</Label>
+              <Input id="current-pw" type="password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} autoComplete="current-password" />
+            </div>
+            <div className="space-y-xs">
+              <Label htmlFor="new-pw">New password</Label>
+              <Input id="new-pw" type="password" value={newPw} onChange={e => setNewPw(e.target.value)} autoComplete="new-password" />
+            </div>
+            <div className="space-y-xs">
+              <Label htmlFor="new-pw2">Confirm new password</Label>
+              <Input id="new-pw2" type="password" value={newPw2} onChange={e => setNewPw2(e.target.value)} autoComplete="new-password" />
+            </div>
+            {pwError && <p className="text-xs text-error">{pwError}</p>}
+          </div>
+          <DialogFooter className="gap-sm">
+            <Button variant="outline" onClick={closePwDialog}>Cancel</Button>
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              disabled={pwSaving || !currentPw || !newPw || !newPw2}
+              onClick={() => void submitPasswordChange()}
+            >
+              {pwSaving ? "Changing…" : "Change password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Building2, Mail, Lock, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
 import { FormAlert } from "@/components/shared/FormAlert";
 import { useAuth } from "@/store/auth";
 import { AuthShell } from "@/components/auth/AuthShell";

@@ -2,7 +2,17 @@ import { create } from "zustand";
 import { MESSAGES } from "@/lib/user-messages";
 import { persist } from "zustand/middleware";
 import type { Role } from "@/lib/types";
-import { ApiError, getMe, loadTokens, loginApi, logoutApi, saveTokens, type MeResponse } from "@/lib/api/client";
+import {
+  ApiError,
+  clearSession,
+  getMe,
+  loginApi,
+  logoutApi,
+  onSessionExpired,
+  restoreSession as restoreApiSession,
+  type MeResponse,
+} from "@/lib/api/client";
+import { mapStaffRole } from "@/lib/api/mappers";
 
 type Session = {
   staffId: string;
@@ -15,18 +25,20 @@ type Session = {
 
 type AuthState = {
   session: Session | null;
+  /** False until the cookie-based session restore on page load has settled. */
+  ready: boolean;
   failedAttempts: number;
   lockoutUntil: number | null;
   login: (pharmacyCode: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
-  switchRole: (role: Role) => void;
 };
 
-function mapRole(me: MeResponse): Role {
-  const r = me.staff_role as Role | undefined;
-  if (r && ["cashier", "technician", "pharmacist", "manager"].includes(r)) return r;
-  return "pharmacist";
+let restoreInFlight: Promise<void> | null = null;
+
+export function mapRole(me: MeResponse): Role {
+  if (me.role === "pharmacy_manager") return "manager";
+  return mapStaffRole(me.staff_role);
 }
 
 function sessionFromMe(me: MeResponse, pharmacyCode: string): Session {
@@ -44,6 +56,7 @@ export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
       session: null,
+      ready: false,
       failedAttempts: 0,
       lockoutUntil: null,
       login: async (pharmacyCode, email, password) => {
@@ -55,7 +68,7 @@ export const useAuth = create<AuthState>()(
         try {
           const me = await loginApi(email.trim(), password, pharmacyCode.trim());
           const session = sessionFromMe(me, pharmacyCode.trim());
-          set({ failedAttempts: 0, lockoutUntil: null, session });
+          set({ failedAttempts: 0, lockoutUntil: null, session, ready: true });
           return { ok: true };
         } catch (err) {
           const body = err instanceof ApiError ? (err.body as { error?: { details?: { retry_after?: number } } }) : null;
@@ -77,23 +90,28 @@ export const useAuth = create<AuthState>()(
         await logoutApi();
         set({ session: null });
       },
-      restoreSession: async () => {
-        if (!loadTokens()) return;
-        try {
-          const me = await getMe();
-          const prev = get().session;
-          set({
-            session: sessionFromMe(me, prev?.pharmacyCode ?? me.pharmacy_code ?? ""),
+      restoreSession: () => {
+        // One restore per page load; concurrent guards share it.
+        if (get().ready) return Promise.resolve();
+        if (!restoreInFlight) {
+          restoreInFlight = (async () => {
+            try {
+              if (!(await restoreApiSession())) {
+                set({ session: null, ready: true });
+                return;
+              }
+              const me = await getMe();
+              const prev = get().session;
+              set({ session: sessionFromMe(me, prev?.pharmacyCode ?? me.pharmacy_code ?? ""), ready: true });
+            } catch {
+              clearSession();
+              set({ session: null, ready: true });
+            }
+          })().finally(() => {
+            restoreInFlight = null;
           });
-        } catch {
-          saveTokens(null);
-          set({ session: null });
         }
-      },
-      switchRole: (role) => {
-        const s = get().session;
-        if (!s) return;
-        set({ session: { ...s, role } });
+        return restoreInFlight;
       },
     }),
     {
@@ -103,9 +121,12 @@ export const useAuth = create<AuthState>()(
   ),
 );
 
+// A refresh that fails mid-session drops the session so route guards redirect to login.
+onSessionExpired(() => useAuth.setState({ session: null }));
+
 export const PERMISSIONS = {
-  cashier:    { scanQR: true,  viewQueue: true, viewRxDetails: false, prepare: false, verify: false, dispense: true,  override: false, manageInventory: false, manageStaff: false, viewAnalytics: false, viewBilling: true,  viewAudit: false, manageSettings: false },
-  technician: { scanQR: true,  viewQueue: true, viewRxDetails: true,  prepare: true,  verify: false, dispense: true,  override: false, manageInventory: true,  manageStaff: false, viewAnalytics: false, viewBilling: true,  viewAudit: false, manageSettings: false },
+  cashier:    { scanQR: true,  viewQueue: true, viewRxDetails: false, prepare: false, verify: false, dispense: false, override: false, manageInventory: false, manageStaff: false, viewAnalytics: false, viewBilling: true,  viewAudit: false, manageSettings: false },
+  technician: { scanQR: true,  viewQueue: true, viewRxDetails: true,  prepare: true,  verify: false, dispense: false, override: false, manageInventory: true,  manageStaff: false, viewAnalytics: false, viewBilling: true,  viewAudit: false, manageSettings: false },
   pharmacist: { scanQR: true,  viewQueue: true, viewRxDetails: true,  prepare: true,  verify: true,  dispense: true,  override: true,  manageInventory: true,  manageStaff: false, viewAnalytics: true,  viewBilling: true,  viewAudit: true,  manageSettings: false },
   manager:    { scanQR: true,  viewQueue: true, viewRxDetails: true,  prepare: true,  verify: true,  dispense: true,  override: true,  manageInventory: true,  manageStaff: true,  viewAnalytics: true,  viewBilling: true,  viewAudit: true,  manageSettings: true  },
 } as const;

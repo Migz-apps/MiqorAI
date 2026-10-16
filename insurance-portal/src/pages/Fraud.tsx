@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
+import { Checkbox } from "@miqorai/ui/checkbox";
+import { Skeleton } from "@miqorai/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+} from "@miqorai/ui/table";
 import { ShieldAlert, Search, FileSearch, FlaskConical, Building, Download } from "lucide-react";
 import { PageHeader } from "@/components/miqorai/PageHeader";
 import { KpiCard } from "@/components/miqorai/KpiCard";
@@ -16,7 +16,7 @@ import { StatusPill } from "@/components/miqorai/StatusPill";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapFlaggedClaim, mapProvider } from "@/lib/api/insurer";
 import { fmtKsh, fmtNum } from "@/lib/format";
-import { Input } from "@/components/ui/input";
+import { Input } from "@miqorai/ui/input";
 import { toast } from "@/lib/notify";
 
 export default function Fraud() {
@@ -242,7 +242,7 @@ export default function Fraud() {
                     <TableCell className="num text-right">{p.flagged}</TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="ghost" className="h-7 text-xs text-insurer" disabled={investigateProviderMutation.isPending} onClick={() => investigateProviderMutation.mutate(p.name)}>
-                        {p.anomalyScore >= 70 ? "Investigate" : "Monitor"} â†’
+                        {p.anomalyScore >= 70 ? "Investigate" : "Monitor"} →
                       </Button>
                     </TableCell>
                   </TableRow>

@@ -1,12 +1,9 @@
-import { createFileRoute, Link, Navigate, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  Activity,
   Eye,
   EyeOff,
-  Globe2,
   Lock,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { FormAlert } from "@/components/FormAlert";
@@ -72,38 +69,18 @@ function LoginPage() {
         </div>
 
         <div className="relative space-y-6 max-w-md">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-success/30 bg-success/10 text-success text-[11px] font-mono">
-            <span className="size-1.5 rounded-full bg-success pulse-dot text-success" />
-            ALL SYSTEMS OPERATIONAL
-          </div>
           <h1 className="text-4xl font-semibold tracking-tight leading-tight">
             The command center <br />
             for the <span className="text-gradient">MiqorAI</span> network.
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Approve hospitals, resolve disputes, monitor billing and system health all in one
-            real-time cockpit covering 4 countries and 127k+ patients.
+            Approve hospitals and pharmacies, resolve disputes, and monitor billing and
+            system health from one place.
           </p>
-
-          <div className="grid grid-cols-3 gap-3 pt-2">
-            {[
-              { icon: Globe2, key: "4", label: "Countries" },
-              { icon: Activity, key: "47", label: "Hospitals" },
-              { icon: ShieldCheck, key: "99.97%", label: "Uptime" },
-            ].map(({ icon: Icon, key, label }) => (
-              <div key={label} className="rounded-lg border border-border bg-card-gradient p-3">
-                <Icon className="size-4 text-primary" />
-                <div className="mt-2 font-mono text-lg font-semibold">{key}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {label}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div className="relative text-[11px] text-muted-foreground font-mono flex items-center gap-2">
-          <Lock className="size-3" /> SOC 2 · HIPAA-ready · End-to-end encrypted
+          <Lock className="size-3" /> Authorized administrators only · Every sign-in is audited
         </div>
       </div>
 
@@ -136,14 +113,9 @@ function LoginPage() {
               />
             </div>
             <div>
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                  Password
-                </label>
-                <button type="button" className="text-[11px] text-primary hover:underline">
-                  Forgot?
-                </button>
-              </div>
+              <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                Password
+              </label>
               <div className="relative mt-1.5">
                 <input
                   type={show ? "text" : "password"}
@@ -165,15 +137,6 @@ function LoginPage() {
 
             {error ? <FormAlert>{error}</FormAlert> : null}
 
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input
-                type="checkbox"
-                className="size-3.5 rounded border-border accent-[var(--color-primary)]"
-                defaultChecked
-              />
-              Keep me signed in for 30 days
-            </label>
-
             <button
               type="submit"
               disabled={loading}
@@ -181,34 +144,10 @@ function LoginPage() {
             >
               {loading ? "Authenticating..." : "Sign in to Dashboard"}
             </button>
-
-            <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-background px-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  or
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="w-full h-11 rounded-md border border-border bg-card/60 text-sm hover:bg-accent transition flex items-center justify-center gap-2"
-            >
-              <ShieldCheck className="size-4 text-primary" /> Continue with SSO
-            </button>
           </form>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Need an account?{" "}
-            <Link to="/" className="text-primary hover:underline">
-              Request access
-            </Link>
-          </p>
-          <p className="mt-3 text-center text-[10px] font-mono text-muted-foreground/70">
-            MiqorAI · v2.6.1 · Build 20260508
+            Access is granted by invitation from a platform administrator.
           </p>
         </div>
       </div>

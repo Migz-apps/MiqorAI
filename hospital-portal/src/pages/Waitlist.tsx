@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Input } from "@miqorai/ui/input";
+import { Checkbox } from "@miqorai/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select";
+} from "@miqorai/ui/select";
 import { Phone, AlertTriangle, UserX, Clock, Bell } from "lucide-react";
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapDepartment, mapStaffMember } from "@/lib/mappers";

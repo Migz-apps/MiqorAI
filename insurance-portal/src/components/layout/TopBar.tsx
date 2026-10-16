@@ -1,14 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { LogOut, ShieldCheck, ChevronDown, Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Button } from "@miqorai/ui/button";
+import { Badge } from "@miqorai/ui/badge";
+import { Input } from "@miqorai/ui/input";
 import { useAuth, ROLE_LABEL } from "@/store/auth";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@miqorai/ui/dropdown-menu";
 import { initials } from "@/lib/format";
 import type { Role } from "@/lib/types";
 import { insurerApi, insurerKeys, mapAlert } from "@/lib/api/insurer";

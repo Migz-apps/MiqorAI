@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, type LucideIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@miqorai/ui/card";
 import { cn } from "@/lib/utils";
 
 export type KpiCardProps = {

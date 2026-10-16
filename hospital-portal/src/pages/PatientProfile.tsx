@@ -9,10 +9,10 @@ import {
   RotateCcw,
   User,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@miqorai/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@miqorai/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Badge } from "@miqorai/ui/badge";
 import { hospitalApi } from "@/lib/api/hospital";
 import {
   emptyVisitDraft,

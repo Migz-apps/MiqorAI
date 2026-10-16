@@ -6,10 +6,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+} from "@miqorai/ui/dialog";
+import { Button } from "@miqorai/ui/button";
+import { Textarea } from "@miqorai/ui/textarea";
+import { Label } from "@miqorai/ui/label";
 import type { CheckActionResponse } from "@/lib/api/ai";
 
 type Props = {

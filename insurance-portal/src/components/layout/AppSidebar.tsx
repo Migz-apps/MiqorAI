@@ -6,7 +6,7 @@ import {
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
-} from "@/components/ui/sidebar";
+} from "@miqorai/ui/sidebar";
 import { useAuth, can } from "@/store/auth";
 
 export function AppSidebar() {

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Input } from "@miqorai/ui/input";
+import { Badge } from "@miqorai/ui/badge";
 import { StatusBadge } from "@/components/miqorai/StatusBadge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@miqorai/ui/button";
 import { AlertTriangle, Search, Filter } from "lucide-react";
 import type { RxStatus } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";

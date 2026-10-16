@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { HelpCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@miqorai/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from "@/components/ui/dialog";
+} from "@miqorai/ui/dialog";
 import { useAuth, ROLE_LABEL } from "@/store/auth";
 
 const ROLE_TIPS: Record<string, { title: string; tips: string[] }> = {

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
+import { Input } from "@miqorai/ui/input";
+import { Label } from "@miqorai/ui/label";
+import { Button } from "@miqorai/ui/button";
+import { Switch } from "@miqorai/ui/switch";
 import { useAuth } from "@/store/auth";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { pharmacyKeys } from "@/store/rx";
@@ -44,11 +44,11 @@ export default function Settings() {
   }, [settings, session.pharmacyName]);
 
   const saveMutation = useMutation({
-    mutationFn: () => pharmacyApi.updateSettings({
+    mutationFn: (rules: typeof notificationRules) => pharmacyApi.updateSettings({
       name,
       phone,
       address,
-      notification_rules: notificationRules,
+      notification_rules: rules,
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: pharmacyKeys.settings() });
@@ -77,9 +77,11 @@ export default function Settings() {
               <div className="text-sm">{rule.label}</div>
               <Switch
                 checked={notificationRules[rule.key as keyof typeof notificationRules]}
-                onCheckedChange={(checked) =>
-                  setNotificationRules((current) => ({ ...current, [rule.key]: checked }))
-                }
+                onCheckedChange={(checked) => {
+                  const next = { ...notificationRules, [rule.key]: checked };
+                  setNotificationRules(next);
+                  saveMutation.mutate(next);
+                }}
               />
             </div>
           ))}

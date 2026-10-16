@@ -2,7 +2,16 @@ import { create } from "zustand";
 import { MESSAGES } from "@/lib/user-messages";
 import { persist } from "zustand/middleware";
 import type { Role } from "@/lib/types";
-import { ApiError, getMe, loadTokens, loginApi, logoutApi, saveTokens, type MeResponse } from "@/lib/api/client";
+import {
+  ApiError,
+  clearSession,
+  getMe,
+  loginApi,
+  logoutApi,
+  onSessionExpired,
+  restoreSession as restoreApiSession,
+  type MeResponse,
+} from "@/lib/api/client";
 
 type Session = {
   staffId: string;
@@ -17,6 +26,8 @@ type Session = {
 
 type AuthState = {
   session: Session | null;
+  /** False until the cookie-based session restore on page load has settled. */
+  ready: boolean;
   failedAttempts: number;
   lockoutUntil: number | null;
   login: (hospitalCode: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
@@ -27,11 +38,14 @@ type AuthState = {
 const AUTH_STORAGE_KEY = "MiqorAI-hospital-auth-v2";
 const LEGACY_AUTH_STORAGE_KEYS = ["MiqorAI-auth"];
 
-function mapRole(me: MeResponse): Role {
+let restoreInFlight: Promise<void> | null = null;
+
+export function mapRole(me: MeResponse): Role {
   if (me.role === "hospital_admin" || me.staff_role === "admin") return "admin";
   const r = me.staff_role as Role | undefined;
   if (isRole(r)) return r;
-  return "doctor";
+  // Unknown roles fall back to the least-privileged role.
+  return "receptionist";
 }
 
 function isRole(role: unknown): role is Role {
@@ -60,6 +74,7 @@ export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
       session: null,
+      ready: false,
       failedAttempts: 0,
       lockoutUntil: null,
       login: async (hospitalCode, email, password) => {
@@ -67,7 +82,7 @@ export const useAuth = create<AuthState>()(
           const me = await loginApi(email.trim(), password, hospitalCode.trim());
           const session = sessionFromMe(me, hospitalCode.trim());
           clearLegacyAuthStorage();
-          set({ failedAttempts: 0, lockoutUntil: null, session });
+          set({ failedAttempts: 0, lockoutUntil: null, session, ready: true });
           return { ok: true };
         } catch (err) {
           const body = err instanceof ApiError ? (err.body as { error?: { details?: { retry_after?: number } } }) : null;
@@ -84,24 +99,37 @@ export const useAuth = create<AuthState>()(
         await logoutApi();
         set({ session: null, failedAttempts: 0, lockoutUntil: null });
       },
-      restoreSession: async () => {
-        if (!loadTokens()) return;
-        try {
-          const me = await getMe();
-          const prev = get().session;
-          set({
-            session: sessionFromMe(me, prev?.hospitalCode ?? me.hospital_code ?? ""),
+      restoreSession: () => {
+        // One restore per page load; concurrent guards share it.
+        if (get().ready) return Promise.resolve();
+        if (!restoreInFlight) {
+          restoreInFlight = (async () => {
+            try {
+              if (!(await restoreApiSession())) {
+                set({ session: null, ready: true });
+                return;
+              }
+              const me = await getMe();
+              const prev = get().session;
+              set({
+                session: sessionFromMe(me, prev?.hospitalCode ?? me.hospital_code ?? ""),
+                ready: true,
+              });
+            } catch {
+              clearSession();
+              set({ session: null, ready: true });
+            }
+          })().finally(() => {
+            restoreInFlight = null;
           });
-        } catch {
-          saveTokens(null);
-          set({ session: null, failedAttempts: 0, lockoutUntil: null });
         }
+        return restoreInFlight;
       },
     }),
     { name: AUTH_STORAGE_KEY, partialize: (s) => ({ session: s.session, failedAttempts: s.failedAttempts, lockoutUntil: s.lockoutUntil }),
       onRehydrateStorage: () => (state) => {
         clearLegacyAuthStorage();
-        if (state && (typeof window !== "undefined" && !loadTokens() || !isRole(state.session?.role))) {
+        if (state && !isRole(state.session?.role)) {
           state.session = null;
           state.failedAttempts = 0;
           state.lockoutUntil = null;
@@ -110,6 +138,9 @@ export const useAuth = create<AuthState>()(
     },
   ),
 );
+
+// A refresh that fails mid-session drops the session so route guards redirect to login.
+onSessionExpired(() => useAuth.setState({ session: null }));
 
 export const PERMISSIONS = {
   receptionist: { scan: true,  viewBasic: true, checkIn: true, recordVitals: false, viewFull: false, addDiagnosis: false, prescribe: false, orderLabs: false, manageStaff: false, manageDepartment: false, viewAnalytics: false, viewBilling: false, viewAudit: false, manageDepartments: false, manageHospital: false, manualRegister: true, printSticker: true },
