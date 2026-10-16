@@ -8,6 +8,7 @@ import { ScanLine, Users, Activity, ClipboardList } from "lucide-react";
 import { hospitalApi } from "@/lib/api/hospital";
 import { can, useAuth } from "@/store/auth";
 import { Link } from "react-router-dom";
+import { formatDate, formatTime } from "@miqorai/api-client/format";
 
 function displayName(value: unknown, fallback = "Patient") {
   const name = typeof value === "string" ? value.trim() : "";
@@ -21,7 +22,7 @@ function initials(name: string) {
 export default function Dashboard() {
   const session = useAuth(s => s.session)!;
   const canScan = can(session.role, "scan");
-  const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const today = formatDate(new Date(), { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
   const { data: dash, isLoading } = useQuery({
     queryKey: ["hospital", "dashboard"],
@@ -33,11 +34,12 @@ export default function Dashboard() {
     : [];
   const staffName = displayName(session?.name, "Doctor");
   const hospitalName = displayName(session?.hospitalName, "your hospital");
+  const kigaliHour = Number(formatTime(new Date()).slice(0, 2));
 
   return (
     <div className="space-y-lg max-w-[1400px] mx-auto animate-fade-up">
       <PageHeader
-        title={`${new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening"}, ${staffName.split(" ")[0]}`}
+        title={`${kigaliHour < 12 ? "Good morning" : kigaliHour < 18 ? "Good afternoon" : "Good evening"}, ${staffName.split(" ")[0]}`}
         subtitle={`${today} · Here's what's happening at ${hospitalName} today.`}
       />
 
@@ -82,7 +84,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{name}</div>
-                  <div className="text-xs text-text-secondary">{patientId.slice(0, 8)}… · Checked in {p.checked_in_at ? new Date(p.checked_in_at).toLocaleTimeString() : "—"}</div>
+                  <div className="text-xs text-text-secondary">{patientId.slice(0, 8)}… · Checked in {p.checked_in_at ? formatTime(p.checked_in_at) : "—"}</div>
                 </div>
               </Link>
             );})}

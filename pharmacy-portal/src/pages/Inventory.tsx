@@ -14,6 +14,7 @@ import { MESSAGES } from "@/lib/user-messages";
 import { adjustInventoryStock, loadInventory, pharmacyKeys } from "@/store/rx";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { syncKeys } from "@/store/sync";
+import { formatMoney } from "@miqorai/api-client/format";
 
 export default function Inventory() {
   const session = useAuth((s) => s.session)!;
@@ -106,7 +107,7 @@ export default function Inventory() {
                 <TableHead>Category</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Min</TableHead>
-                <TableHead>Price (KES)</TableHead>
+                <TableHead>Price</TableHead>
                 <TableHead>Expiry</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -127,16 +128,16 @@ export default function Inventory() {
                       {low && <AlertTriangle className="inline h-3.5 w-3.5 ml-1 text-error" />}
                     </TableCell>
                     <TableCell className="text-text-secondary">{it.minStock}</TableCell>
-                    <TableCell>{it.unitPrice}</TableCell>
+                    <TableCell>{formatMoney(it.unitPrice)}</TableCell>
                     <TableCell>
                       <span className={expSoon ? "text-secondary" : "text-text-secondary"}>{it.expiry}</span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
-                        <Button size="icon" variant="outline" className="h-7 w-7" disabled={!can(session.role, "manageInventory")} onClick={() => adjust(it.id, it.name, -1)}>
+                        <Button aria-label={`Decrease ${it.name} stock`} size="icon" variant="outline" className="h-7 w-7" disabled={!can(session.role, "manageInventory")} onClick={() => adjust(it.id, it.name, -1)}>
                           <Minus className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="icon" variant="outline" className="h-7 w-7" disabled={!can(session.role, "manageInventory")} onClick={() => adjust(it.id, it.name, +1)}>
+                        <Button aria-label={`Increase ${it.name} stock`} size="icon" variant="outline" className="h-7 w-7" disabled={!can(session.role, "manageInventory")} onClick={() => adjust(it.id, it.name, +1)}>
                           <Plus className="h-3.5 w-3.5" />
                         </Button>
                         <Button size="sm" variant="outline" className="h-7" disabled={!can(session.role, "manageInventory")} onClick={() => adjust(it.id, it.name, +50)}>

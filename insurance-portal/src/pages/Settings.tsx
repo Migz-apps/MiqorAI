@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/miqorai/PageHeader";
 import { useAuth } from "@/store/auth";
 import { insurerApi, insurerKeys } from "@/lib/api/insurer";
 import { toast } from "@/lib/notify";
+import { DEFAULT_CURRENCY } from "@miqorai/api-client/format";
 
 type SettingsShape = {
   country?: string;
@@ -116,11 +117,11 @@ export default function Settings() {
           </div>
           <div className="space-y-xs">
             <Label>Country</Label>
-            <Input defaultValue={s.country ?? "Kenya"} readOnly />
+            <Input defaultValue={s.country ?? "Rwanda"} readOnly />
           </div>
           <div className="space-y-xs">
             <Label>Reporting currency</Label>
-            <Input defaultValue={s.currency ?? "KSh"} readOnly />
+            <Input defaultValue={s.currency ?? DEFAULT_CURRENCY} readOnly />
           </div>
         </CardContent>
       </Card>

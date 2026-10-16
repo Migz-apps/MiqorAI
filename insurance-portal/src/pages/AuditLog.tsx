@@ -9,7 +9,7 @@ import { Search, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/miqorai/PageHeader";
 import { insurerApi, insurerKeys, mapAuditEntry } from "@/lib/api/insurer";
 import { ROLE_LABEL } from "@/store/auth";
-import { fmtDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
 export default function AuditLog() {
   const [q, setQ] = useState("");
@@ -69,7 +69,7 @@ export default function AuditLog() {
                   </TableRow>
                 ) : filtered.map(e => (
                   <TableRow key={e.id}>
-                    <TableCell className="text-xs whitespace-nowrap">{fmtDateTime(e.timestamp)}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{formatDateTime(e.timestamp)}</TableCell>
                     <TableCell className="text-sm">{e.user}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{ROLE_LABEL[e.role]}</Badge></TableCell>
                     <TableCell className="text-sm font-medium">{e.action}</TableCell>

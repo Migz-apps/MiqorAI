@@ -50,7 +50,7 @@ export const CheckInList = () => {
                   <div className="text-xs text-text-secondary truncate">{item.reason || item.department} · {item.checkInTime}</div>
                 </div>
                 <Badge variant="outline" className={statusStyle[displayStatus] ?? statusStyle.waiting}>{displayStatus.replace("-", " ")}</Badge>
-                <Button size="sm" variant="ghost" onClick={() => nav(`/patients/${item.patientId}`)}>
+                <Button aria-label={`Open ${patientLabel} profile`} size="sm" variant="ghost" onClick={() => nav(`/patients/${item.patientId}`)}>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>

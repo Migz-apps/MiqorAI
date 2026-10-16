@@ -18,16 +18,16 @@ import { ProgressBar } from "@/components/miqorai/ProgressBar";
 import { useAuth } from "@/store/auth";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapAlert, mapMedication } from "@/lib/api/insurer";
-import { fmtKshShort, fmtNum, fmtPct } from "@/lib/format";
+import { formatDate, formatIsoDate, formatMoney, formatNumber, fmtPct } from "@/lib/format";
 import { toast } from "@/lib/notify";
 
 export default function Dashboard() {
   const session = useAuth(s => s.session)!;
-  const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const today = formatDate(new Date(), { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   const reportStart = new Date();
   reportStart.setDate(1);
-  const reportFrom = reportStart.toISOString().slice(0, 10);
-  const reportTo = new Date().toISOString().slice(0, 10);
+  const reportFrom = `${formatIsoDate().slice(0, 8)}01`;
+  const reportTo = formatIsoDate();
 
   const { data: dashboard, isLoading: dashLoading } = useQuery({
     queryKey: insurerKeys.dashboard,
@@ -106,8 +106,8 @@ export default function Dashboard() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
-        <KpiCard icon={TrendingUp} label="Total savings" value={fmtKshShort(dashboard?.total_savings ?? 0)} hint="This month" accent="success" />
-        <KpiCard icon={Users} label="Members covered" value={fmtNum(dashboard?.members_covered ?? 0)} accent="insurer" />
+        <KpiCard icon={TrendingUp} label="Total savings" value={formatMoney(dashboard?.total_savings ?? 0, { compact: true })} hint="This month" accent="success" />
+        <KpiCard icon={Users} label="Members covered" value={formatNumber(dashboard?.members_covered ?? 0)} accent="insurer" />
         <KpiCard icon={Activity} label="Adherence rate" value={fmtPct(dashboard?.adherence_rate ?? 0)} hint="Population average" accent="secondary" positive="up-good" />
         <KpiCard icon={Sparkles} label="ROI" value={`${dashboard?.roi ?? 0}×`} hint="Net savings ÷ MiqorAI fee" accent="primary" />
       </div>
@@ -117,11 +117,11 @@ export default function Dashboard() {
           <CardHeader className="pb-sm flex flex-row items-center justify-between">
             <div>
               <CardTitle className="h3">Savings by category</CardTitle>
-              <p className="text-xs text-text-secondary mt-1">Verified savings (KSh thousands) grouped by test category.</p>
+              <p className="text-xs text-text-secondary mt-1">Verified savings (thousands) grouped by test category.</p>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-8" onClick={() => void downloadSavingsSnapshot()}><Download className="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="sm" className="h-8"><Share2 className="h-3.5 w-3.5" /></Button>
+              <Button aria-label="Download savings snapshot" variant="ghost" size="sm" className="h-8" onClick={() => void downloadSavingsSnapshot()}><Download className="h-3.5 w-3.5" /></Button>
+              <Button aria-label="Share" variant="ghost" size="sm" className="h-8"><Share2 className="h-3.5 w-3.5" /></Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -133,7 +133,7 @@ export default function Dashboard() {
                   <YAxis stroke="hsl(var(--text-secondary))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}k`} />
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12, padding: 8 }}
-                    formatter={(v: number) => [`KSh ${v}k`, "Savings"]}
+                    formatter={(v: number) => [formatMoney(v * 1000, { compact: true }), "Savings"]}
                   />
                   <Bar dataKey="savings" radius={[6, 6, 0, 0]}>
                     {trendData.map((_, i) => (
@@ -206,7 +206,7 @@ export default function Dashboard() {
                     {m.medication}
                     {m.alert && <Badge variant="outline" className="bg-error/10 text-error border-error/30 text-[10px]">Alert</Badge>}
                   </div>
-                  <div className="text-[11px] text-text-secondary">{fmtNum(m.patients)} patients</div>
+                  <div className="text-[11px] text-text-secondary">{formatNumber(m.patients)} patients</div>
                 </div>
                 <div className={`num text-sm font-semibold whitespace-nowrap ${m.rate >= 85 ? "text-success" : m.rate >= 75 ? "text-secondary" : "text-error"}`}>
                   {fmtPct(m.rate)}

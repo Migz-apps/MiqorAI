@@ -10,7 +10,7 @@ import { Users, Search, Download } from "lucide-react";
 import { PageHeader } from "@/components/miqorai/PageHeader";
 import { KpiCard } from "@/components/miqorai/KpiCard";
 import { downloadFile } from "@/lib/api/client";
-import { initials, fmtNum } from "@/lib/format";
+import { initials, formatNumber } from "@/lib/format";
 import { insurerApi, insurerKeys } from "@/lib/api/insurer";
 import { toast } from "@/lib/notify";
 
@@ -67,10 +67,10 @@ export default function Members() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
-        <KpiCard icon={Users} label="Members covered" value={fmtNum(stats?.total_members ?? 0)} accent="insurer" />
-        <KpiCard icon={Users} label="Active this month" value={fmtNum(stats?.active_this_month ?? 0)} accent="success" />
-        <KpiCard icon={Users} label="High-risk cohort" value={fmtNum(stats?.high_risk_cohort ?? 0)} positive="down-good" accent="error" />
-        <KpiCard icon={Users} label="New enrollments" value={fmtNum(stats?.new_enrollments ?? 0)} accent="primary" />
+        <KpiCard icon={Users} label="Members covered" value={formatNumber(stats?.total_members ?? 0)} accent="insurer" />
+        <KpiCard icon={Users} label="Active this month" value={formatNumber(stats?.active_this_month ?? 0)} accent="success" />
+        <KpiCard icon={Users} label="High-risk cohort" value={formatNumber(stats?.high_risk_cohort ?? 0)} positive="down-good" accent="error" />
+        <KpiCard icon={Users} label="New enrollments" value={formatNumber(stats?.new_enrollments ?? 0)} accent="primary" />
       </div>
 
       <Card>

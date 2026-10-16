@@ -15,7 +15,7 @@ import { ProgressBar } from "@/components/miqorai/ProgressBar";
 import { StatusPill } from "@/components/miqorai/StatusPill";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapFlaggedClaim, mapProvider } from "@/lib/api/insurer";
-import { fmtKsh, fmtNum } from "@/lib/format";
+import { formatMoney, formatNumber } from "@/lib/format";
 import { Input } from "@miqorai/ui/input";
 import { toast } from "@/lib/notify";
 
@@ -116,10 +116,10 @@ export default function Fraud() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
-        <KpiCard icon={ShieldAlert} label="High risk (>90)" value={fmtNum(high)} accent="error" hint="Action required" />
-        <KpiCard icon={FileSearch} label="Medium risk (70-90)" value={fmtNum(med)} accent="secondary" hint="Review" />
-        <KpiCard icon={FlaskConical} label="Low risk (<70)" value={fmtNum(low)} accent="primary" hint="Monitored" />
-        <KpiCard icon={Building} label="Total flagged" value={`${totalFlagged} / ${fmtNum(totalClaims)}`} accent="insurer" hint={totalClaims ? `${((totalFlagged / totalClaims) * 100).toFixed(1)}% of claims` : undefined} />
+        <KpiCard icon={ShieldAlert} label="High risk (>90)" value={formatNumber(high)} accent="error" hint="Action required" />
+        <KpiCard icon={FileSearch} label="Medium risk (70-90)" value={formatNumber(med)} accent="secondary" hint="Review" />
+        <KpiCard icon={FlaskConical} label="Low risk (<70)" value={formatNumber(low)} accent="primary" hint="Monitored" />
+        <KpiCard icon={Building} label="Total flagged" value={`${totalFlagged} / ${formatNumber(totalClaims)}`} accent="insurer" hint={totalClaims ? `${((totalFlagged / totalClaims) * 100).toFixed(1)}% of claims` : undefined} />
       </div>
 
       <Card>
@@ -135,7 +135,7 @@ export default function Fraud() {
             <div key={b.band}>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <div className="font-medium">{b.band}</div>
-                <div className="num text-text-secondary">{fmtNum(b.count)} claims</div>
+                <div className="num text-text-secondary">{formatNumber(b.count)} claims</div>
               </div>
               <ProgressBar value={b.pct} barClass={b.color} />
             </div>
@@ -194,7 +194,7 @@ export default function Fraud() {
                       <div className="font-mono text-[11px] text-text-secondary">{c.patientId}</div>
                     </TableCell>
                     <TableCell className="text-sm">{c.provider}</TableCell>
-                    <TableCell className="num text-right">{fmtKsh(c.amount)}</TableCell>
+                    <TableCell className="num text-right">{formatMoney(c.amount)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="num font-semibold w-7">{c.score}</div>
@@ -232,7 +232,7 @@ export default function Fraud() {
                 return (
                   <TableRow key={p.name}>
                     <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell className="num text-right">{fmtNum(p.totalClaims)}</TableCell>
+                    <TableCell className="num text-right">{formatNumber(p.totalClaims)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="num font-semibold w-7">{p.anomalyScore}</div>

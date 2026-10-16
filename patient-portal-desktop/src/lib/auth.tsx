@@ -97,8 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (data: { name: string; email: string; phone: string; password: string; dateOfBirth: string }) => {
-    if (!data.name.trim() || !data.email.includes("@") || !data.phone.trim() || !data.password || !data.dateOfBirth) {
+  const signup = async (data: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    dateOfBirth: string;
+  }) => {
+    if (
+      !data.name.trim() ||
+      !data.email.includes("@") ||
+      !data.phone.trim() ||
+      !data.password ||
+      !data.dateOfBirth
+    ) {
       return null;
     }
     try {

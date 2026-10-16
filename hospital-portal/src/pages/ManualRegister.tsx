@@ -12,6 +12,7 @@ import { UserPlus } from "lucide-react";
 import { hospitalApi } from "@/lib/api/hospital";
 import { toast } from "@/lib/notify";
 import { MESSAGES } from "@/lib/user-messages";
+import type { ChangeEvent } from "react";
 
 export default function ManualRegister() {
   const nav = useNavigate();
@@ -20,7 +21,7 @@ export default function ManualRegister() {
     name: "", phone: "", nationalId: "", insuranceId: "", dob: "",
     gender: "F", emergencyName: "", emergencyPhone: "", emergencyRelationship: "", allergies: "",
   });
-  const update = (k: keyof typeof form) => (e: any) => setForm(f => ({ ...f, [k]: typeof e === "string" ? e : e.target.value }));
+  const update = (k: keyof typeof form) => (e: string | ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [k]: typeof e === "string" ? e : e.target.value }));
 
   const required: (keyof typeof form)[] = ["name", "phone", "dob", "allergies"];
 
@@ -98,7 +99,7 @@ export default function ManualRegister() {
               <Input type="date" value={form.dob} onChange={update("dob")} />
             </Field>
             <Field label="Gender">
-              <Select value={form.gender} onValueChange={update("gender") as any}>
+              <Select value={form.gender} onValueChange={update("gender")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="F">Female</SelectItem>

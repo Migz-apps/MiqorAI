@@ -16,21 +16,15 @@ import { insurerApi, insurerKeys } from "@/lib/api/insurer";
 import { toast } from "@/lib/notify";
 import { useAuth } from "@/store/auth";
 
-function fmtDate(d: string | Date): string {
-  return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
-}
+import { formatDate, formatIsoDate } from "@/lib/format";
 
 export default function Reports() {
   const session = useAuth((s) => s.session)!;
   const queryClient = useQueryClient();
   const [metrics, setMetrics] = useState({ savings: true, adherence: true, fraud: true, members: false, contract: false });
   const [format, setFormat] = useState<"pdf" | "csv" | "excel">("pdf");
-  const [from, setFrom] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().slice(0, 10);
-  });
-  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [from, setFrom] = useState(() => `${formatIsoDate().slice(0, 8)}01`);
+  const [to, setTo] = useState(() => formatIsoDate());
 
   const { data: history, isLoading } = useQuery({
     queryKey: insurerKeys.reports,
@@ -100,8 +94,9 @@ export default function Reports() {
                   { k: "members", label: "Member analytics", desc: "Cohort breakdown + risk distribution" },
                   { k: "contract", label: "Contract & billing", desc: "Invoices, fees, allowance usage" },
                 ].map(m => (
-                  <label key={m.k} className="flex gap-sm items-start p-sm rounded-md border border-border hover:border-insurer/40 cursor-pointer transition">
+                  <label key={m.k} htmlFor={`metric-${m.k}`} className="flex gap-sm items-start p-sm rounded-md border border-border hover:border-insurer/40 cursor-pointer transition">
                     <Checkbox
+                      id={`metric-${m.k}`}
                       checked={(metrics as Record<string, boolean>)[m.k]}
                       onCheckedChange={(v) => setMetrics(s => ({ ...s, [m.k]: !!v }))}
                       className="mt-0.5"
@@ -211,7 +206,7 @@ export default function Reports() {
                   <TableRow key={r.id}>
                     <TableCell className="font-medium text-sm">{r.title}</TableCell>
                     <TableCell><Badge variant="outline" className="uppercase">{r.format}</Badge></TableCell>
-                    <TableCell className="text-xs">{fmtDate(r.createdAt)}</TableCell>
+                    <TableCell className="text-xs">{formatDate(r.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         size="sm"

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { Button } from "@miqorai/ui/button";
 import { Badge } from "@miqorai/ui/badge";
 import { RefreshCw } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatRelative } from "@miqorai/api-client/format";
 
 export default function SyncQueue() {
   const online = useSync((s) => s.online);
@@ -44,7 +44,7 @@ export default function SyncQueue() {
               <div key={q.id} className="flex items-center gap-md px-md py-sm">
                 <Badge variant="outline" className="capitalize">{q.type}</Badge>
                 <div className="flex-1 text-sm">{q.label}</div>
-                <div className="text-xs text-text-secondary">{formatDistanceToNow(new Date(q.at), { addSuffix: true })}</div>
+                <div className="text-xs text-text-secondary">{formatRelative(q.at)}</div>
                 <Badge variant="outline" className={
                   q.status === "synced" ? "border-success/30 text-success bg-success/10"
                     : q.status === "failed" ? "border-error/30 text-error bg-error/10"

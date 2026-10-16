@@ -1,4 +1,13 @@
-import { useEffect, useMemo, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -51,7 +60,8 @@ function validateEmail(value: string) {
 function validatePhone(value: string) {
   const phone = normalizePhone(value);
   if (!phone) return "Phone number is required.";
-  if (!PHONE_PATTERN.test(phone)) return "Use a valid international phone number, for example +2507XXXXXXXX.";
+  if (!PHONE_PATTERN.test(phone))
+    return "Use a valid international phone number, for example +2507XXXXXXXX.";
   return null;
 }
 
@@ -203,7 +213,13 @@ export default function LoginPage() {
     );
   }
 
-  if (isLoggedIn && !wantsSignup && !pendingVerificationEmail && !showPasswordReset && mode === "login") {
+  if (
+    isLoggedIn &&
+    !wantsSignup &&
+    !pendingVerificationEmail &&
+    !showPasswordReset &&
+    mode === "login"
+  ) {
     return <Navigate to="/portal" replace />;
   }
 
@@ -283,7 +299,8 @@ export default function LoginPage() {
     const passwordError = validatePassword(newPassword);
     if (passwordError) nextErrors.newPassword = passwordError;
     if (!confirmNewPassword) nextErrors.confirmNewPassword = "Please confirm your new password.";
-    else if (newPassword !== confirmNewPassword) nextErrors.confirmNewPassword = "Your new passwords do not match.";
+    else if (newPassword !== confirmNewPassword)
+      nextErrors.confirmNewPassword = "Your new passwords do not match.";
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -338,7 +355,10 @@ export default function LoginPage() {
         if (!validateResetVerifyForm()) return;
         setPendingAction("verify-reset");
         try {
-          const token = await verifyPasswordResetOtp(normalizeEmail(forgotPasswordEmail), normalizeOtp(resetOtp));
+          const token = await verifyPasswordResetOtp(
+            normalizeEmail(forgotPasswordEmail),
+            normalizeOtp(resetOtp),
+          );
           if (!token) {
             setFormError("We couldn't verify that reset code. Check it and try again.");
             return;
@@ -401,7 +421,9 @@ export default function LoginPage() {
         dateOfBirth,
       });
       if (!result?.verificationRequired) {
-        setFormError(result?.error ?? "We couldn't create your account. Check your details and try again.");
+        setFormError(
+          result?.error ?? "We couldn't create your account. Check your details and try again.",
+        );
         return;
       }
       setPendingVerificationEmail(result.email ?? normalizeEmail(email));
@@ -417,14 +439,18 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-6 md:p-12">
       <div className="w-full max-w-sm">
         <Link to="/" className="mb-8 flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">M+</div>
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">
+            M+
+          </div>
           <span className="text-lg font-bold">MiqorAI</span>
         </Link>
 
         {isLoggedIn && wantsSignup && !pendingVerificationEmail && !showPasswordReset && (
           <div className="mb-6 rounded-lg border border-border bg-muted/50 p-4 text-sm">
             <p className="font-medium">You are signed in as {user?.email}</p>
-            <p className="mt-1 text-muted-foreground">Sign out first to create a different account.</p>
+            <p className="mt-1 text-muted-foreground">
+              Sign out first to create a different account.
+            </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -536,7 +562,14 @@ export default function LoginPage() {
                 value={password}
                 onChange={(value) => {
                   setPassword(value);
-                  updateFieldError("password", mode === "signup" ? validatePassword(value) : !value ? MESSAGES.form.passwordRequired : null);
+                  updateFieldError(
+                    "password",
+                    mode === "signup"
+                      ? validatePassword(value)
+                      : !value
+                        ? MESSAGES.form.passwordRequired
+                        : null,
+                  );
                 }}
                 showPassword={showPassword}
                 setShowPassword={setShowPassword}
@@ -551,21 +584,33 @@ export default function LoginPage() {
                 error={fieldErrors.password}
               />
               {mode === "signup" && (
-                <PasswordChecklist issues={passwordStrengthHints} validLabel="Password strength looks good." />
+                <PasswordChecklist
+                  issues={passwordStrengthHints}
+                  validLabel="Password strength looks good."
+                />
               )}
             </>
           )}
 
           {pendingVerificationEmail && (
             <>
-              <Field label="Email" value={pendingVerificationEmail} onChange={() => undefined} disabled autoComplete="off" />
+              <Field
+                label="Email"
+                value={pendingVerificationEmail}
+                onChange={() => undefined}
+                disabled
+                autoComplete="off"
+              />
               <OtpField
                 label="Verification code"
                 value={signupOtp}
                 onChange={(value) => {
                   const nextValue = normalizeOtp(value);
                   setSignupOtp(nextValue);
-                  updateFieldError("signupOtp", nextValue ? validateOtp(nextValue, "verification code") : null);
+                  updateFieldError(
+                    "signupOtp",
+                    nextValue ? validateOtp(nextValue, "verification code") : null,
+                  );
                 }}
                 error={fieldErrors.signupOtp}
               />
@@ -589,14 +634,23 @@ export default function LoginPage() {
 
           {showPasswordReset && passwordResetStage === "verify" && (
             <>
-              <Field label="Email" value={forgotPasswordEmail} onChange={() => undefined} disabled autoComplete="off" />
+              <Field
+                label="Email"
+                value={forgotPasswordEmail}
+                onChange={() => undefined}
+                disabled
+                autoComplete="off"
+              />
               <OtpField
                 label="Reset code"
                 value={resetOtp}
                 onChange={(value) => {
                   const nextValue = normalizeOtp(value);
                   setResetOtp(nextValue);
-                  updateFieldError("resetOtp", nextValue ? validateOtp(nextValue, "reset code") : null);
+                  updateFieldError(
+                    "resetOtp",
+                    nextValue ? validateOtp(nextValue, "reset code") : null,
+                  );
                 }}
                 error={fieldErrors.resetOtp}
               />
@@ -625,7 +679,10 @@ export default function LoginPage() {
                 helperText="Use at least 10 characters with uppercase, lowercase, number, and symbol."
                 error={fieldErrors.newPassword}
               />
-              <PasswordChecklist issues={resetPasswordHints} validLabel="Password strength looks good." />
+              <PasswordChecklist
+                issues={resetPasswordHints}
+                validLabel="Password strength looks good."
+              />
               <PasswordField
                 label="Confirm new password"
                 value={confirmNewPassword}
@@ -633,7 +690,11 @@ export default function LoginPage() {
                   setConfirmNewPassword(value);
                   updateFieldError(
                     "confirmNewPassword",
-                    !value ? "Please confirm your new password." : value !== newPassword ? "Your new passwords do not match." : null,
+                    !value
+                      ? "Please confirm your new password."
+                      : value !== newPassword
+                        ? "Your new passwords do not match."
+                        : null,
                   );
                 }}
                 showPassword={showResetPassword}
@@ -684,7 +745,9 @@ export default function LoginPage() {
                     if (await resendSignupOtp(pendingVerificationEmail)) {
                       toast("A new verification code has been sent.");
                     } else {
-                      setFormError("We couldn't resend the verification code yet. Try again shortly.");
+                      setFormError(
+                        "We couldn't resend the verification code yet. Try again shortly.",
+                      );
                     }
                   } finally {
                     setPendingAction(null);
@@ -791,19 +854,42 @@ function OtpField({
   onChange: (value: string) => void;
   error?: string;
 }) {
+  const id = useId();
   return (
     <div className="space-y-2">
-      <span className="text-sm font-medium">{label}</span>
-      <div className={`flex justify-center rounded-xl border bg-card p-4 ${error ? "border-destructive/60" : "border-input"}`}>
-        <InputOTP maxLength={6} value={value} onChange={onChange} containerClassName="justify-center gap-0">
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
+      <div
+        className={`flex justify-center rounded-xl border bg-card p-4 ${error ? "border-destructive/60" : "border-input"}`}
+      >
+        <InputOTP
+          maxLength={6}
+          value={value}
+          onChange={onChange}
+          id={id}
+          aria-label={label}
+          aria-invalid={error ? "true" : "false"}
+          aria-describedby={`${id}-hint`}
+          containerClassName="justify-center gap-0"
+        >
           <InputOTPGroup>
             {Array.from({ length: 6 }, (_, index) => (
-              <InputOTPSlot key={index} index={index} className="h-11 w-11 text-base" />
+              <InputOTPSlot
+                key={index}
+                index={index}
+                aria-label={`Digit ${index + 1} of 6`}
+                className="h-11 w-11 text-base"
+              />
             ))}
           </InputOTPGroup>
         </InputOTP>
       </div>
-      <p className={`text-xs ${error ? "text-destructive" : "text-muted-foreground"}`}>
+      <p
+        id={`${id}-hint`}
+        role={error ? "alert" : undefined}
+        className={`text-xs ${error ? "text-destructive" : "text-muted-foreground"}`}
+      >
         {error ?? "Codes are short-lived for security. If needed, request a new one."}
       </p>
     </div>
@@ -814,7 +900,9 @@ function PasswordChecklist({ issues, validLabel }: { issues: string[]; validLabe
   const items = issues.length > 0 ? issues : [validLabel];
   const isValid = issues.length === 0;
   return (
-    <div className={`rounded-lg border px-3 py-2 text-xs ${isValid ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+    <div
+      className={`rounded-lg border px-3 py-2 text-xs ${isValid ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}
+    >
       {items.map((item) => (
         <p key={item}>{item}</p>
       ))}
@@ -893,11 +981,16 @@ function Field({
   rightElement?: ReactNode;
   error?: string;
 }) {
+  const id = useId();
+  const describedBy = error ? `${id}-error` : helperText ? `${id}-help` : undefined;
   return (
-    <label className="block">
-      <span className="text-sm font-medium">{label}</span>
+    <div className="block">
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
       <div className="relative mt-1">
         <input
+          id={id}
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -908,12 +1001,21 @@ function Field({
           autoCorrect={type === "email" ? "off" : undefined}
           spellCheck={type === "email" ? false : undefined}
           aria-invalid={error ? "true" : "false"}
+          aria-describedby={describedBy}
           className={`w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 ${rightElement ? "pr-10" : ""} ${error ? "border-destructive/60" : "border-input"}`}
         />
         {rightElement}
       </div>
-      {error ? <span className="mt-1 block text-xs text-destructive">{error}</span> : null}
-      {!error && helperText ? <span className="mt-1 block text-xs text-muted-foreground">{helperText}</span> : null}
-    </label>
+      {error ? (
+        <span id={`${id}-error`} role="alert" className="mt-1 block text-xs text-destructive">
+          {error}
+        </span>
+      ) : null}
+      {!error && helperText ? (
+        <span id={`${id}-help`} className="mt-1 block text-xs text-muted-foreground">
+          {helperText}
+        </span>
+      ) : null}
+    </div>
   );
 }

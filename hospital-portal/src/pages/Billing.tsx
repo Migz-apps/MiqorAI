@@ -7,6 +7,7 @@ import { downloadFile } from "@/lib/api/client";
 import { hospitalApi } from "@/lib/api/hospital";
 import { toast } from "@/lib/notify";
 import { useAuth } from "@/store/auth";
+import { formatDate, formatMoney } from "@miqorai/api-client/format";
 
 export default function Billing() {
   const session = useAuth(s => s.session);
@@ -68,9 +69,9 @@ export default function Billing() {
               <div key={String(i.id)} className="px-md py-sm flex items-center gap-md">
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">{String(i.invoiceNumber ?? i.id ?? "Invoice")}</div>
-                  <div className="text-xs text-text-secondary">{String(i.createdAt ?? i.created_at ?? "").slice(0, 10)}</div>
+                  <div className="text-xs text-text-secondary">{formatDate(String(i.createdAt ?? i.created_at ?? ""))}</div>
                 </div>
-                <div className="text-sm font-medium">${Number(i.amount ?? 0).toFixed(2)}</div>
+                <div className="text-sm font-medium">{formatMoney(Number(i.amount ?? 0))}</div>
                 <Badge variant="outline" className="border-success/30 text-success bg-success/10 capitalize">{String(i.status ?? "paid")}</Badge>
                 <Button size="sm" variant="outline" onClick={() => void downloadInvoicePdf(String(i.id))}>
                   <Download className="h-3 w-3 mr-1" /> PDF

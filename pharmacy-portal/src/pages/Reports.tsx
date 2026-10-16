@@ -8,6 +8,7 @@ import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapRevenueTrend } from "@/lib/api/mappers";
 import { toast } from "@/lib/notify";
 import { loadInventory, pharmacyKeys } from "@/store/rx";
+import { formatMoney } from "@miqorai/api-client/format";
 
 const COLORS = ["hsl(var(--pharmacy))", "hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--secondary))", "hsl(var(--info))", "hsl(var(--error))", "hsl(var(--cashier-accent))"];
 
@@ -61,7 +62,7 @@ export default function Reports() {
         <Card>
           <CardContent className="p-md">
             <div className="text-xs text-text-secondary">Revenue this period</div>
-            <div className="text-2xl font-bold">KES {Number(report?.revenue ?? totalRev).toLocaleString()}</div>
+            <div className="text-2xl font-bold">{formatMoney(Number(report?.revenue ?? totalRev))}</div>
             <div className="text-[11px] text-success mt-1">Avg adherence {Number(report?.adherence_average ?? 0).toFixed(1)}%</div>
           </CardContent>
         </Card>
@@ -75,7 +76,7 @@ export default function Reports() {
         <Card>
           <CardContent className="p-md">
             <div className="text-xs text-text-secondary">Avg basket</div>
-            <div className="text-2xl font-bold">KES {dispenseCount ? Math.round(Number(report?.revenue ?? totalRev) / dispenseCount).toLocaleString() : "0"}</div>
+            <div className="text-2xl font-bold">{formatMoney(dispenseCount ? Number(report?.revenue ?? totalRev) / dispenseCount : 0)}</div>
             <div className="text-[11px] text-text-secondary mt-1">Per dispensed prescription</div>
           </CardContent>
         </Card>

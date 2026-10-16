@@ -1,0 +1,38 @@
+# Normalize text to LF in the repository and working copies (prettier enforces endOfLine "lf").
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets: never touch line endings or diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.icns binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.wasm binary
+*.safetensors binary
+*.bin binary
+*.onnx binary
+*.pt binary
+*.gguf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.jar binary
+*.keystore binary
+*.jks binary
+*.mp3 binary
+*.mp4 binary
+*.xlsx binary
+*.docx binary

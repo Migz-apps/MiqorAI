@@ -140,7 +140,7 @@ export default function Signup() {
                 <Label htmlFor="pw">Password</Label>
                 <div className="relative">
                   <Input id="pw" type={showPw ? "text" : "password"} className="pr-10 h-11" value={pw} onChange={e => setPw(e.target.value)} autoComplete="new-password" />
-                  <button type="button" onClick={() => setShowPw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
+                  <button aria-label={showPw ? "Hide password" : "Show password"} type="button" onClick={() => setShowPw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
                     {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -152,7 +152,7 @@ export default function Signup() {
             </div>
             <label className="flex items-start gap-sm text-xs text-text-secondary cursor-pointer select-none">
               <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-border accent-primary" />
-              <span>I agree to the <a href="#" className="text-primary hover:underline">Terms</a> and confirm I'm authorised to request access for this hospital.</span>
+              <span>I agree to the Terms and confirm I'm authorised to request access for this hospital.</span>
             </label>
             {error && <FormAlert>{error}</FormAlert>}
             <Button type="submit" disabled={submitting} className="w-full h-11 bg-primary hover:bg-primary/90">

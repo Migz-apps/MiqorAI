@@ -8,15 +8,24 @@ import { SystemHealth } from "@/components/portal/SystemHealth";
 import { PendingApprovals } from "@/components/portal/PendingApprovals";
 import { adminApi, adminKeys } from "@/lib/api/admin";
 import { downloadFile } from "@/lib/api/client";
-import { fmtKsh } from "@/lib/format";
+import { formatDate, formatMoney, formatNumber, formatTime } from "@/lib/format";
 import { toast } from "@/lib/notify";
 import {
-  Wallet, Hospital, Pill, Users, Zap, FileText, ShieldCheck, UserPlus,
-  TrendingUp, ArrowUpRight, Sparkles, Calendar, Download,
+  Wallet,
+  Hospital,
+  Pill,
+  Users,
+  Zap,
+  FileText,
+  ShieldCheck,
+  UserPlus,
+  TrendingUp,
+  ArrowUpRight,
+  Sparkles,
+  Calendar,
+  Download,
 } from "lucide-react";
-import {
-  Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, Bar, BarChart,
-} from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, Bar, BarChart } from "recharts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -54,15 +63,18 @@ function Dashboard() {
     );
   }
 
-  const revenueSeries = (revenue?.by_customer_type ?? []).slice().reverse().map((r) => ({
-    month: r.month,
-    insurers: Math.round(r.insurers / 1000),
-    hospitals: Math.round(r.hospitals / 1000),
-    pharmacies: Math.round(r.pharmacies / 1000),
-  }));
+  const revenueSeries = (revenue?.by_customer_type ?? [])
+    .slice()
+    .reverse()
+    .map((r) => ({
+      month: r.month,
+      insurers: Math.round(r.insurers / 1000),
+      hospitals: Math.round(r.hospitals / 1000),
+      pharmacies: Math.round(r.pharmacies / 1000),
+    }));
 
   const activityHourly = hourly.map((h) => ({
-    h: new Date(h.hour).toLocaleTimeString("en-US", { hour: "numeric" }),
+    h: formatTime(h.hour, { hour: "2-digit" }),
     scans: h.scans,
     scripts: h.scripts,
   }));
@@ -76,10 +88,30 @@ function Dashboard() {
       <HeroBanner dash={dash} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Savings" value={fmtKsh(dash.total_savings)} icon={Wallet} accent="success" />
-        <StatCard label="Hospitals Live" value={String(dash.total_hospitals)} icon={Hospital} accent="primary" />
-        <StatCard label="Pharmacies" value={String(dash.total_pharmacies)} icon={Pill} accent="purple" />
-        <StatCard label="Patients" value={dash.total_patients.toLocaleString()} icon={Users} accent="pink" />
+        <StatCard
+          label="Total Savings"
+          value={formatMoney(dash.total_savings, { compact: true })}
+          icon={Wallet}
+          accent="success"
+        />
+        <StatCard
+          label="Hospitals Live"
+          value={String(dash.total_hospitals)}
+          icon={Hospital}
+          accent="primary"
+        />
+        <StatCard
+          label="Pharmacies"
+          value={String(dash.total_pharmacies)}
+          icon={Pill}
+          accent="purple"
+        />
+        <StatCard
+          label="Patients"
+          value={formatNumber(dash.total_patients)}
+          icon={Users}
+          accent="pink"
+        />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -103,8 +135,10 @@ function Dashboard() {
 }
 
 function HeroBanner({ dash }: { dash: Awaited<ReturnType<typeof adminApi.dashboard>> }) {
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric",
+  const today = formatDate(new Date(), {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
   });
 
   const downloadInsurerReport = async () => {
@@ -150,7 +184,9 @@ function HeroBanner({ dash }: { dash: Awaited<ReturnType<typeof adminApi.dashboa
                 : "border-warning/30 bg-warning/10 text-warning"
             }`}
           >
-            <span className={`size-1.5 rounded-full pulse-dot ${allUp ? "bg-success text-success" : "bg-warning text-warning"}`} />
+            <span
+              className={`size-1.5 rounded-full pulse-dot ${allUp ? "bg-success text-success" : "bg-warning text-warning"}`}
+            />
             {allUp ? "ALL SYSTEMS NOMINAL" : "SYSTEM DEGRADED"}
             <span className="text-muted-foreground">·</span>
             <Calendar className="size-3" /> {today}
@@ -159,14 +195,26 @@ function HeroBanner({ dash }: { dash: Awaited<ReturnType<typeof adminApi.dashboa
             Welcome back, <span className="text-gradient">Founder</span>.
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            The network saved patients <span className="text-foreground font-semibold">{fmtKsh(dash.total_savings)}</span> so
-            far — {dash.total_hospitals} hospitals and {dash.total_pharmacies} pharmacies are live across the network.
+            The network saved patients{" "}
+            <span className="text-foreground font-semibold">
+              {formatMoney(dash.total_savings, { compact: true })}
+            </span>{" "}
+            so far — {dash.total_hospitals} hospitals and {dash.total_pharmacies} pharmacies are
+            live across the network.
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 min-w-[280px]">
-          <RibbonStat label="MRR" value={fmtKsh(dash.mrr)} tone="text-primary" />
-          <RibbonStat label="ARR" value={fmtKsh(dash.arr)} tone="text-pink" />
+          <RibbonStat
+            label="MRR"
+            value={formatMoney(dash.mrr, { compact: true })}
+            tone="text-primary"
+          />
+          <RibbonStat
+            label="ARR"
+            value={formatMoney(dash.arr, { compact: true })}
+            tone="text-pink"
+          />
           <RibbonStat label="Pending" value={String(dash.pending_approvals)} tone="text-success" />
         </div>
       </div>
@@ -187,8 +235,12 @@ function HeroBanner({ dash }: { dash: Awaited<ReturnType<typeof adminApi.dashboa
           <Download className="size-4" /> Export Snapshot
         </button>
         {dash.open_disputes > 0 && (
-          <Link to="/disputes" className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-warning/30 bg-warning/10 text-warning text-sm hover:bg-warning/20">
-            <Zap className="size-4" /> {dash.open_disputes} dispute{dash.open_disputes === 1 ? "" : "s"} need review
+          <Link
+            to="/disputes"
+            className="inline-flex items-center gap-2 h-9 px-3.5 rounded-md border border-warning/30 bg-warning/10 text-warning text-sm hover:bg-warning/20"
+          >
+            <Zap className="size-4" /> {dash.open_disputes} dispute
+            {dash.open_disputes === 1 ? "" : "s"} need review
           </Link>
         )}
       </div>
@@ -210,12 +262,18 @@ function NetworkPulse({ data }: { data: Array<{ h: string; scans: number; script
     <div className="rounded-xl border border-border bg-card-gradient p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Network Pulse · last 24h</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            Network Pulse · last 24h
+          </div>
           <div className="text-lg font-semibold mt-0.5">Scans & Prescriptions</div>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-sm bg-primary" /> QR Scans</span>
-          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-sm bg-pink" /> Prescriptions</span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-sm bg-primary" /> QR Scans
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-sm bg-pink" /> Prescriptions
+          </span>
         </div>
       </div>
       <div className="h-56">
@@ -231,10 +289,35 @@ function NetworkPulse({ data }: { data: Array<{ h: string; scans: number; script
                 <stop offset="100%" stopColor="oklch(0.7 0.22 350)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <XAxis dataKey="h" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} interval={2} />
-            <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} />
-            <Area type="monotone" dataKey="scans" stroke="oklch(0.62 0.11 200)" fill="url(#g1)" strokeWidth={2} />
-            <Area type="monotone" dataKey="scripts" stroke="oklch(0.7 0.22 350)" fill="url(#g2)" strokeWidth={2} />
+            <XAxis
+              dataKey="h"
+              tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
+              interval={2}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "var(--color-popover)",
+                border: "1px solid var(--color-border)",
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="scans"
+              stroke="oklch(0.62 0.11 200)"
+              fill="url(#g1)"
+              strokeWidth={2}
+            />
+            <Area
+              type="monotone"
+              dataKey="scripts"
+              stroke="oklch(0.7 0.22 350)"
+              fill="url(#g2)"
+              strokeWidth={2}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -242,28 +325,56 @@ function NetworkPulse({ data }: { data: Array<{ h: string; scans: number; script
   );
 }
 
-function RevenueSnapshot({ series }: { series: Array<{ month: string; insurers: number; hospitals: number; pharmacies: number }> }) {
+function RevenueSnapshot({
+  series,
+}: {
+  series: Array<{ month: string; insurers: number; hospitals: number; pharmacies: number }>;
+}) {
   const total = series[series.length - 1];
   const sum = total ? total.insurers + total.hospitals + total.pharmacies : 0;
   return (
     <div className="rounded-xl border border-border bg-card-gradient p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Revenue · recent months</div>
-          <div className="mt-1 font-mono text-2xl font-semibold">KSh {sum}k</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            Revenue · recent months
+          </div>
+          <div className="mt-1 font-mono text-2xl font-semibold">
+            {formatMoney(sum * 1000, { compact: true })}
+          </div>
         </div>
-        <Link to="/billing" className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+        <Link
+          to="/billing"
+          className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
           View billing <ArrowUpRight className="size-3" />
         </Link>
       </div>
       <div className="h-32 mt-3">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={series} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
-            <XAxis dataKey="month" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} />
-            <Bar dataKey="insurers" stackId="a" fill="oklch(0.62 0.11 200)" radius={[0,0,0,0]} />
+            <XAxis
+              dataKey="month"
+              tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "var(--color-popover)",
+                border: "1px solid var(--color-border)",
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+            />
+            <Bar dataKey="insurers" stackId="a" fill="oklch(0.62 0.11 200)" radius={[0, 0, 0, 0]} />
             <Bar dataKey="hospitals" stackId="a" fill="oklch(0.65 0.2 295)" />
-            <Bar dataKey="pharmacies" stackId="a" fill="oklch(0.7 0.22 350)" radius={[4,4,0,0]} />
+            <Bar
+              dataKey="pharmacies"
+              stackId="a"
+              fill="oklch(0.7 0.22 350)"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -271,16 +382,31 @@ function RevenueSnapshot({ series }: { series: Array<{ month: string; insurers: 
   );
 }
 
-function TopHospitals({ hospitals }: { hospitals: Array<{ id: string; name: string; city: string; patient_count: number; total_savings: number }> }) {
+function TopHospitals({
+  hospitals,
+}: {
+  hospitals: Array<{
+    id: string;
+    name: string;
+    city: string;
+    patient_count: number;
+    total_savings: number;
+  }>;
+}) {
   const max = Math.max(hospitals[0]?.total_savings ?? 0, 1);
   return (
     <div className="rounded-xl border border-border bg-card-gradient p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Leaderboard</div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            Leaderboard
+          </div>
           <div className="text-base font-semibold">Top Performing Hospitals</div>
         </div>
-        <Link to="/hospitals" className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+        <Link
+          to="/hospitals"
+          className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
           View all <ArrowUpRight className="size-3" />
         </Link>
       </div>
@@ -292,13 +418,18 @@ function TopHospitals({ hospitals }: { hospitals: Array<{ id: string; name: stri
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-mono text-[10px] w-5 text-muted-foreground">#{i + 1}</span>
                 <span className="flex-1 truncate font-medium">{h.name}</span>
-                <span className="font-mono text-xs">{fmtKsh(h.total_savings)}</span>
+                <span className="font-mono text-xs">
+                  {formatMoney(h.total_savings, { compact: true })}
+                </span>
               </div>
               <div className="relative h-1.5 rounded-full bg-background/60 overflow-hidden">
-                <div className="absolute inset-y-0 left-0 bg-gradient-primary rounded-full" style={{ width: `${pct}%` }} />
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-primary rounded-full"
+                  style={{ width: `${pct}%` }}
+                />
               </div>
               <div className="text-[10px] text-muted-foreground font-mono">
-                {h.city} · {h.patient_count.toLocaleString()} patients
+                {h.city} · {formatNumber(h.patient_count)} patients
               </div>
             </li>
           );
@@ -314,15 +445,26 @@ function QuickActions({ disputes }: { disputes: number }) {
     { label: "Approve Pharmacy", icon: Pill, tone: "text-purple", to: "/pharmacies" },
     { label: "Insurer Report", icon: FileText, tone: "text-info", to: "/insurers" },
     { label: "Compliance Check", icon: ShieldCheck, tone: "text-success", to: "/compliance" },
-    { label: disputes > 0 ? `View Disputes (${disputes})` : "View Disputes", icon: Zap, tone: "text-warning", to: "/disputes" },
+    {
+      label: disputes > 0 ? `View Disputes (${disputes})` : "View Disputes",
+      icon: Zap,
+      tone: "text-warning",
+      to: "/disputes",
+    },
     { label: "Invite Team Member", icon: UserPlus, tone: "text-pink", to: "/settings" },
   ] as const;
   return (
     <div className="rounded-xl border border-border bg-card-gradient p-3 shadow-[var(--shadow-card)]">
-      <div className="px-2 py-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Quick Actions</div>
+      <div className="px-2 py-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        Quick Actions
+      </div>
       <div className="grid grid-cols-2 gap-2">
         {items.map(({ label, icon: I, tone, to }) => (
-          <Link key={label} to={to} className="group flex items-center gap-2 rounded-md border border-border bg-background/40 p-2.5 text-left text-sm hover:border-primary/50 hover:bg-accent/40 transition-all">
+          <Link
+            key={label}
+            to={to}
+            className="group flex items-center gap-2 rounded-md border border-border bg-background/40 p-2.5 text-left text-sm hover:border-primary/50 hover:bg-accent/40 transition-all"
+          >
             <I className={`size-4 ${tone}`} />
             <span className="truncate">{label}</span>
           </Link>

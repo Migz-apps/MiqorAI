@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/miqorai/StatusBadge";
 import { Button } from "@miqorai/ui/button";
 import { AlertTriangle, Search, Filter } from "lucide-react";
 import type { RxStatus } from "@/lib/types";
-import { formatDistanceToNow } from "date-fns";
+import { formatRelative } from "@miqorai/api-client/format";
 import { loadPrescriptions, pharmacyKeys } from "@/store/rx";
 
 const STATUSES: { key: RxStatus | "all"; label: string }[] = [
@@ -94,7 +94,7 @@ export default function Prescriptions() {
                 </div>
                 <div className="col-span-6 sm:col-span-3 text-xs text-text-secondary truncate">{r.doctorName} · {r.hospital}</div>
                 <div className="col-span-3 sm:col-span-2 text-xs">{r.items.length} item(s)</div>
-                <div className="col-span-3 sm:col-span-1 text-xs text-text-secondary">{formatDistanceToNow(new Date(r.issuedAt), { addSuffix: true })}</div>
+                <div className="col-span-3 sm:col-span-1 text-xs text-text-secondary">{formatRelative(r.issuedAt)}</div>
                 <div className="col-span-12 sm:col-span-2 flex sm:justify-end"><StatusBadge status={r.status} /></div>
               </Link>
             ))}

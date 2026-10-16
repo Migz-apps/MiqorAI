@@ -11,6 +11,7 @@ import type {
   SavingsRecord,
   Staff,
 } from "@/lib/types";
+import { formatIsoDate } from "@miqorai/api-client/format";
 
 export const insurerKeys = {
   dashboard: ["insurer", "dashboard"] as const,
@@ -163,7 +164,7 @@ export function toBackendStaffRole(role: Role): string {
 }
 
 function dateStr(d: string | Date): string {
-  return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
+  return formatIsoDate(d);
 }
 
 export function mapSavingsRecord(r: {

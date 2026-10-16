@@ -235,7 +235,7 @@ export const QRScanner = ({ onResult }: { onResult?: (id: string) => void }) => 
       <div className="relative aspect-video rounded-lg overflow-hidden bg-foreground/95 border border-pharmacy/20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_hsl(var(--pharmacy)/0.15),_transparent_60%)]" />
         {scanning && (
-          <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" muted playsInline />
+          <video aria-label="QR code camera preview" ref={videoRef} className="absolute inset-0 h-full w-full object-cover" muted playsInline />
         )}
         <div className="absolute inset-8 border-2 border-pharmacy/70 rounded-md pointer-events-none">
           {scanned && (

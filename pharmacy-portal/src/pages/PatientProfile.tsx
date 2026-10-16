@@ -10,6 +10,7 @@ import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapPatientDetail, mapPrescription } from "@/lib/api/mappers";
 import { toast } from "@/lib/notify";
 import { pharmacyKeys } from "@/store/rx";
+import { formatDate } from "@miqorai/api-client/format";
 
 export default function PatientProfile() {
   const { id } = useParams();
@@ -146,7 +147,7 @@ export default function PatientProfile() {
               <Link key={r.id} to={`/prescriptions/${r.id}`} className="flex items-center gap-md px-md py-sm hover:bg-background-grey transition">
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium">{r.id} · {r.diagnosis}</div>
-                  <div className="text-xs text-text-secondary">{r.doctorName} · {new Date(r.issuedAt).toLocaleDateString()}</div>
+                  <div className="text-xs text-text-secondary">{r.doctorName} · {formatDate(r.issuedAt)}</div>
                 </div>
                 <StatusBadge status={r.status} />
               </Link>

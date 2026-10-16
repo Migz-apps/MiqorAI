@@ -1,11 +1,6 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Eye,
-  EyeOff,
-  Lock,
-  Sparkles,
-} from "lucide-react";
+import { Eye, EyeOff, Lock, Sparkles } from "lucide-react";
 import { FormAlert } from "@/components/FormAlert";
 import { useAuth } from "@/lib/auth";
 import { MESSAGES } from "@/lib/user-messages";
@@ -74,8 +69,8 @@ function LoginPage() {
             for the <span className="text-gradient">MiqorAI</span> network.
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Approve hospitals and pharmacies, resolve disputes, and monitor billing and
-            system health from one place.
+            Approve hospitals and pharmacies, resolve disputes, and monitor billing and system
+            health from one place.
           </p>
         </div>
 
@@ -100,11 +95,17 @@ function LoginPage() {
 
           <form onSubmit={submit} className="mt-8 space-y-4">
             <div>
-              <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              <label
+                htmlFor="admin-login-email"
+                className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+              >
                 Email
               </label>
               <input
+                id="admin-login-email"
+                name="email"
                 type="email"
+                autoComplete="username"
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -113,12 +114,18 @@ function LoginPage() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+              <label
+                htmlFor="admin-login-password"
+                className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+              >
                 Password
               </label>
               <div className="relative mt-1.5">
                 <input
+                  id="admin-login-password"
+                  name="password"
                   type={show ? "text" : "password"}
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -128,6 +135,8 @@ function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShow((current) => !current)}
+                  aria-label={show ? "Hide password" : "Show password"}
+                  aria-pressed={show}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-accent text-muted-foreground"
                 >
                   {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

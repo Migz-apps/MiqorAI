@@ -27,6 +27,7 @@ import {
   verifyRx,
 } from "@/store/rx";
 import { syncKeys } from "@/store/sync";
+import { formatDateTime, formatMoney } from "@miqorai/api-client/format";
 
 export default function PrescriptionDetail() {
   const { id } = useParams();
@@ -162,7 +163,7 @@ export default function PrescriptionDetail() {
                       <div className="text-xs text-text-secondary">{it.dose} · {it.durationDays} day(s)</div>
                     </div>
                     <div className="col-span-4 md:col-span-2 text-sm">Qty <strong>{it.quantity}</strong></div>
-                    <div className="col-span-4 md:col-span-2 text-sm">KES {it.unitPrice * it.quantity}</div>
+                    <div className="col-span-4 md:col-span-2 text-sm">{formatMoney(it.unitPrice * it.quantity)}</div>
                     <div className="col-span-4 md:col-span-3 text-right">
                       {enough ? (
                         <Badge variant="outline" className="border-success/30 text-success bg-success/10">Stock {stock!.stock}</Badge>
@@ -177,7 +178,7 @@ export default function PrescriptionDetail() {
               })}
               <div className="px-md py-sm flex justify-between items-center bg-background-grey">
                 <div className="text-xs text-text-secondary">{rx.insurance ? `Insurance: ${rx.insurance.provider} · ${rx.insurance.member}` : "Cash payment"}</div>
-                <div className="text-base font-semibold">Total: KES {rx.total.toLocaleString()}</div>
+                <div className="text-base font-semibold">Total: {formatMoney(rx.total)}</div>
               </div>
             </div>
           </CardContent>
@@ -198,7 +199,7 @@ export default function PrescriptionDetail() {
             <CardContent className="text-sm space-y-1">
               <div>{rx.doctorName}</div>
               <div className="text-text-secondary">{rx.hospital}</div>
-              <div className="text-xs text-text-secondary">Issued {new Date(rx.issuedAt).toLocaleString()}</div>
+              <div className="text-xs text-text-secondary">Issued {formatDateTime(rx.issuedAt)}</div>
             </CardContent>
           </Card>
           <Card>

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Eye, Hospital, Pill, ShieldCheck, X } from "lucide-react";
 import { adminApi, adminKeys } from "@/lib/api/admin";
-import { timeAgo } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
 import { toast } from "@/lib/notify";
 
 const iconFor = (type: string) =>
@@ -67,11 +67,13 @@ export function PendingApprovals() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{request.name}</div>
                   <div className="text-[11px] text-muted-foreground font-mono truncate">
-                    {request.registrationRef} · {request.location ?? "-"} · {timeAgo(request.createdAt)}
+                    {request.registrationRef} · {request.location ?? "-"} ·{" "}
+                    {formatRelative(request.createdAt)}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
+                    aria-label={`Review ${request.name}`}
                     type="button"
                     onClick={() =>
                       toast.info(
@@ -92,6 +94,7 @@ export function PendingApprovals() {
                     <Check className="size-3.5" /> Approve
                   </button>
                   <button
+                    aria-label={`Reject ${request.name}`}
                     type="button"
                     onClick={() => {
                       const reason = window.prompt("Reason for rejection");

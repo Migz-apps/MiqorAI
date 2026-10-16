@@ -1,7 +1,7 @@
 import { AlertTriangle, AlertCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Alert } from "@/lib/types";
-import { fmtDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
 const palette = {
   high:   { wrap: "bg-error/10 border-error/30 text-error",       icon: AlertTriangle },
@@ -18,7 +18,7 @@ export const AnomalyAlert = ({ alert, onAction }: { alert: Alert; onAction?: () 
       <div className="flex-1 min-w-0">
         <div className="text-xs font-semibold text-foreground">{alert.title}</div>
         <div className="text-[11px] text-foreground/80 mt-0.5">{alert.message}</div>
-        <div className="text-[10px] text-text-secondary mt-1">{fmtDateTime(alert.timestamp)}</div>
+        <div className="text-[10px] text-text-secondary mt-1">{formatDateTime(alert.timestamp)}</div>
       </div>
       {onAction && (
         <button onClick={onAction} className="text-[11px] font-medium underline-offset-2 hover:underline shrink-0">

@@ -24,7 +24,7 @@ export const AuthShell = ({ children }: { children: React.ReactNode }) => (
           Analytics for insurers on the MiqorAI network
         </div>
         <h2 className="text-3xl font-bold leading-tight">
-          See every shilling<br />MiqorAI saves you.
+          See every franc<br />MiqorAI saves you.
         </h2>
         <p className="text-sm opacity-85">
           Audit duplicate-test savings, monitor adherence outcomes, detect fraud, and

@@ -3,14 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Eye, MapPin, X } from "lucide-react";
 import { useState } from "react";
 import { PageShell } from "@/components/portal/PageShell";
-import {
-  adminApi,
-  adminKeys,
-  type HospitalStat,
-  type PilotHospitalStat,
-} from "@/lib/api/admin";
+import { adminApi, adminKeys, type HospitalStat, type PilotHospitalStat } from "@/lib/api/admin";
 import { getMe } from "@/lib/api/client";
-import { fmtKsh } from "@/lib/format";
+import { formatIsoDate, formatMoney, formatNumber } from "@/lib/format";
 import { toast } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
@@ -69,9 +64,7 @@ function HospitalsPage() {
     mutationFn: async (hospitalId: string) => {
       if (!me?.id) throw new Error("Admin session not ready");
       const pilotDays = Number(settingsQuery.data?.default_pilot_duration_days ?? 90);
-      const pilotEndDate = new Date(Date.now() + pilotDays * 86400000)
-        .toISOString()
-        .slice(0, 10);
+      const pilotEndDate = formatIsoDate(Date.now() + pilotDays * 86400000);
       return adminApi.approveHospital(hospitalId, me.id, pilotEndDate);
     },
     onSuccess: async () => {
@@ -92,17 +85,10 @@ function HospitalsPage() {
   });
 
   const statusMutation = useMutation({
-    mutationFn: ({
-      hospitalId,
-      status,
-    }: {
-      hospitalId: string;
-      status: "active" | "disabled";
-    }) => adminApi.setHospitalStatus(hospitalId, status),
+    mutationFn: ({ hospitalId, status }: { hospitalId: string; status: "active" | "disabled" }) =>
+      adminApi.setHospitalStatus(hospitalId, status),
     onSuccess: async (_, variables) => {
-      toast.success(
-        variables.status === "active" ? "Hospital restored" : "Hospital disabled",
-      );
+      toast.success(variables.status === "active" ? "Hospital restored" : "Hospital disabled");
       await refreshHospitals();
     },
     onError: (error) => toast.error(error),
@@ -124,10 +110,7 @@ function HospitalsPage() {
     },
     onToggleStatus: (hospitalId: string, status: "active" | "disabled") =>
       statusMutation.mutate({ hospitalId, status }),
-    busy:
-      approveMutation.isPending ||
-      rejectMutation.isPending ||
-      statusMutation.isPending,
+    busy: approveMutation.isPending || rejectMutation.isPending || statusMutation.isPending,
   };
 
   return (
@@ -258,18 +241,13 @@ function HospitalTable({
                       {location}
                     </span>
                   </td>
-                  <td className="px-2 py-3 font-mono text-right">
-                    {patientCount.toLocaleString()}
-                  </td>
+                  <td className="px-2 py-3 font-mono text-right">{formatNumber(patientCount)}</td>
                   <td className="px-2 py-3 font-mono text-right text-success">
-                    {fmtKsh(totalSavings)}
+                    {formatMoney(totalSavings, { compact: true })}
                   </td>
                   <td className="px-2 py-3">
                     <span
-                      className={cn(
-                        "text-xs font-mono px-1.5 py-0.5 rounded border",
-                        pilotTone,
-                      )}
+                      className={cn("text-xs font-mono px-1.5 py-0.5 rounded border", pilotTone)}
                     >
                       {days === null ? "not set" : `${days}d left`}
                     </span>
@@ -280,7 +258,7 @@ function HospitalTable({
                         type="button"
                         onClick={() =>
                           toast.info(
-                            `${hospital.name} has ${patientCount} patients and ${fmtKsh(totalSavings)} in tracked savings.`,
+                            `${hospital.name} has ${patientCount} patients and ${formatMoney(totalSavings, { compact: true })} in tracked savings.`,
                           )
                         }
                         className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-border text-xs hover:bg-accent"
@@ -298,6 +276,7 @@ function HospitalTable({
                             <Check className="size-3.5" /> Approve
                           </button>
                           <button
+                            aria-label={`Reject ${hospital.name}`}
                             type="button"
                             onClick={() => onReject(hospital.id)}
                             disabled={busy}
@@ -310,10 +289,7 @@ function HospitalTable({
                         <button
                           type="button"
                           onClick={() =>
-                            onToggleStatus(
-                              hospital.id,
-                              isActive ? "disabled" : "active",
-                            )
+                            onToggleStatus(hospital.id, isActive ? "disabled" : "active")
                           }
                           disabled={busy}
                           className={cn(

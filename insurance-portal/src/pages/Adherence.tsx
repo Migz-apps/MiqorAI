@@ -16,7 +16,7 @@ import { ProgressBar } from "@/components/miqorai/ProgressBar";
 import { KpiCard } from "@/components/miqorai/KpiCard";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapMedication, mapNonAdherent } from "@/lib/api/insurer";
-import { fmtKsh, fmtNum, fmtPct } from "@/lib/format";
+import { formatMoney, formatNumber, fmtPct } from "@/lib/format";
 import { toast } from "@/lib/notify";
 
 export default function Adherence() {
@@ -83,9 +83,9 @@ export default function Adherence() {
             <div className="text-[11px] text-text-secondary mt-sm">Overall adherence rate</div>
           </CardContent>
         </Card>
-        <KpiCard icon={Activity} label="Patients tracked" value={fmtNum(patientsTracked)} accent="insurer" />
-        <KpiCard icon={Phone} label="Non-adherent" value={fmtNum(nonAdherent.length)} accent="primary" />
-        <KpiCard icon={AlertTriangle} label="Est. savings" value={fmtKsh(data?.estimated_savings ?? 0)} accent="error" />
+        <KpiCard icon={Activity} label="Patients tracked" value={formatNumber(patientsTracked)} accent="insurer" />
+        <KpiCard icon={Phone} label="Non-adherent" value={formatNumber(nonAdherent.length)} accent="primary" />
+        <KpiCard icon={AlertTriangle} label="Est. savings" value={formatMoney(data?.estimated_savings ?? 0)} accent="error" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
@@ -115,7 +115,7 @@ export default function Adherence() {
             <CardTitle className="h3">Estimated savings from adherence</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="num text-3xl font-bold text-success">{fmtKsh(data?.estimated_savings ?? 0)}</div>
+            <div className="num text-3xl font-bold text-success">{formatMoney(data?.estimated_savings ?? 0)}</div>
             <div className="text-xs text-text-secondary">Hospitalisations prevented this month (modeled).</div>
             <div className="mt-md space-y-sm">
               {[
@@ -125,7 +125,7 @@ export default function Adherence() {
               ].map((s) => (
                 <div key={s.k}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span>{s.k}</span><span className="num font-medium">{s.k === "Overall rate" ? `${s.v}%` : fmtNum(s.v)}</span>
+                    <span>{s.k}</span><span className="num font-medium">{s.k === "Overall rate" ? `${s.v}%` : formatNumber(s.v)}</span>
                   </div>
                   <ProgressBar value={Math.min(100, s.v)} barClass={s.c} />
                 </div>
@@ -154,7 +154,7 @@ export default function Adherence() {
               {medAdherence.map((m) => (
                 <TableRow key={m.medication}>
                   <TableCell className="font-medium">{m.medication}</TableCell>
-                  <TableCell className="num">{fmtNum(m.patients)}</TableCell>
+                  <TableCell className="num">{formatNumber(m.patients)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="num text-sm font-semibold w-10" style={{ color: colorFor(m.rate) }}>{fmtPct(m.rate)}</div>

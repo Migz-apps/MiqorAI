@@ -7,6 +7,7 @@ import { adminApi, adminKeys, type PharmacyStat } from "@/lib/api/admin";
 import { getMe } from "@/lib/api/client";
 import { toast } from "@/lib/notify";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/pharmacies")({
   head: () => ({ meta: [{ title: "Pharmacies · MiqorAI Management" }] }),
@@ -77,17 +78,10 @@ function PharmaciesPage() {
   });
 
   const statusMutation = useMutation({
-    mutationFn: ({
-      pharmacyId,
-      status,
-    }: {
-      pharmacyId: string;
-      status: "active" | "disabled";
-    }) => adminApi.setPharmacyStatus(pharmacyId, status),
+    mutationFn: ({ pharmacyId, status }: { pharmacyId: string; status: "active" | "disabled" }) =>
+      adminApi.setPharmacyStatus(pharmacyId, status),
     onSuccess: async (_, variables) => {
-      toast.success(
-        variables.status === "active" ? "Pharmacy restored" : "Pharmacy disabled",
-      );
+      toast.success(variables.status === "active" ? "Pharmacy restored" : "Pharmacy disabled");
       await refreshPharmacies();
     },
     onError: (error) => toast.error(error),
@@ -109,10 +103,7 @@ function PharmaciesPage() {
     },
     onToggleStatus: (pharmacyId: string, status: "active" | "disabled") =>
       statusMutation.mutate({ pharmacyId, status }),
-    busy:
-      approveMutation.isPending ||
-      rejectMutation.isPending ||
-      statusMutation.isPending,
+    busy: approveMutation.isPending || rejectMutation.isPending || statusMutation.isPending,
   };
 
   return (
@@ -228,7 +219,7 @@ function PharmacyTable({
                   {pharmacy.licenseNumber ?? pharmacy.registrationNumber ?? "-"}
                 </td>
                 <td className="px-2 py-3 font-mono text-right">
-                  {pharmacy.script_volume.toLocaleString()}
+                  {formatNumber(pharmacy.script_volume)}
                 </td>
                 <td className="px-2 py-3">
                   <span className="inline-flex items-center gap-1.5 text-xs">
@@ -242,11 +233,7 @@ function PharmacyTable({
                             : "bg-info text-info",
                       )}
                     />
-                    {!pharmacy.verified
-                      ? "Pending"
-                      : pharmacy.isActive
-                        ? "Active"
-                        : "Disabled"}
+                    {!pharmacy.verified ? "Pending" : pharmacy.isActive ? "Active" : "Disabled"}
                   </span>
                 </td>
                 <td className="px-5 py-3">
@@ -255,7 +242,7 @@ function PharmacyTable({
                       type="button"
                       onClick={() =>
                         toast.info(
-                          `${pharmacy.name} has processed ${pharmacy.script_volume.toLocaleString()} prescriptions.`,
+                          `${pharmacy.name} has processed ${formatNumber(pharmacy.script_volume)} prescriptions.`,
                         )
                       }
                       className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-border text-xs hover:bg-accent"
@@ -273,6 +260,7 @@ function PharmacyTable({
                           <Check className="size-3.5" /> Approve
                         </button>
                         <button
+                          aria-label={`Reject ${pharmacy.name}`}
                           type="button"
                           onClick={() => onReject(pharmacy.id)}
                           disabled={busy}
@@ -285,10 +273,7 @@ function PharmacyTable({
                       <button
                         type="button"
                         onClick={() =>
-                          onToggleStatus(
-                            pharmacy.id,
-                            pharmacy.isActive ? "disabled" : "active",
-                          )
+                          onToggleStatus(pharmacy.id, pharmacy.isActive ? "disabled" : "active")
                         }
                         disabled={busy}
                         className={cn(

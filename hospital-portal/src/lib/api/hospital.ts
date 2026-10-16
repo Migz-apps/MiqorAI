@@ -104,7 +104,26 @@ export const hospitalApi = {
   systemHealth: () => api<Record<string, unknown>>("/api/hospital/system/health"),
 };
 
+/** Paged catalog response (`?paged=true` on /api/reference/icd and /drugs). */
+export type CatalogPage<T = Record<string, unknown>> = {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+};
+
+export type CatalogSearch = { q?: string; offset?: number; limit?: number };
+
+function catalogParams({ q, offset = 0, limit = 50 }: CatalogSearch) {
+  const params = new URLSearchParams({ paged: "true", limit: String(limit), offset: String(offset) });
+  if (q?.trim()) params.set("q", q.trim());
+  return params.toString();
+}
+
 export const referenceApi = {
+  icdPage: (search: CatalogSearch) => api<CatalogPage>(`/api/reference/icd?${catalogParams(search)}`),
+  drugsPage: (search: CatalogSearch) => api<CatalogPage>(`/api/reference/drugs?${catalogParams(search)}`),
   icd: (q?: string) => api<unknown[]>(`/api/reference/icd${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   drugs: (q?: string) => api<unknown[]>(`/api/reference/drugs${q ? `?q=${encodeURIComponent(q)}` : ""}`),
   interactions: (drugs: string[]) =>

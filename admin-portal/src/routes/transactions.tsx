@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/portal/PageShell";
 import { adminApi, adminKeys } from "@/lib/api/admin";
-import { formatTs, fmtKsh } from "@/lib/format";
+import { formatMoney, formatTime, formatTs } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/transactions")({
@@ -45,15 +45,21 @@ function TransactionsPage() {
             <tbody>
               {txns.map((t) => (
                 <tr key={t.id} className="border-b border-border/30 hover:bg-accent/30">
-                  <td className="px-5 py-3 font-mono text-xs text-primary">{t.id.slice(0, 8).toUpperCase()}</td>
+                  <td className="px-5 py-3 font-mono text-xs text-primary">
+                    {t.id.slice(0, 8).toUpperCase()}
+                  </td>
                   <td className="px-2 py-3">
                     <span className="text-[11px] font-mono px-1.5 py-0.5 rounded border bg-info/10 text-info border-info/30">
                       {t.kind}
                     </span>
                   </td>
                   <td className="px-2 py-3 text-muted-foreground">{t.description}</td>
-                  <td className="px-2 py-3 font-mono text-right">{t.amount ? fmtKsh(t.amount) : "—"}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-muted-foreground text-right">{formatTs(t.at).split(" ")[1]}</td>
+                  <td className="px-2 py-3 font-mono text-right">
+                    {t.amount ? formatMoney(t.amount, { compact: true }) : "—"}
+                  </td>
+                  <td className="px-5 py-3 font-mono text-xs text-muted-foreground text-right">
+                    {formatTime(t.at, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -74,7 +80,9 @@ function TransactionsPage() {
                 <span className="text-muted-foreground">{formatTs(a.createdAt)}</span>
                 <span className="text-foreground">{a.userEmail ?? "System"}</span>
                 <span className="text-primary">{a.action}</span>
-                <span className="text-muted-foreground truncate">{a.resourceType}:{a.resourceId ?? ""}</span>
+                <span className="text-muted-foreground truncate">
+                  {a.resourceType}:{a.resourceId ?? ""}
+                </span>
                 <span className="ml-auto">{a.success ? "✓" : "✕"}</span>
               </li>
             ))}

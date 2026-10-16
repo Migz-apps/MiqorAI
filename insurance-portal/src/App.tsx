@@ -5,6 +5,8 @@ import { TooltipProvider } from "@miqorai/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RoleRoute } from "@/components/layout/RoleRoute";
+import { ErrorBoundary } from "@miqorai/ui/error-boundary";
+import { logoutApi } from "@/lib/api/client";
 
 import Login from "./pages/Login";
 import AcceptInvite from "./pages/AcceptInvite";
@@ -23,6 +25,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary appName="insurance portal" storageKeys={["MiqorAI-insurer-auth"]} onSignOut={logoutApi}>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner infoClassName="group-[.toast]:border-insurer/20 group-[.toast]:bg-insurer-light/60" />
@@ -48,6 +51,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

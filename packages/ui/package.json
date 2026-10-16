@@ -15,6 +15,7 @@
     "./command": "./src/command.tsx",
     "./dialog": "./src/dialog.tsx",
     "./dropdown-menu": "./src/dropdown-menu.tsx",
+    "./error-boundary": "./src/error-boundary.tsx",
     "./input-otp": "./src/input-otp.tsx",
     "./input": "./src/input.tsx",
     "./label": "./src/label.tsx",

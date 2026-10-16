@@ -1,7 +1,18 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Hospital, Pill, ShieldCheck, Users, Receipt,
-  AlertTriangle, FileLock2, Wallet, Activity, Settings, LifeBuoy, Sparkles,
+  LayoutDashboard,
+  Hospital,
+  Pill,
+  ShieldCheck,
+  Users,
+  Receipt,
+  AlertTriangle,
+  FileLock2,
+  Wallet,
+  Activity,
+  Settings,
+  LifeBuoy,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -45,12 +56,16 @@ export function Sidebar() {
         </div>
         <div className="leading-tight">
           <div className="text-sm font-semibold tracking-tight">MiqorAI</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Management</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Management
+          </div>
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-thin">
-        <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Operations</div>
+        <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          Operations
+        </div>
         <ul className="space-y-1">
           {nav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? path === "/" : path.startsWith(to);
@@ -76,8 +91,11 @@ export function Sidebar() {
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
         {footer.map(({ to, label, icon: Icon }) => (
-          <Link key={to} to={to}
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent/60">
+          <Link
+            key={to}
+            to={to}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-sidebar-accent/60"
+          >
             <Icon className="size-4" /> {label}
           </Link>
         ))}
@@ -91,7 +109,9 @@ export function Sidebar() {
           </div>
           <div className="leading-tight min-w-0">
             <div className="text-xs font-medium truncate">Admin</div>
-            <div className="text-[10px] text-muted-foreground truncate">{session?.email ?? "Sign out"}</div>
+            <div className="text-[10px] text-muted-foreground truncate">
+              {session?.email ?? "Sign out"}
+            </div>
           </div>
           <span className="ml-auto text-[10px] text-muted-foreground">Sign out</span>
         </button>

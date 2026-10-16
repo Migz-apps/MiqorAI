@@ -10,12 +10,17 @@ const Ctx = createContext<{
   toast: (message: string, type?: ToastType) => void;
 } | null>(null);
 
-const STYLES: Record<ToastType, { border: string; icon: typeof FiCheckCircle; IconColor: string }> = {
-  success: { border: "border-success/30", icon: FiCheckCircle, IconColor: "text-success" },
-  error: { border: "border-destructive/30", icon: FiAlertCircle, IconColor: "text-destructive" },
-  info: { border: "border-primary/20", icon: FiInfo, IconColor: "text-primary" },
-  warning: { border: "border-secondary/40", icon: FiAlertTriangle, IconColor: "text-secondary-foreground" },
-};
+const STYLES: Record<ToastType, { border: string; icon: typeof FiCheckCircle; IconColor: string }> =
+  {
+    success: { border: "border-success/30", icon: FiCheckCircle, IconColor: "text-success" },
+    error: { border: "border-destructive/30", icon: FiAlertCircle, IconColor: "text-destructive" },
+    info: { border: "border-primary/20", icon: FiInfo, IconColor: "text-primary" },
+    warning: {
+      border: "border-secondary/40",
+      icon: FiAlertTriangle,
+      IconColor: "text-secondary-foreground",
+    },
+  };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);

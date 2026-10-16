@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Notification, Role } from "@/lib/types";
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapNotification } from "@/lib/mappers";
+import { formatIsoDate, formatTime } from "@miqorai/api-client/format";
 
 type NotifState = {
   items: Notification[];
@@ -39,6 +40,6 @@ export const useNotifications = create<NotifState>((set, get) => ({
     set({ items: get().items.map(n => ({ ...n, read: true })) });
   },
   push: (n) => set({
-    items: [{ ...n, id: `N${Date.now()}`, createdAt: new Date().toISOString().slice(0, 16).replace("T", " "), read: false }, ...get().items],
+    items: [{ ...n, id: `N${Date.now()}`, createdAt: `${formatIsoDate()} ${formatTime(new Date())}`, read: false }, ...get().items],
   }),
 }));

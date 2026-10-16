@@ -8,6 +8,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@miqorai/ui/sidebar";
 import { useAuth, can } from "@/store/auth";
+import type { LucideIcon } from "lucide-react";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -17,7 +18,7 @@ export function AppSidebar() {
   if (!session) return null;
   const role = session.role;
 
-  const sections: { label: string; items: { title: string; url: string; icon: any; show: boolean }[] }[] = [
+  const sections: { label: string; items: { title: string; url: string; icon: LucideIcon; show: boolean }[] }[] = [
     {
       label: "Workspace",
       items: [

@@ -7,7 +7,10 @@ const TONE: Record<Tone, { wrap: string; icon: typeof AlertCircle }> = {
   error: { wrap: "border-destructive/30 bg-destructive/5 text-destructive", icon: AlertCircle },
   success: { wrap: "border-success/30 bg-success/5 text-success", icon: CheckCircle2 },
   info: { wrap: "border-primary/20 bg-primary/5 text-primary", icon: Info },
-  warning: { wrap: "border-secondary/40 bg-secondary/10 text-secondary-foreground", icon: AlertTriangle },
+  warning: {
+    wrap: "border-secondary/40 bg-secondary/10 text-secondary-foreground",
+    icon: AlertTriangle,
+  },
 };
 
 export function FormAlert({

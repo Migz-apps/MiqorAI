@@ -11,7 +11,7 @@ import { ProgressBar } from "@/components/miqorai/ProgressBar";
 import { StatusPill } from "@/components/miqorai/StatusPill";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapInvoice } from "@/lib/api/insurer";
-import { fmtKsh } from "@/lib/format";
+import { formatMoney, formatNumber } from "@/lib/format";
 import { toast } from "@/lib/notify";
 import {
   Dialog,
@@ -22,9 +22,10 @@ import {
   DialogTrigger,
 } from "@miqorai/ui/dialog";
 import { Textarea } from "@miqorai/ui/textarea";
+import { formatIsoDate } from "@miqorai/api-client/format";
 
 function dateStr(d: string | Date): string {
-  return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
+  return formatIsoDate(d);
 }
 
 export default function Contract() {
@@ -183,15 +184,15 @@ export default function Contract() {
                   <TableRow key={inv.id}>
                     <TableCell className="font-mono text-xs font-medium">{inv.id}</TableCell>
                     <TableCell className="text-sm">{inv.period}</TableCell>
-                    <TableCell className="num text-right text-success font-medium">{fmtKsh(inv.grossSavings)}</TableCell>
-                    <TableCell className="num text-right">{fmtKsh(inv.fee)}</TableCell>
+                    <TableCell className="num text-right text-success font-medium">{formatMoney(inv.grossSavings)}</TableCell>
+                    <TableCell className="num text-right">{formatMoney(inv.fee)}</TableCell>
                     <TableCell><StatusPill status={inv.status} /></TableCell>
                     <TableCell className="text-xs">
                       <div>{inv.dueDate}</div>
                       {inv.paidDate && <div className="text-success">Paid {inv.paidDate}</div>}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => void downloadInvoicePdf(inv.sourceId)}>
+                      <Button aria-label="Download invoice PDF" size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => void downloadInvoicePdf(inv.sourceId)}>
                         <Download className="h-3.5 w-3.5" />
                       </Button>
                     </TableCell>
@@ -218,7 +219,7 @@ export default function Contract() {
                       {u.label}
                     </span>
                     <span className="num text-text-secondary">
-                      {typeof u.used === "number" && u.used < 100 ? u.used.toFixed(1) : u.used.toLocaleString()} / {u.allow.toLocaleString()} {u.unit}
+                      {typeof u.used === "number" && u.used < 100 ? u.used.toFixed(1) : formatNumber(u.used)} / {formatNumber(u.allow)} {u.unit}
                     </span>
                   </div>
                   <ProgressBar value={pct} barClass={warn ? "bg-secondary" : u.color} />

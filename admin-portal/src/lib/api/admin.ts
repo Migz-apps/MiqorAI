@@ -203,7 +203,8 @@ export const adminKeys = {
   network: ["admin", "network"] as const,
   hourly: ["admin", "hourly"] as const,
   revenue: ["admin", "revenue"] as const,
-  hospitals: (status?: string, limit?: number) => ["admin", "hospitals", status, limit ?? "all"] as const,
+  hospitals: (status?: string, limit?: number) =>
+    ["admin", "hospitals", status, limit ?? "all"] as const,
   hospitalsPilot: ["admin", "hospitals", "pilot"] as const,
   pharmacies: (status?: string) => ["admin", "pharmacies", status] as const,
   insurers: ["admin", "insurers"] as const,

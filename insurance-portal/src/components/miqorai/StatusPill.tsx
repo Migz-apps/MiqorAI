@@ -17,6 +17,6 @@ const palette = {
 
 type Key = keyof typeof palette;
 export const StatusPill = ({ status, className }: { status: Key | string; className?: string }) => {
-  const p = (palette as any)[status] ?? "bg-muted text-text-secondary border-border";
+  const p = (palette as Record<string, string>)[status] ?? "bg-muted text-text-secondary border-border";
   return <Badge variant="outline" className={cn("capitalize", p, className)}>{status}</Badge>;
 };

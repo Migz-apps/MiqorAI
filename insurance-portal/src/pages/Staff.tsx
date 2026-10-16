@@ -9,7 +9,7 @@ import { UserPlus, Mail } from "lucide-react";
 import { PageHeader } from "@/components/miqorai/PageHeader";
 import { insurerApi, insurerKeys, mapStaffRow, toBackendStaffRole } from "@/lib/api/insurer";
 import { ROLE_LABEL, can, useAuth } from "@/store/auth";
-import { initials, fmtDateTime } from "@/lib/format";
+import { initials, formatDateTime } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -167,7 +167,7 @@ export default function Staff() {
                   <TableCell>
                     <Badge variant="outline" className={`capitalize ${trackPill[s.role]}`}>{ROLE_LABEL[s.role]}</Badge>
                   </TableCell>
-                  <TableCell className="text-xs">{fmtDateTime(s.lastLogin)}</TableCell>
+                  <TableCell className="text-xs">{formatDateTime(s.lastLogin)}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={s.active ? "bg-success/10 text-success border-success/30" : "bg-muted text-text-secondary"}>
                       {s.active ? "Active" : "Disabled"}

@@ -71,11 +71,11 @@ export default function Login() {
         <div className="space-y-xs">
           <div className="flex items-center justify-between">
             <Label htmlFor="pw">Password</Label>
-            <a href="#" className="text-xs text-primary hover:underline">Forgot?</a>
+            <span className="text-xs text-text-secondary">Forgot? Ask your hospital admin</span>
           </div>
           <div className="relative">
             <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} className="pr-10 h-11" autoComplete="current-password" />
-            <button type="button" onClick={() => setShowPw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
+            <button aria-label={showPw ? "Hide password" : "Show password"} type="button" onClick={() => setShowPw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>

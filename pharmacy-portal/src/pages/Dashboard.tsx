@@ -10,6 +10,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from "rec
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapAdherenceTrend, mapInventoryItem } from "@/lib/api/mappers";
 import { loadPrescriptions, pharmacyKeys } from "@/store/rx";
+import { formatDate } from "@miqorai/api-client/format";
 
 const StatCard = ({ icon: Icon, label, value, accent, sub }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -34,7 +35,7 @@ const StatCard = ({ icon: Icon, label, value, accent, sub }: {
 
 export default function Dashboard() {
   const session = useAuth((s) => s.session)!;
-  const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const today = formatDate(new Date(), { weekday: "long", month: "long", day: "numeric" });
 
   const { data: dashboard } = useQuery({
     queryKey: pharmacyKeys.dashboard(),

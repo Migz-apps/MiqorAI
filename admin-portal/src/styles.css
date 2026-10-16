@@ -52,8 +52,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-mono: "Fira Code", ui-monospace, monospace;
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
@@ -97,7 +97,8 @@
   --sidebar-ring: oklch(0.62 0.11 200);
 
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
-  --gradient-cockpit: radial-gradient(ellipse at top, oklch(0.22 0.04 200 / 0.4), transparent 60%),
+  --gradient-cockpit:
+    radial-gradient(ellipse at top, oklch(0.22 0.04 200 / 0.4), transparent 60%),
     radial-gradient(ellipse at bottom right, oklch(0.22 0.06 295 / 0.25), transparent 60%);
   --gradient-card: linear-gradient(180deg, oklch(0.23 0.016 250), oklch(0.19 0.012 250));
   --shadow-glow: 0 0 24px oklch(0.62 0.11 200 / 0.35);
@@ -110,27 +111,41 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   body {
     background-image: var(--gradient-cockpit);
     background-attachment: fixed;
     min-height: 100vh;
   }
-  .font-mono { font-family: var(--font-mono); }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
 }
 
 @layer utilities {
-  .glow-primary { box-shadow: var(--shadow-glow); }
-  .glow-success { box-shadow: var(--shadow-glow-success); }
-  .glow-pink { box-shadow: var(--shadow-glow-pink); }
-  .bg-cockpit { background-image: var(--gradient-cockpit); }
-  .bg-gradient-primary { background-image: var(--gradient-primary); }
-  .bg-card-gradient { background-image: var(--gradient-card); }
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+  .glow-success {
+    box-shadow: var(--shadow-glow-success);
+  }
+  .glow-pink {
+    box-shadow: var(--shadow-glow-pink);
+  }
+  .bg-cockpit {
+    background-image: var(--gradient-cockpit);
+  }
+  .bg-gradient-primary {
+    background-image: var(--gradient-primary);
+  }
+  .bg-card-gradient {
+    background-image: var(--gradient-card);
+  }
   .text-gradient {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
@@ -143,32 +158,61 @@
       linear-gradient(90deg, oklch(0.62 0.11 200 / 0.06) 1px, transparent 1px);
     background-size: 40px 40px;
   }
-  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: var(--color-border); border-radius: 3px;
+    background: var(--color-border);
+    border-radius: 3px;
   }
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
-  50% { opacity: 0.6; box-shadow: 0 0 0 6px transparent; }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 0 6px transparent;
+  }
 }
-.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
 
 @keyframes ping-ring {
-  0% { transform: scale(1); opacity: 0.8; }
-  100% { transform: scale(2.4); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
 }
-.ping-ring { animation: ping-ring 2s cubic-bezier(0,0,0.2,1) infinite; }
+.ping-ring {
+  animation: ping-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
 
 @keyframes ticker {
-  from { transform: translateY(0); }
-  to { transform: translateY(-50%); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 .shimmer {
   background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent);

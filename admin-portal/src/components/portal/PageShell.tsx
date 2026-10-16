@@ -5,8 +5,14 @@ import { Topbar } from "./Topbar";
 import { useAuth } from "@/lib/auth";
 
 export function PageShell({
-  title, subtitle, children,
-}: { title: string; subtitle?: string; children: React.ReactNode }) {
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   const session = useAuth((s) => s.session);
   const ready = useAuth((s) => s.ready);
   const restoreSession = useAuth((s) => s.restoreSession);

@@ -18,7 +18,7 @@ import { PageHeader } from "@/components/miqorai/PageHeader";
 import { KpiCard } from "@/components/miqorai/KpiCard";
 import { downloadFile } from "@/lib/api/client";
 import { insurerApi, insurerKeys, mapSavingsRecord } from "@/lib/api/insurer";
-import { fmtKsh, fmtKshShort, fmtNum } from "@/lib/format";
+import { formatIsoDate, formatMoney, formatNumber } from "@/lib/format";
 import { toast } from "@/lib/notify";
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -32,11 +32,10 @@ export default function Savings() {
   const [period, setPeriod] = useState<"month" | "ytd">("month");
 
   const range = (() => {
-    const now = new Date();
-    const start = period === "month"
-      ? new Date(now.getFullYear(), now.getMonth(), 1)
-      : new Date(now.getFullYear(), 0, 1);
-    return { start: start.toISOString().slice(0, 10), end: now.toISOString().slice(0, 10) };
+    // Calendar boundaries follow the Kigali day, not the browser's zone.
+    const end = formatIsoDate();
+    const start = period === "month" ? `${end.slice(0, 8)}01` : `${end.slice(0, 5)}01-01`;
+    return { start, end };
   })();
 
   const { data: savings, isLoading } = useQuery({
@@ -95,7 +94,7 @@ export default function Savings() {
     <div className="space-y-lg max-w-[1500px] mx-auto animate-fade-up">
       <PageHeader
         title="Savings dashboard"
-        subtitle="Verified duplicate-test savings. Every shilling here is auditable to a claim."
+        subtitle="Verified duplicate-test savings. Every franc here is auditable to a claim."
         right={
           <>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as "month" | "ytd")}>
@@ -115,10 +114,10 @@ export default function Savings() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-md">
-        <KpiCard icon={FlaskConical} label="Verified savings" value={fmtKshShort(savings?.gross_savings ?? 0)} accent="success" />
-        <KpiCard icon={Boxes} label="Duplicates blocked" value={fmtNum(savings?.duplicate_tests_prevented ?? 0)} accent="insurer" />
-        <KpiCard icon={Microscope} label="Avg savings / claim" value={fmtKsh(avgPerClaim)} accent="primary" />
-        <KpiCard icon={FlaskConical} label="Net savings" value={fmtKshShort(savings?.net_savings ?? 0)} hint="After MiqorAI fee" accent="secondary" />
+        <KpiCard icon={FlaskConical} label="Verified savings" value={formatMoney(savings?.gross_savings ?? 0, { compact: true })} accent="success" />
+        <KpiCard icon={Boxes} label="Duplicates blocked" value={formatNumber(savings?.duplicate_tests_prevented ?? 0)} accent="insurer" />
+        <KpiCard icon={Microscope} label="Avg savings / claim" value={formatMoney(avgPerClaim)} accent="primary" />
+        <KpiCard icon={FlaskConical} label="Net savings" value={formatMoney(savings?.net_savings ?? 0, { compact: true })} hint="After MiqorAI fee" accent="secondary" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
@@ -135,7 +134,7 @@ export default function Savings() {
                   <YAxis type="category" dataKey="name" stroke="hsl(var(--text-secondary))" fontSize={11} width={140} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))", fontSize: 12 }}
-                    formatter={(v: number) => [fmtKsh(v), "Savings"]}
+                    formatter={(v: number) => [formatMoney(v), "Savings"]}
                   />
                   <Bar dataKey="savings" radius={[0, 6, 6, 0]}>
                     {hospitals.map((_, i) => (
@@ -159,7 +158,7 @@ export default function Savings() {
                   <Pie data={breakdown} dataKey="value" nameKey="name" innerRadius={48} outerRadius={80} paddingAngle={3}>
                     {breakdown.map((b, i) => <Cell key={i} fill={b.color} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number) => fmtKsh(v)} contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))" }} />
+                  <Tooltip formatter={(v: number) => formatMoney(v)} contentStyle={{ borderRadius: 8, fontSize: 12, border: "1px solid hsl(var(--border))" }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
@@ -169,7 +168,7 @@ export default function Savings() {
               {topTests.map(([name, amount]) => (
                 <div key={name} className="flex justify-between">
                   <span>{name}</span>
-                  <span className="num font-medium">{fmtKsh(amount)}</span>
+                  <span className="num font-medium">{formatMoney(amount)}</span>
                 </div>
               ))}
             </div>
@@ -220,7 +219,7 @@ export default function Savings() {
                       <div className="text-text-secondary">{r.attemptedProvider}</div>
                     </TableCell>
                     <TableCell className="text-xs text-text-secondary">{r.preventionMethod}</TableCell>
-                    <TableCell className="num text-right font-semibold text-success">{fmtKsh(r.savings)}</TableCell>
+                    <TableCell className="num text-right font-semibold text-success">{formatMoney(r.savings)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

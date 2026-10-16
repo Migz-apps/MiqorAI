@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { WaitlistEntry, Priority, Department } from "@/lib/types";
 import { hospitalApi } from "@/lib/api/hospital";
 import { mapCheckinToWaitlistEntry, mapVisitStatusToApi } from "@/lib/mappers";
+import { formatTime } from "@miqorai/api-client/format";
 
 type WaitState = {
   entries: WaitlistEntry[];
@@ -46,8 +47,8 @@ export const useWaitlist = create<WaitState>((set, get) => ({
       id: res.visit_id,
       checkInTimestamp: res.checkin_time ? new Date(res.checkin_time).getTime() : ts,
       checkInTime: res.checkin_time
-        ? new Date(res.checkin_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
-        : new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
+        ? formatTime(res.checkin_time)
+        : formatTime(ts),
     };
     set({ entries: [fallback, ...get().entries] });
     return fallback;

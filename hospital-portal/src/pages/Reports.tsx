@@ -5,6 +5,7 @@ import { FileText, Download, Calendar } from "lucide-react";
 import { downloadFile } from "@/lib/api/client";
 import { hospitalApi } from "@/lib/api/hospital";
 import { toast } from "@/lib/notify";
+import { formatDateTime } from "@miqorai/api-client/format";
 
 const reports = [
   { type: "census", name: "Daily Census", description: "Patients checked in per day", formats: ["CSV", "PDF"] as const },
@@ -106,7 +107,7 @@ export default function Reports() {
               <div>
                 <div className="text-sm font-medium">{item.title}</div>
                 <div className="text-xs text-text-secondary">
-                  {String(item.format).toUpperCase()} · {new Date(item.createdAt).toLocaleString()}
+                  {String(item.format).toUpperCase()} · {formatDateTime(item.createdAt)}
                 </div>
               </div>
               <Button size="sm" variant="outline" onClick={() => void downloadHistoryItem(item)}>

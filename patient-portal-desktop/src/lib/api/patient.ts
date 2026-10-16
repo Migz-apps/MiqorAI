@@ -133,11 +133,16 @@ export const patientApi = {
     return api<{ items: MedicalRecord[]; total: number }>(`/api/patient/records${q}`);
   },
   allergies: () => api<MedicalRecord[]>("/api/patient/allergies"),
-  labs: () => api<Array<{ id: string; testName?: string; orderedAt?: string; status?: string }>>("/api/patient/labs"),
+  labs: () =>
+    api<Array<{ id: string; testName?: string; orderedAt?: string; status?: string }>>(
+      "/api/patient/labs",
+    ),
   accessGrants: () => api<AccessGrant[]>("/api/patient/access-grants"),
   accessRequests: () => api<AccessRequest[]>("/api/patient/access-requests"),
-  approveAccessRequest: (id: string) => api(`/api/patient/access-requests/${id}/approve`, { method: "POST" }),
-  denyAccessRequest: (id: string) => api(`/api/patient/access-requests/${id}/deny`, { method: "POST" }),
+  approveAccessRequest: (id: string) =>
+    api(`/api/patient/access-requests/${id}/approve`, { method: "POST" }),
+  denyAccessRequest: (id: string) =>
+    api(`/api/patient/access-requests/${id}/deny`, { method: "POST" }),
   revokeAccessGrant: (id: string) => api(`/api/patient/access-grants/${id}`, { method: "DELETE" }),
   accessLogs: () => api<{ items: AccessLogItem[]; total: number }>("/api/patient/access-logs"),
   family: () => api<FamilyMember[]>("/api/patient/family"),
@@ -146,13 +151,22 @@ export const patientApi = {
     api<PatientSettings>("/api/patient/settings", { method: "PUT", body: JSON.stringify(body) }),
   emergencyContacts: () => api<EmergencyContact[]>("/api/patient/emergency-contacts"),
   createEmergencyContact: (body: Record<string, unknown>) =>
-    api<EmergencyContact>("/api/patient/emergency-contacts", { method: "POST", body: JSON.stringify(body) }),
-  deleteEmergencyContact: (id: string) => api(`/api/patient/emergency-contacts/${id}`, { method: "DELETE" }),
+    api<EmergencyContact>("/api/patient/emergency-contacts", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  deleteEmergencyContact: (id: string) =>
+    api(`/api/patient/emergency-contacts/${id}`, { method: "DELETE" }),
   qrCode: () => api<QrResponse>("/api/patient/qr-code"),
-  recoveryPhrase: () => api<{ recovery_phrase?: string; phrase?: string }>("/api/patient/recovery-phrase"),
-  exportData: () => api<{ download_url: string }>("/api/patient/export-data", { method: "POST", body: "{}" }),
+  recoveryPhrase: () =>
+    api<{ recovery_phrase?: string; phrase?: string }>("/api/patient/recovery-phrase"),
+  exportData: () =>
+    api<{ download_url: string }>("/api/patient/export-data", { method: "POST", body: "{}" }),
   deleteAccount: () =>
-    api("/api/patient/account", { method: "DELETE", body: JSON.stringify({ confirmation: "DELETE" }) }),
+    api("/api/patient/account", {
+      method: "DELETE",
+      body: JSON.stringify({ confirmation: "DELETE" }),
+    }),
   register: (body: {
     phone: string;
     password: string;
@@ -177,12 +191,4 @@ export function profileToUser(p: ProfileResponse) {
     nationalId: p.national_id ?? "",
     insuranceId: p.insurance_id ?? "",
   };
-}
-
-export function timeAgo(date: string) {
-  const sec = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (sec < 60) return "just now";
-  if (sec < 3600) return `${Math.floor(sec / 60)} minutes ago`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)} hours ago`;
-  return `${Math.floor(sec / 86400)} days ago`;
 }

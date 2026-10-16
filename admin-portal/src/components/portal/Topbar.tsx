@@ -20,7 +20,11 @@ export function Topbar({ title, subtitle }: { title: string; subtitle?: string }
           <Bell className="size-4" />
           <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-pink text-pink pulse-dot" />
         </button>
-        <button className="h-9 w-9 grid place-items-center rounded-md border border-border bg-card/60 hover:bg-accent">
+        <button
+          type="button"
+          aria-label="Settings"
+          className="h-9 w-9 grid place-items-center rounded-md border border-border bg-card/60 hover:bg-accent"
+        >
           <Settings2 className="size-4" />
         </button>
         <div className="hidden md:flex items-center gap-2 h-9 px-2.5 rounded-md border border-success/30 bg-success/10 text-success">

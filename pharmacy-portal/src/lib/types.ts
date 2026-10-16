@@ -23,7 +23,7 @@ export type Rx = {
   notes?: string;
   items: RxItem[];
   insurance?: { provider: string; member: string };
-  total: number;           // KES
+  total: number;           // platform currency (RWF)
   interactionMessages: string[];
 };
 

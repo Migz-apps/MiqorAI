@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { Badge } from "@miqorai/ui/badge";
 import { ShieldCheck } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatRelative } from "@miqorai/api-client/format";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapAuditLog } from "@/lib/api/mappers";
 import { pharmacyKeys } from "@/store/rx";
@@ -32,7 +32,7 @@ export default function AuditLog() {
                 <div className={`mt-1 h-2 w-2 rounded-full ${a.level === "warning" ? "bg-secondary" : a.level === "success" ? "bg-success" : "bg-info"}`} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm">{a.action}</div>
-                  <div className="text-xs text-text-secondary">{a.actor} · {formatDistanceToNow(new Date(a.at), { addSuffix: true })}</div>
+                  <div className="text-xs text-text-secondary">{a.actor} · {formatRelative(a.at)}</div>
                 </div>
                 <Badge variant="outline" className={
                   a.level === "warning" ? "border-secondary/30 text-secondary bg-secondary/10"

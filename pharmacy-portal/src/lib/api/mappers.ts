@@ -1,5 +1,5 @@
 import type { Patient, Role, Rx, RxItem, RxStatus, Staff, StockItem } from "@/lib/types";
-import { formatDistanceToNow } from "date-fns";
+import { formatRelative } from "@miqorai/api-client/format";
 
 const PHARMACY_ROLES: Role[] = ["cashier", "technician", "pharmacist", "manager"];
 
@@ -250,7 +250,7 @@ export function mapPatientDetail(data: {
     conditions: mapConditions(data.conditions),
     adherence: adherence?.overall_rate ? Math.round(adherence.overall_rate) : (data.adherence ?? 0),
     lastVisit: data.prescriptions?.[0]?.prescribed_at
-      ? formatDistanceToNow(new Date(data.prescriptions[0].prescribed_at), { addSuffix: true })
+      ? formatRelative(data.prescriptions[0].prescribed_at)
       : "—",
   };
 }
@@ -270,7 +270,7 @@ export function mapStaffMember(s: {
     role: mapStaffRole(s.role),
     active: s.active,
     lastActive: s.last_login
-      ? formatDistanceToNow(new Date(s.last_login), { addSuffix: true })
+      ? formatRelative(s.last_login)
       : "—",
   };
 }

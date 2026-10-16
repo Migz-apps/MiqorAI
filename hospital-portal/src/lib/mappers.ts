@@ -1,3 +1,4 @@
+import { formatIsoDate, formatTime } from "@miqorai/api-client/format";
 import type {
   Patient,
   StaffMember,
@@ -44,22 +45,13 @@ export function mapVisitStatusToApi(ui: WaitlistEntry["status"]): string {
   return m[ui];
 }
 
-const fmtDate = (d: string | Date | null | undefined) => {
-  if (!d) return "";
-  const dt = typeof d === "string" ? new Date(d) : d;
-  return dt.toISOString().slice(0, 10);
-};
+// Kigali calendar day / wall-clock time, kept in sortable "YYYY-MM-DD[ HH:mm]" form.
+const fmtDate = (d: string | Date | null | undefined) => (d ? formatIsoDate(d) : "");
 
-const fmtDateTime = (d: string | Date | null | undefined) => {
-  if (!d) return "";
-  const dt = typeof d === "string" ? new Date(d) : d;
-  return dt.toISOString().slice(0, 16).replace("T", " ");
-};
+const fmtDateTime = (d: string | Date | null | undefined) =>
+  d ? `${formatIsoDate(d)} ${formatTime(d)}` : "";
 
-const fmtHHMM = (d: string | Date) => {
-  const dt = typeof d === "string" ? new Date(d) : d;
-  return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-};
+const fmtHHMM = (d: string | Date) => formatTime(d);
 
 function mapGender(g?: string | null): Patient["gender"] {
   if (!g) return "Other";

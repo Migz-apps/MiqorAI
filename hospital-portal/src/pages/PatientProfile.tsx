@@ -30,6 +30,7 @@ import { RelevantHistoryPanel } from "@/components/miqorai/RelevantHistoryPanel"
 import { useAuth, can } from "@/store/auth";
 import type { DraftVisitWorkspace, VisitDraftState } from "@/lib/types";
 import { toast } from "@/lib/notify";
+import { formatDateTime } from "@miqorai/api-client/format";
 
 export default function PatientProfile() {
   const { id } = useParams();
@@ -291,7 +292,7 @@ export default function PatientProfile() {
                       <div className="text-sm font-medium">
                         {draft.openVisit?.status ? `Visit ${draft.openVisit.status.replace("_", " ")}` : "Draft visit"}
                       </div>
-                      <Badge variant="outline">Updated {new Date(draft.updatedAt).toLocaleString()}</Badge>
+                      <Badge variant="outline">Updated {formatDateTime(draft.updatedAt)}</Badge>
                     </div>
                     <div className="text-xs text-text-secondary">
                       {draft.draft.chief || "No chief complaint yet"}
@@ -344,7 +345,7 @@ export default function PatientProfile() {
                       <Badge variant="outline">{prescription.status}</Badge>
                     </div>
                     <div className="text-xs text-text-secondary">
-                      {new Date(prescription.prescribedAt).toLocaleString()}
+                      {formatDateTime(prescription.prescribedAt)}
                     </div>
                   </div>
                 ))

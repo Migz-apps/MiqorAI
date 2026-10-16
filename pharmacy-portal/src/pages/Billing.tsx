@@ -8,7 +8,7 @@ import {
   Receipt, Download, Search, Wallet, Building2, ShieldCheck,
   TrendingUp, ArrowUpRight, Printer, Filter,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatIsoDate, formatMoney, formatRelative } from "@miqorai/api-client/format";
 import { downloadFile } from "@/lib/api/client";
 import { pharmacyApi } from "@/lib/api/pharmacy";
 import { mapBillingReceipt } from "@/lib/api/mappers";
@@ -24,7 +24,7 @@ export default function Billing() {
   const { data: receipts = [], isLoading } = useQuery({
     queryKey: pharmacyKeys.billing(),
     queryFn: async () => {
-      const rows = await pharmacyApi.billingReceipts(new Date().toISOString().slice(0, 10));
+      const rows = await pharmacyApi.billingReceipts(formatIsoDate());
       return (rows as Parameters<typeof mapBillingReceipt>[0][]).map(mapBillingReceipt);
     },
   });
@@ -77,9 +77,9 @@ export default function Billing() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
         <KpiCard icon={Receipt} label="Receipts today" value={receipts.length.toString()} accent="bg-pharmacy/10 text-pharmacy" delta={`${receipts.length} receipts`} />
-        <KpiCard icon={TrendingUp} label="Revenue today" value={`KES ${total.toLocaleString()}`} accent="bg-success/10 text-success" highlight />
-        <KpiCard icon={Wallet} label="Cash collected" value={`KES ${cashTotal.toLocaleString()}`} accent="bg-info/10 text-info" delta={`${receipts.filter((r) => r.paymentType === "cash").length} receipts`} />
-        <KpiCard icon={ShieldCheck} label="Insurance pending" value={`KES ${insuranceTotal.toLocaleString()}`} accent="bg-secondary/15 text-secondary" delta={`${receipts.filter((r) => r.paymentType === "insurance").length} claims`} />
+        <KpiCard icon={TrendingUp} label="Revenue today" value={formatMoney(total)} accent="bg-success/10 text-success" highlight />
+        <KpiCard icon={Wallet} label="Cash collected" value={formatMoney(cashTotal)} accent="bg-info/10 text-info" delta={`${receipts.filter((r) => r.paymentType === "cash").length} receipts`} />
+        <KpiCard icon={ShieldCheck} label="Insurance pending" value={formatMoney(insuranceTotal)} accent="bg-secondary/15 text-secondary" delta={`${receipts.filter((r) => r.paymentType === "insurance").length} claims`} />
       </div>
 
       <Card className="border-border/70 shadow-sm">
@@ -119,7 +119,7 @@ export default function Billing() {
                     <span className="text-text-secondary font-normal ml-2">· {r.id}</span>
                   </div>
                   <div className="text-xs text-text-secondary truncate">
-                    {formatDistanceToNow(new Date(r.dispensedAt), { addSuffix: true })}
+                    {formatRelative(r.dispensedAt)}
                   </div>
                 </div>
                 {r.paymentType === "insurance" ? (
@@ -132,7 +132,7 @@ export default function Billing() {
                   </Badge>
                 )}
                 <div className="text-right">
-                  <div className="font-bold text-sm tabular-nums">KES {r.total.toLocaleString()}</div>
+                  <div className="font-bold text-sm tabular-nums">{formatMoney(r.total)}</div>
                   <div className="text-[10px] text-text-secondary">Total billed</div>
                 </div>
               </div>

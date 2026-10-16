@@ -1,8 +1,8 @@
 import { Badge } from "@miqorai/ui/badge";
-import { Clock, CheckCircle2, Package, PauseCircle, XCircle, ShieldCheck } from "lucide-react";
+import { Clock, CheckCircle2, Package, PauseCircle, XCircle, ShieldCheck, type LucideIcon } from "lucide-react";
 import type { RxStatus } from "@/lib/types";
 
-const META: Record<RxStatus, { label: string; cls: string; icon: any }> = {
+const META: Record<RxStatus, { label: string; cls: string; icon: LucideIcon }> = {
   pending:   { label: "Pending",   cls: "bg-secondary/15 text-secondary border-secondary/30",         icon: Clock },
   verified:  { label: "Verified",  cls: "bg-info/15 text-info border-info/30",                          icon: ShieldCheck },
   ready:     { label: "Ready",     cls: "bg-pharmacy/15 text-pharmacy border-pharmacy/30",              icon: Package },

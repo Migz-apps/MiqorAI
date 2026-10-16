@@ -29,12 +29,17 @@ import Reports from "./pages/Reports";
 import AuditLog from "./pages/AuditLog";
 import SystemHealth from "./pages/SystemHealth";
 
-import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { ErrorBoundary } from "@miqorai/ui/error-boundary";
+import { logoutApi } from "@/lib/api/client";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ErrorBoundary>
+  <ErrorBoundary
+    appName="hospital portal"
+    storageKeys={["MiqorAI-auth", "MiqorAI-hospital-auth-v2"]}
+    onSignOut={logoutApi}
+  >
     <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner infoClassName="group-[.toast]:border-primary/20 group-[.toast]:bg-primary-light/40" />

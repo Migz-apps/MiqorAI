@@ -303,7 +303,7 @@ export const QRScanner = ({ onScanned }: Props) => {
           </div>
         ) : (
           <>
-            <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" muted playsInline />
+            <video aria-label="QR code camera preview" ref={videoRef} className="absolute inset-0 h-full w-full object-cover" muted playsInline />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className={`w-56 h-56 rounded-lg border-4 ${detected ? "border-success animate-pulse-ring" : "border-success/70"} relative`}>
                 {cameraReady && !detected && (

@@ -9,6 +9,7 @@ import {
 import { useSync } from "@/store/sync";
 import { toast } from "@/lib/notify";
 import type { SyncItem } from "@/lib/types";
+import type { LucideIcon } from "lucide-react";
 
 const typeIcon = {
   visit: FileText,
@@ -90,11 +91,11 @@ export default function SyncQueue() {
                       <Button size="sm" variant="outline" onClick={() => setConflict(item)}>Resolve</Button>
                     )}
                     {item.status === "pending" && (
-                      <Button size="sm" variant="ghost" onClick={() => retry(item.id)} title="Retry">
+                      <Button aria-label="Retry" size="sm" variant="ghost" onClick={() => retry(item.id)} title="Retry">
                         <RefreshCw className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" onClick={() => { remove(item.id); toast.success("Removed from queue"); }} title="Remove" className="h-8 w-8">
+                    <Button aria-label="Remove from queue" size="icon" variant="ghost" onClick={() => { remove(item.id); toast.success("Removed from queue"); }} title="Remove" className="h-8 w-8">
                       <Trash2 className="h-4 w-4 text-text-secondary" />
                     </Button>
                   </div>
@@ -141,7 +142,7 @@ export default function SyncQueue() {
   );
 }
 
-const Stat = ({ icon: Icon, label, value, tone }: any) => (
+const Stat = ({ icon: Icon, label, value, tone }: { icon: LucideIcon; label: string; value: number; tone: string }) => (
   <Card>
     <CardContent className="p-md flex items-center gap-sm">
       <div className={`h-9 w-9 rounded-md flex items-center justify-center ${tone}`}><Icon className="h-4 w-4" /></div>

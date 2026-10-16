@@ -1,9 +1,9 @@
-import { AlertCircle, CheckCircle2, Info, AlertTriangle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, AlertTriangle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tone = "error" | "success" | "info" | "warning";
 
-const TONE: Record<Tone, { wrap: string; icon: any }> = {
+const TONE: Record<Tone, { wrap: string; icon: LucideIcon }> = {
   error:   { wrap: "border-error/30 bg-error/10 text-error",          icon: AlertCircle },
   success: { wrap: "border-success/30 bg-success/10 text-success",    icon: CheckCircle2 },
   info:    { wrap: "border-primary/20 bg-primary-light/40 text-primary", icon: Info },

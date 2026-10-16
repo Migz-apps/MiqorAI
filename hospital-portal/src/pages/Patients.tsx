@@ -13,6 +13,7 @@ import { Label } from "@miqorai/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@miqorai/ui/select";
 import { hospitalApi, referenceApi } from "@/lib/api/hospital";
 import { mapCensusPatient, mapDrug, mapIcd } from "@/lib/mappers";
+import { CatalogFilter } from "@/components/miqorai/CatalogFilter";
 
 export default function Patients() {
   const nav = useNavigate();
@@ -39,16 +40,6 @@ export default function Patients() {
       const rows = await hospitalApi.patientsCensus(params);
       return (rows as Record<string, unknown>[]).map(mapCensusPatient);
     },
-  });
-
-  const { data: icdCodes = [] } = useQuery({
-    queryKey: ["reference", "icd"],
-    queryFn: async () => (await referenceApi.icd()).map(r => mapIcd(r as Record<string, unknown>)),
-  });
-
-  const { data: drugList = [] } = useQuery({
-    queryKey: ["reference", "drugs", "all"],
-    queryFn: async () => (await referenceApi.drugs()).map(r => mapDrug(r as Record<string, unknown>)),
   });
 
   return (
@@ -79,23 +70,34 @@ export default function Patients() {
                 <div className="space-y-md">
                   <div className="space-y-xs">
                     <Label>Diagnosis</Label>
-                    <Select value={diag} onValueChange={setDiag}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any</SelectItem>
-                        {icdCodes.map(c => <SelectItem key={c.code} value={c.label}>{c.code} - {c.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <CatalogFilter
+                      label="Diagnosis"
+                      value={diag}
+                      onChange={setDiag}
+                      queryKey={["reference", "icd", "paged"]}
+                      fetchPage={referenceApi.icdPage}
+                      toOption={(row) => {
+                        const c = mapIcd(row);
+                        return { value: c.label, label: `${c.code} - ${c.label}`, hint: c.code };
+                      }}
+                      placeholder="Search ICD code or description…"
+                    />
                   </div>
                   <div className="space-y-xs">
                     <Label>Prescribed medication</Label>
-                    <Select value={drug} onValueChange={setDrug}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any</SelectItem>
-                        {drugList.map(d => <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <CatalogFilter
+                      label="Prescribed medication"
+                      value={drug}
+                      onChange={setDrug}
+                      queryKey={["reference", "drugs", "paged"]}
+                      fetchPage={referenceApi.drugsPage}
+                      toOption={(row) => {
+                        const d = mapDrug(row);
+                        const strength = d.forms[0] === "—" ? "" : d.forms[0];
+                        return { value: d.name, label: strength ? `${d.name} · ${strength}` : d.name, hint: String(row.id ?? strength) };
+                      }}
+                      placeholder="Search drug or generic name…"
+                    />
                   </div>
                   <div className="space-y-xs">
                     <Label>Age range</Label>
@@ -130,7 +132,7 @@ export default function Patients() {
             <div className="col-span-1 text-right">Last visit</div>
           </div>
           {isLoading && <div className="p-md text-sm text-text-secondary">Loading patients…</div>}
-          {isError && <div className="p-md text-sm text-error">Failed to load patients.</div>}
+          {isError && <div role="alert" className="p-md text-sm text-error">Failed to load patients.</div>}
           <div className="divide-y">
             {results.map(p => (
               <button key={p.id} onClick={() => nav(`/patients/${p.id}`)} className="w-full text-left flex md:grid md:grid-cols-12 md:items-center gap-sm px-md py-sm hover:bg-primary-light/40 transition-colors">

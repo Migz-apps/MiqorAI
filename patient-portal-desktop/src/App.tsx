@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ToastProvider } from "@/components/Toast";
+import { ErrorBoundary } from "@miqorai/ui/error-boundary";
+import { logoutApi } from "@/lib/api/client";
 
 import { Landing } from "@/components/Landing";
 import PortalPage from "@/routes/portal";
@@ -25,25 +27,35 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-
 export default function App() {
   return (
-    <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <BrowserRouter basename={routerBasename}>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/portal" element={<ProtectedRoute><PortalPage /></ProtectedRoute>} />
-              <Route path="*" element={<NotFoundComponent />} />
-            </Routes>
-          </BrowserRouter>
-        </ToastProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary
+      appName="patient portal"
+      storageKeys={["miqorai-patient-auth"]}
+      onSignOut={logoutApi}
+      loginHref={`${routerBasename ?? ""}/login`}
+    >
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ToastProvider>
+            <BrowserRouter basename={routerBasename}>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route
+                  path="/portal"
+                  element={
+                    <ProtectedRoute>
+                      <PortalPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<NotFoundComponent />} />
+              </Routes>
+            </BrowserRouter>
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }

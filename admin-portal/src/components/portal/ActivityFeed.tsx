@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, AlertTriangle, FileText, Hospital, Pill, UserCheck, Wallet } from "lucide-react";
 import { adminApi, adminKeys } from "@/lib/api/admin";
-import { timeAgo } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const iconMap: Record<string, { icon: typeof Activity; tone: string }> = {
@@ -33,20 +33,25 @@ export function ActivityFeed() {
         {isLoading ? (
           <li className="px-5 py-8 text-center text-sm text-muted-foreground">Loading activity…</li>
         ) : data.length === 0 ? (
-          <li className="px-5 py-8 text-center text-sm text-muted-foreground">No recent activity</li>
+          <li className="px-5 py-8 text-center text-sm text-muted-foreground">
+            No recent activity
+          </li>
         ) : (
           data.map((a, i) => {
             const m = iconMap[a.kind] ?? iconMap.request;
             const I = m.icon;
             return (
-              <li key={a.id} className="px-5 py-3 flex items-start gap-3 hover:bg-accent/30 transition-colors">
+              <li
+                key={a.id}
+                className="px-5 py-3 flex items-start gap-3 hover:bg-accent/30 transition-colors"
+              >
                 <div className={cn("size-8 rounded-md grid place-items-center border", m.tone)}>
                   <I className="size-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm leading-snug">{a.text}</p>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground font-mono">
-                    <span>{timeAgo(a.createdAt)}</span>
+                    <span>{formatRelative(a.createdAt)}</span>
                     {a.actor ? (
                       <>
                         <span>·</span>
@@ -56,7 +61,9 @@ export function ActivityFeed() {
                   </div>
                 </div>
                 {i === 0 && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-success/15 text-success border border-success/30">NEW</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-success/15 text-success border border-success/30">
+                    NEW
+                  </span>
                 )}
               </li>
             );

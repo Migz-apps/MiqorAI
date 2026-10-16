@@ -9,7 +9,9 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { ErrorBoundary } from "@miqorai/ui/error-boundary";
 import { Toaster } from "@miqorai/ui/sonner";
+import { logoutApi } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth";
 import appCss from "../styles.css?url";
 
@@ -75,8 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "robots", content: "noindex, nofollow" },
       { title: "MiqorAI · Management Cockpit" },
-      { name: "description", content: "Real-time command center for the MiqorAI network — approvals, disputes, billing, audit." },
+      {
+        name: "description",
+        content:
+          "Real-time command center for the MiqorAI network — approvals, disputes, billing, audit.",
+      },
       { name: "author", content: "MiqorAI" },
       { property: "og:title", content: "MiqorAI · Management Cockpit" },
       { property: "og:description", content: "Real-time command center for the MiqorAI network." },
@@ -128,15 +135,21 @@ function RootComponent() {
   }, [restoreSession]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster theme="dark" />
-      {ready ? (
-        <Outlet />
-      ) : (
-        <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
-          Restoring session…
-        </div>
-      )}
-    </QueryClientProvider>
+    <ErrorBoundary
+      appName="management cockpit"
+      storageKeys={["MiqorAI-admin-auth"]}
+      onSignOut={logoutApi}
+    >
+      <QueryClientProvider client={queryClient}>
+        <Toaster theme="dark" />
+        {ready ? (
+          <Outlet />
+        ) : (
+          <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+            Restoring session…
+          </div>
+        )}
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

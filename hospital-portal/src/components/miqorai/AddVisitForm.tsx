@@ -336,7 +336,7 @@ export const AddVisitForm = ({
             {draft.diagnoses.map((d, i) => (
               <Badge key={i} className="bg-primary-light text-primary border-primary/20 hover:bg-primary-light gap-1">
                 {d.code} — {d.label}
-                <button onClick={() => update({ diagnoses: draft.diagnoses.filter((_, j) => j !== i) })}><X className="h-3 w-3" /></button>
+                <button type="button" aria-label={`Remove diagnosis ${d.code}`} onClick={() => update({ diagnoses: draft.diagnoses.filter((_, j) => j !== i) })}><X className="h-3 w-3" /></button>
               </Badge>
             ))}
           </div>
@@ -365,7 +365,7 @@ export const AddVisitForm = ({
                         {item.pharmacyName ?? "Hospital"} · Qty {item.quantity}
                       </div>
                     </div>
-                    <Button
+                    <Button aria-label="Remove prescription"
                       type="button"
                       variant="ghost"
                       size="sm"
@@ -410,7 +410,7 @@ export const AddVisitForm = ({
             {draft.labs.map((l, i) => (
               <Badge key={i} variant="outline" className="gap-1">
                 {l}
-                <button onClick={() => update({ labs: draft.labs.filter((_, j) => j !== i) })}><X className="h-3 w-3" /></button>
+                <button type="button" aria-label={`Remove lab ${l}`} onClick={() => update({ labs: draft.labs.filter((_, j) => j !== i) })}><X className="h-3 w-3" /></button>
               </Badge>
             ))}
           </div>

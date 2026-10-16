@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { PageShell } from "@/components/portal/PageShell";
 import { adminApi, adminKeys } from "@/lib/api/admin";
-import { timeAgo } from "@/lib/format";
+import { formatRelative } from "@/lib/format";
 import { toast } from "@/lib/notify";
 import { cn } from "@/lib/utils";
 
@@ -98,11 +98,12 @@ function DisputesPage() {
                         {dispute.priority}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        · opened {timeAgo(dispute.createdAt)}
+                        · opened {formatRelative(dispute.createdAt)}
                       </span>
                     </div>
                     <div className="mt-1 text-sm font-semibold">
-                      {patient} <span className="text-muted-foreground font-normal">vs</span> {party}
+                      {patient} <span className="text-muted-foreground font-normal">vs</span>{" "}
+                      {party}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">Type: {dispute.type}</div>
                     <div className="mt-1 text-xs text-muted-foreground">

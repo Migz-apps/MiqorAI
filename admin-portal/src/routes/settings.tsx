@@ -198,9 +198,7 @@ function SettingsPage() {
               Active links that have not yet been accepted.
             </p>
           </div>
-          <span className="text-xs text-muted-foreground font-mono">
-            {invitations.length} open
-          </span>
+          <span className="text-xs text-muted-foreground font-mono">{invitations.length} open</span>
         </div>
         <div className="divide-y divide-border/40">
           {invitations.length === 0 ? (

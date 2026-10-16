@@ -1,0 +1,8 @@
+# Only the public landing page may be indexed; the sign-in and portal app stay private.
+User-agent: *
+Allow: /$
+Allow: /assets/
+Allow: /favicon.svg
+Disallow: /login
+Disallow: /portal
+Disallow: /

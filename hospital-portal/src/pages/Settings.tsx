@@ -15,6 +15,7 @@ import { ApiError, changePasswordApi } from "@/lib/api/client";
 import { Shield, Building2, KeyRound, LogOut } from "lucide-react";
 import { toast } from "@/lib/notify";
 import { useNavigate } from "react-router-dom";
+import { formatDateTime } from "@miqorai/api-client/format";
 
 export default function Settings() {
   const session = useAuth(s => s.session)!;
@@ -116,7 +117,7 @@ export default function Settings() {
           <CardTitle className="h3 flex items-center gap-sm"><KeyRound className="h-4 w-4 text-primary" /> Security</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          <Row label="Active session" desc={`Signed in ${new Date(session.loggedInAt).toLocaleString()} · auto sign-out after 8h`}>
+          <Row label="Active session" desc={`Signed in ${formatDateTime(session.loggedInAt)} · auto sign-out after 8h`}>
             <Button variant="outline" size="sm" onClick={async () => { await logout(); nav("/login"); }}><LogOut className="h-4 w-4 mr-1" /> Sign out</Button>
           </Row>
           <Separator />
@@ -184,7 +185,7 @@ export default function Settings() {
               <Label htmlFor="new-pw2">Confirm new password</Label>
               <Input id="new-pw2" type="password" value={newPw2} onChange={e => setNewPw2(e.target.value)} autoComplete="new-password" />
             </div>
-            {pwError && <p className="text-xs text-error">{pwError}</p>}
+            {pwError && <p role="alert" className="text-xs text-error">{pwError}</p>}
           </div>
           <DialogFooter className="gap-sm">
             <Button variant="outline" onClick={closePwDialog}>Cancel</Button>

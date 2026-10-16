@@ -33,22 +33,34 @@ function AcceptInvitePage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { data: invite, isLoading, error: inviteError } = useQuery({
+  const {
+    data: invite,
+    isLoading,
+    error: inviteError,
+  } = useQuery({
     queryKey: ["invitation", token],
     queryFn: () => invitationApi.info(token),
     enabled: !!token,
     retry: false,
   });
 
-  const invalidInvite =
-    !token || (inviteError instanceof ApiError && inviteError.status === 404);
+  const invalidInvite = !token || (inviteError instanceof ApiError && inviteError.status === 404);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
-    if (!name.trim()) { setError("Enter your full name."); return; }
-    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    if (password !== confirm) { setError("Passwords do not match."); return; }
+    if (!name.trim()) {
+      setError("Enter your full name.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
     setSubmitting(true);
     try {
       await invitationApi.accept(token, { name: name.trim(), password });
@@ -60,7 +72,11 @@ function AcceptInvitePage() {
       } else if (err instanceof ApiError && err.status === 404) {
         setError("This invitation is invalid, expired, or already used.");
       } else {
-        setError(err instanceof ApiError ? err.message : "Could not create your account. Please try again.");
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Could not create your account. Please try again.",
+        );
       }
     } finally {
       setSubmitting(false);
@@ -115,25 +131,47 @@ function AcceptInvitePage() {
           <>
             <h2 className="text-2xl font-semibold tracking-tight">You're invited</h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Finish creating your <span className="text-foreground font-medium capitalize">{(invite.staff_role ?? invite.role).replace(/_/g, " ")}</span> account
+              Finish creating your{" "}
+              <span className="text-foreground font-medium capitalize">
+                {(invite.staff_role ?? invite.role).replace(/_/g, " ")}
+              </span>{" "}
+              account
               {invite.organization_name ? (
-                <> for <span className="text-foreground font-medium">{invite.organization_name}</span></>
+                <>
+                  {" "}
+                  for{" "}
+                  <span className="text-foreground font-medium">{invite.organization_name}</span>
+                </>
               ) : null}
               .
             </p>
 
             <form onSubmit={submit} className="mt-8 space-y-4">
               <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                <label
+                  htmlFor="invite-email"
+                  className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+                >
                   Email
                 </label>
-                <input type="email" value={invite.email} readOnly disabled className={`${inputClass} font-mono opacity-70`} />
+                <input
+                  id="invite-email"
+                  type="email"
+                  value={invite.email}
+                  readOnly
+                  disabled
+                  className={`${inputClass} font-mono opacity-70`}
+                />
               </div>
               <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                <label
+                  htmlFor="invite-name"
+                  className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+                >
                   Full name
                 </label>
                 <input
+                  id="invite-name"
                   required
                   value={name}
                   onChange={(event) => setName(event.target.value)}
@@ -143,11 +181,15 @@ function AcceptInvitePage() {
                 />
               </div>
               <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                <label
+                  htmlFor="invite-password"
+                  className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+                >
                   Password
                 </label>
                 <div className="relative">
                   <input
+                    id="invite-password"
                     type={show ? "text" : "password"}
                     required
                     value={password}
@@ -157,6 +199,7 @@ function AcceptInvitePage() {
                     className={`${inputClass} pr-10`}
                   />
                   <button
+                    aria-label={show ? "Hide password" : "Show password"}
                     type="button"
                     onClick={() => setShow((current) => !current)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-accent text-muted-foreground"
@@ -166,10 +209,14 @@ function AcceptInvitePage() {
                 </div>
               </div>
               <div>
-                <label className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                <label
+                  htmlFor="invite-confirm"
+                  className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground"
+                >
                   Confirm password
                 </label>
                 <input
+                  id="invite-confirm"
                   type={show ? "text" : "password"}
                   required
                   value={confirm}
