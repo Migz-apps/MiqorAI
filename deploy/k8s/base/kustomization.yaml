@@ -1,0 +1,26 @@
+# MiqorAI base: everything that runs, environment-neutral.
+# Overlays (overlays/dev, overlays/prod) set registry, tags, replicas and hosts.
+# The Secret is NOT part of the build: create it from secret.template.yaml first.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: miqorai
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: miqorai
+    includeSelectors: false
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - api.yaml
+  - worker.yaml
+  - ai-service.yaml
+  - portals/patient
+  - portals/hospital
+  - portals/insurance
+  - portals/pharmacy
+  - portals/admin
+  - ingress.yaml
+  - networkpolicies.yaml

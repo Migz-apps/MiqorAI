@@ -1,0 +1,7 @@
+# Shared portal template (Deployment + Service named "portal", image "miqorai-portal").
+# Each sibling folder (patient, hospital, insurance, pharmacy, admin) reuses it
+# with a namePrefix, its own selector label and its own image - no copy-paste.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - portal.yaml

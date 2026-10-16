@@ -1,0 +1,90 @@
+# Non-secret configuration. Names and defaults mirror server/src/config.ts and
+# server/.env.production.example (secrets live in miqorai-secrets, see
+# secret.template.yaml). Hosts below are local defaults; overlays patch them.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: miqorai-config
+data:
+  # --- Runtime -------------------------------------------------------------
+  NODE_ENV: "production"
+  PORT: "3000"
+  # IANA zone that defines "today" for day-boundary queries and reports.
+  PLATFORM_TIMEZONE: "Africa/Kigali"
+  # Forced exit after SIGTERM; keep below terminationGracePeriodSeconds (40s).
+  SHUTDOWN_TIMEOUT_MS: "10000"
+  # Background loops (domain-event outbox + report schedules) run ONLY in the
+  # dedicated worker Deployment. The API must not run them inline, otherwise
+  # every API replica would also poll the outbox (src/index.ts starts the loops
+  # unless WORKER_INLINE=false; src/worker.ts ignores the flag).
+  WORKER_INLINE: "false"
+
+  # --- Public URLs ---------------------------------------------------------
+  BASE_URL: "https://api.miqorai.local"
+  CORS_ORIGINS: "https://patient.miqorai.local,https://hospital.miqorai.local,https://insurance.miqorai.local,https://pharmacy.miqorai.local,https://admin.miqorai.local"
+  PATIENT_PORTAL_URL: "https://patient.miqorai.local"
+  HOSPITAL_PORTAL_URL: "https://hospital.miqorai.local"
+  INSURANCE_PORTAL_URL: "https://insurance.miqorai.local"
+  PHARMACY_PORTAL_URL: "https://pharmacy.miqorai.local"
+  ADMIN_PORTAL_URL: "https://admin.miqorai.local"
+  # API origin allowed by the portals' CSP connect-src (nginx env API_ORIGIN).
+  # Must match the VITE_API_URL the portal images were built with.
+  PORTAL_API_ORIGIN: "https://api.miqorai.local"
+
+  # --- Storage -------------------------------------------------------------
+  SUPABASE_URL: ""
+  SUPABASE_STORAGE_BUCKET: "miqorai-uploads"
+  # Local disk fallback (emptyDir in the pod: NOT durable - use Supabase Storage in production).
+  UPLOAD_DIR: "/app/uploads"
+
+  # --- Auth / tokens -------------------------------------------------------
+  JWT_ACCESS_EXPIRES: "15m"
+  JWT_REFRESH_EXPIRES: "7d"
+  QR_TTL_SECONDS: "300"
+  OTP_EXPIRES_MINUTES: "10"
+  PASSWORD_RESET_EXPIRES_MINUTES: "60"
+  AUTH_CHALLENGE_RESEND_COOLDOWN_SECONDS: "45"
+  AUTH_CHALLENGE_MAX_ATTEMPTS: "5"
+  INVITATION_EXPIRY_DAYS: "7"
+
+  # --- Email / SMS ---------------------------------------------------------
+  SMTP_HOST: "smtp.resend.com"
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  SMTP_FROM: "noreply@miqorai.com"
+  EMAIL_REDIRECT_ALL_TO: ""
+  SMS_PROVIDER: "twilio"
+  SMS_FROM_NUMBER: ""
+
+  # --- Limits / housekeeping ----------------------------------------------
+  RATE_LIMIT_PER_USER_PER_MINUTE: "300"
+  RATE_LIMIT_PER_IP_PER_MINUTE: "600"
+  AUDIT_ARCHIVE_DAYS: "365"
+
+  # --- Clinical-safety AI --------------------------------------------------
+  # In-cluster Service; point at the Hugging Face Space instead if the
+  # ai-service Deployment is not used. AI_SERVICE_URL is a legacy alias - do not set it.
+  AI_SERVICE_BASE_URL: "http://ai-service:8000"
+  AI_SERVICE_TIMEOUT_SECONDS: "60"
+  AI_SERVICE_ENABLED: "true"
+  MIQORAI_AI_MOCK: "false"
+  CLINICAL_SAFETY_REQUIRED: "false"
+---
+# AI service settings (miqorai-ai-service/app/config.py). Kept separate from
+# miqorai-config so the service does not pick up the API's PORT/CORS_ORIGINS.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: miqorai-ai-config
+data:
+  BASE_MODEL_ID: "Qwen/Qwen1.5-0.5B-Chat"
+  ADAPTER_PATH: "model/miqorai-qwen1.5-0.5b-lora-json-v3"
+  # CPU nodes: 4-bit needs CUDA + bitsandbytes (GPU=1 image build).
+  USE_4BIT: "false"
+  TRUST_REMOTE_CODE: "true"
+  MAX_NEW_TOKENS: "160"
+  REPETITION_PENALTY: "1.2"
+  NO_REPEAT_NGRAM_SIZE: "4"
+  DEBUG_RAW_MODEL_OUTPUT: "false"
+  # Server-to-server only: no CORS.
+  CORS_ORIGINS: ""

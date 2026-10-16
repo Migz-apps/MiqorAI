@@ -1,0 +1,44 @@
+# Production: managed Supabase Postgres + managed Redis (no in-cluster data),
+# real hosts, pinned image tags. Build: kustomize build deploy/k8s/overlays/prod
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace for every rendered resource.
+namespace: miqorai
+
+resources:
+  - ../../base
+
+# Pin every image to the released tag (CD can run:
+#   kustomize edit set image miqorai-api=ghcr.io/<owner>/miqorai-api:<tag> ...).
+# Portal images are environment-specific: build them with
+# VITE_API_URL=https://api.miqorai.com.
+images:
+  - name: miqorai-api
+    newName: ghcr.io/your-github-owner/miqorai-api
+    newTag: "1.0.0"
+  - name: miqorai-ai-service
+    newName: ghcr.io/your-github-owner/miqorai-ai-service
+    newTag: "1.0.0"
+  - name: miqorai-patient-portal
+    newName: ghcr.io/your-github-owner/miqorai-patient-portal
+    newTag: "1.0.0"
+  - name: miqorai-hospital-portal
+    newName: ghcr.io/your-github-owner/miqorai-hospital-portal
+    newTag: "1.0.0"
+  - name: miqorai-insurance-portal
+    newName: ghcr.io/your-github-owner/miqorai-insurance-portal
+    newTag: "1.0.0"
+  - name: miqorai-pharmacy-portal
+    newName: ghcr.io/your-github-owner/miqorai-pharmacy-portal
+    newTag: "1.0.0"
+  - name: miqorai-admin-portal
+    newName: ghcr.io/your-github-owner/miqorai-admin-portal
+    newTag: "1.0.0"
+
+patches:
+  - path: config.yaml
+  - path: ingress-hosts.yaml
+    target:
+      kind: Ingress
+      name: miqorai

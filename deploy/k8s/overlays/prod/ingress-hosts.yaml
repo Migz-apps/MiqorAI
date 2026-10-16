@@ -1,0 +1,32 @@
+# Production hosts (JSON patch over base/ingress.yaml; rule order: api, patient,
+# hospital, insurance, pharmacy, admin).
+- op: replace
+  path: /spec/rules/0/host
+  value: api.miqorai.com
+- op: replace
+  path: /spec/rules/1/host
+  value: patient.miqorai.com
+- op: replace
+  path: /spec/rules/2/host
+  value: hospital.miqorai.com
+- op: replace
+  path: /spec/rules/3/host
+  value: insurance.miqorai.com
+- op: replace
+  path: /spec/rules/4/host
+  value: pharmacy.miqorai.com
+- op: replace
+  path: /spec/rules/5/host
+  value: admin.miqorai.com
+- op: replace
+  path: /spec/tls/0/hosts
+  value:
+    - api.miqorai.com
+    - patient.miqorai.com
+    - hospital.miqorai.com
+    - insurance.miqorai.com
+    - pharmacy.miqorai.com
+    - admin.miqorai.com
+- op: add
+  path: /metadata/annotations/cert-manager.io~1cluster-issuer
+  value: letsencrypt-prod

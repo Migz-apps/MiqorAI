@@ -1,0 +1,18 @@
+# Production public URLs (strategic-merge patch over base/configmap.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: miqorai-config
+  namespace: miqorai
+data:
+  BASE_URL: "https://api.miqorai.com"
+  CORS_ORIGINS: "https://patient.miqorai.com,https://hospital.miqorai.com,https://insurance.miqorai.com,https://pharmacy.miqorai.com,https://admin.miqorai.com"
+  PATIENT_PORTAL_URL: "https://patient.miqorai.com"
+  HOSPITAL_PORTAL_URL: "https://hospital.miqorai.com"
+  INSURANCE_PORTAL_URL: "https://insurance.miqorai.com"
+  PHARMACY_PORTAL_URL: "https://pharmacy.miqorai.com"
+  ADMIN_PORTAL_URL: "https://admin.miqorai.com"
+  PORTAL_API_ORIGIN: "https://api.miqorai.com"
+  # Set to your Supabase project URL (non-secret); the service-role key is in miqorai-secrets.
+  SUPABASE_URL: "https://your-project-ref.supabase.co"
+  CLINICAL_SAFETY_REQUIRED: "true"

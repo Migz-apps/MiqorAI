@@ -1,0 +1,71 @@
+# MiqorAI background worker: same image as the API, command override
+# `node dist/worker.js`. Consumes the domain-event outbox and due report
+# schedules. Exactly one replica, replaced with Recreate, so two workers never
+# poll at the same time (handlers are idempotent, delivery is at-least-once).
+# No HTTP port, hence no HTTP probes; Kubernetes restarts it if the process exits.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/component: worker
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worker
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worker
+        app.kubernetes.io/component: worker
+        miqorai.io/backend: "true"
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: miqorai-api
+          # Keeps the image ENTRYPOINT (tini) and replaces only the CMD.
+          args: ["node", "dist/worker.js"]
+          envFrom:
+            - configMapRef:
+                name: miqorai-config
+            - secretRef:
+                name: miqorai-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: uploads
+          emptyDir:
+            sizeLimit: 1Gi

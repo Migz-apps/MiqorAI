@@ -18,7 +18,7 @@ Supporting folders:
 
 - `scripts/` - local helper scripts
 - `seed_data/` - CSV seed inputs used by the backend seed flow
-- `docker-compose.dev.yml` - local Redis support for development
+- `deploy/` - container images (`deploy/docker`) and Kubernetes manifests (`deploy/k8s`)
 
 ## Current launch story
 
@@ -125,12 +125,16 @@ npm run test:api:all
 
 ## Deployment overview
 
-- Backend: deploy `server/` with its production environment variables
-- Database: shared PostgreSQL instance, currently prepared for Supabase
-- Redis: shared hosted Redis instance
-- AI service: separate always-on HTTPS service used by clinical safety flows
-- Web portals: deploy each frontend separately and point them to the deployed backend
-- Mobile app: build separately and point it to the deployed backend
+Local development needs only npm (see [Running.md](./Running.md)). Production:
+
+- Backend: Render Blueprint [render.yaml](./render.yaml) - API web service + background worker (`WORKER_INLINE=false` on the API), migrations as pre-deploy, health check `/health`
+- Database and storage: Supabase Postgres + Storage; Redis: managed instance
+- AI service: Hugging Face Space, generated from `miqorai-ai-service/` by `scripts/sync-hf-space.ps1`
+- Web portals: one Vercel project per portal (`<portal>/vercel.json`, installs from the workspace root); patient portal also on GitHub Pages
+- Mobile app: Expo EAS, pointed at the deployed backend
+- Portable alternative: images from `deploy/docker/` (built from the repo root) run on Kubernetes via `deploy/k8s/`; CI builds every image and validates the manifests
+
+Full map, Vercel settings and env templates: [DEPLOYMENT_MAP.md](./DEPLOYMENT_MAP.md).
 
 ## Notes
 
@@ -140,4 +144,4 @@ npm run test:api:all
 
 ## License
 
-Proprietary - MiqorAI.
+Proprietary - all rights reserved. See [LICENSE](./LICENSE).

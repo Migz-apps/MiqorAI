@@ -216,19 +216,22 @@ curl -X POST http://localhost:8000/clinical-safety/check/mock \
 
 ## Docker
 
+The image recipe is `deploy/docker/ai-service.Dockerfile`; build it from the
+repository root (the Hugging Face Space uses a generated copy, see
+`scripts/sync-hf-space.ps1`):
+
 ```bash
-cd miqorai-ai-service
-docker build --build-arg GPU=1 -t miqorai-ai-service .
-docker run --gpus all -p 8000:8000 miqorai-ai-service
+docker build -f deploy/docker/ai-service.Dockerfile -t miqorai-ai-service .
+docker run -p 8000:8000 --env-file miqorai-ai-service/.env miqorai-ai-service
 ```
 
-Copy the adapter into `model/miqorai-qwen1.5-0.5b-lora-json-v3/` before building.
-
-For GPU-enabled Docker images, install the optional GPU requirements during build
-(`--build-arg GPU=1` installs `bitsandbytes`, which 4-bit loading requires):
+The adapter in `model/miqorai-qwen1.5-0.5b-lora-json-v3/` is copied into the image.
+`--build-arg TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu` gives a much
+smaller CPU-only image. For CUDA hosts, `--build-arg GPU=1` installs `bitsandbytes`,
+which 4-bit loading requires:
 
 ```bash
-docker build --build-arg GPU=1 -t miqorai-ai-service .
+docker build -f deploy/docker/ai-service.Dockerfile --build-arg GPU=1 -t miqorai-ai-service .
 docker run --gpus all -e USE_4BIT=true -p 8000:8000 miqorai-ai-service
 ```
 
@@ -360,6 +363,6 @@ miqorai-ai-service/
 │   └── spring-boot/
 │       └── AiClinicalSafetyClient.java
 ├── requirements.txt
-├── Dockerfile
+├── .env.example          # every setting in app/config.py
 └── README.md
 ```

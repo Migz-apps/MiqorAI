@@ -1,149 +1,152 @@
 # MiqorAI Production Deployment Map
 
-This file defines the production launch topology for the full MiqorAI system so every client app talks to the same backend and the backend uses the same database, storage, Redis, and AI service.
+Every client talks to one backend; the backend owns the database, storage,
+Redis and the AI service. Local development needs none of this (see
+[Running.md](./Running.md)).
 
-## 1. Deploy the shared backend first
+## Topology
 
-- Service: `server/`
-- Host: Render web service
-- Public URL target: `https://api.miqorai.com`
-- Runtime source of truth: [render.yaml](./render.yaml)
-- Required env template: [server/.env.production.example](./server/.env.production.example)
+| Surface | Code | Production host | Config |
+|---------|------|-----------------|--------|
+| API | `server/` | Render web service `miqorai-server` | [render.yaml](./render.yaml) |
+| Background worker | `server/` (`npm run start:worker`) | Render worker `miqorai-worker` | [render.yaml](./render.yaml) |
+| Database | `server/prisma` | Supabase Postgres | `DATABASE_URL` |
+| File storage | - | Supabase Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET` |
+| Cache / sessions | - | Managed Redis (e.g. Upstash) | `REDIS_URL` |
+| AI clinical safety | `miqorai-ai-service/` | Hugging Face Space (`hf-space-publish/`) | [miqorai-ai-service/.env.example](./miqorai-ai-service/.env.example) |
+| Patient portal | `patient-portal-desktop/` | GitHub Pages (or Vercel) | `.github/workflows/deploy-patient-portal.yml`, `vercel.json` |
+| Hospital / insurance / pharmacy / admin portals | `*-portal/` | Vercel, one project each | `<portal>/vercel.json` |
+| Mobile app | `mobile_patient/` | Expo EAS | [mobile_patient/.env.production.example](./mobile_patient/.env.production.example) |
 
-The backend is the integration hub for:
-- patient web portal
-- hospital portal
-- insurance portal
-- pharmacy portal
-- admin portal
-- mobile patient app
-- Supabase Postgres
-- Supabase Storage
-- Redis
-- AI clinical safety service
+Portable alternative for any cluster: Docker images from `deploy/docker/` and
+Kubernetes manifests in [deploy/k8s](./deploy/k8s/README.md).
 
-## 2. Use one production database and one production storage layer
+Env templates (all tracked in git; real `.env*` files stay ignored):
+`server/.env.production.example`, `server/.env.example`,
+`<portal>/.env.production.example`, `miqorai-ai-service/.env.example`,
+`mobile_patient/.env*.example`.
 
-- Primary database: Supabase Postgres via `DATABASE_URL`
-- File storage: Supabase Storage via `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`
-- Session / cache / revocation store: Redis via `REDIS_URL`
+## 1. Backend: Render (API + worker)
 
-All portals must go through the backend. No portal should connect directly to the database.
+`render.yaml` is a Blueprint with two services built from `server/`:
 
-## 3. Deploy the AI service separately and connect it only through the backend
+- **API** (`type: web`): `npm ci --include=dev && npm run build`, pre-deploy
+  `npx prisma migrate deploy`, start `npm run start`, health check `/health`
+  (failed checks block the swap, so deploys are zero-downtime).
+- **Worker** (`type: worker`): same build, start `npm run start:worker`. It runs the
+  domain-event outbox and report schedules. The API therefore sets
+  `WORKER_INLINE=false`; with `true` (the code default) every API instance would run
+  the same loops. Single-service fallback: remove the worker and set `WORKER_INLINE=true`.
+- **Node 22** via `NODE_VERSION` (root `.nvmrc` = 22; CI also uses Node 22).
+- **Plan + region**: `plan: starter`, `region: frankfurt` are marked CHANGE ME in the
+  file. Choose the Render region closest to the Supabase project region; it cannot be
+  changed later. Pre-deploy commands and workers need a paid plan.
+- **Deploy gate**: `autoDeployTrigger: checksPass` deploys a commit only after its
+  GitHub checks pass. Set it to `off` for manual deploys.
+- **Secrets**: `sync: false` entries are prompted for on the first Blueprint apply;
+  the worker copies them from the API with `fromService`, so each is entered once.
+  Non-secret values live in the `miqorai-shared` env group.
 
-- Service: `hf-space-publish/` or `miqorai-ai-service/`
-- Host: Hugging Face Space
-- Public URL target: `https://mazimpakamiguel-miqorai.hf.space`
+The full variable list with comments is `server/.env.production.example`. Set
+`AI_SERVICE_BASE_URL` (not the legacy `AI_SERVICE_URL`) and all five
+`*_PORTAL_URL` values, otherwise invitation and reset emails link to the API host.
+`SEED_PASSWORD` is for `npm run db:seed` only; never seed production.
 
-Backend envs:
-- `AI_SERVICE_BASE_URL=https://mazimpakamiguel-miqorai.hf.space`
-- `AI_SERVICE_URL=https://mazimpakamiguel-miqorai.hf.space`
-- `MIQORAI_AI_MOCK=false`
+## 2. AI service: Hugging Face Space
 
-## 4. Deploy the web SPAs to Vercel
+- Source: `miqorai-ai-service/`; image recipe: `deploy/docker/ai-service.Dockerfile`.
+- `scripts/sync-hf-space.ps1` mirrors the service into `hf-space-publish/` (the
+  Space's own git repo) and **generates** `hf-space-publish/Dockerfile`:
+  - central Dockerfile: build context = repo root, `COPY miqorai-ai-service/app ./app`
+  - generated Space Dockerfile: build context = `hf-space-publish/`, `COPY app ./app`
 
-These portals are Vite SPAs and should be deployed as separate Vercel projects with their own root directories:
+  Never edit `hf-space-publish/Dockerfile`; rerun the script and push the Space repo.
+- Space secret `AI_SERVICE_API_KEY` must equal the API's `AI_SERVICE_API_KEY`.
+- Backend: `AI_SERVICE_BASE_URL=https://mazimpakamiguel-miqorai.hf.space`.
 
-1. `patient-portal-desktop/`
-2. `hospital-portal/`
-3. `insurance-portal/`
-4. `pharmacy-portal/`
+## 3. Portals: Vercel
 
-Each of those directories now includes:
-- `.env.production.example`
-- `vercel.json`
+The repo is an npm workspace with one root `package-lock.json`, so each Vercel
+project installs from the repository root. Per portal project:
 
-Required env for each Vercel project:
+| Vercel setting | Value |
+|----------------|-------|
+| Root Directory | the portal folder, e.g. `hospital-portal` |
+| Include source files outside of the Root Directory in the Build Step | **Enabled** (needed for `packages/*` and the root lockfile) |
+| Framework / Install / Build / Output | taken from `<portal>/vercel.json` - leave the dashboard overrides off |
+| Node.js version | 22.x |
+| Env | `VITE_API_URL=https://api.miqorai.com` (Production + Preview) |
 
-```env
-VITE_API_URL=https://api.miqorai.com
+Each `vercel.json`:
+
+- `installCommand`: `cd .. && npm ci -w <portal> -w @miqorai/ui -w @miqorai/api-client`
+- `buildCommand`: `cd .. && npm run build -w <portal>`; `outputDirectory`: `dist`
+  (`dist/client` for admin)
+- `rewrites`: `/((?!api/|api$|assets/).*)` -> `/index.html`. `/api` is never rewritten,
+  so a misconfigured `VITE_API_URL` fails loudly instead of returning index.html; a
+  missing hashed asset is a 404.
+- `headers`: the same security headers as the nginx image (CSP, HSTS,
+  `X-Frame-Options: DENY`, nosniff, `Referrer-Policy`, `Permissions-Policy` with camera
+  for self), `Cache-Control: no-cache` for everything except `/assets/*`
+  (`public, max-age=31536000, immutable`). The CSP `connect-src` lists
+  `https://api.miqorai.com` and `https://miqorai.onrender.com`; edit it if the API
+  origin changes.
+
+Patient portal on GitHub Pages: built by `.github/workflows/deploy-patient-portal.yml`
+with `VITE_BASE=/MiqorAI/`. GitHub Pages cannot set response headers; use the Vercel
+project (same `vercel.json`) when the security headers are required.
+
+## 4. Admin portal: one host, static SPA
+
+Decision: the admin portal is served as a **static SPA**, exactly like the other
+portals - a Vercel project with `admin-portal/vercel.json`, or the shared
+`portal.Dockerfile`/nginx image. There is no Node server in production (no
+`vite preview`, no Cloudflare Worker; `wrangler.jsonc` is gone).
+
+TanStack Start (installed `@tanstack/react-start` 1.168) supports this through SPA
+mode, which prerenders a shell to `dist/client/_shell.html`. Required change in
+`admin-portal/vite.config.ts` (owned by the portal code):
+
+```ts
+tanstackStart({
+  // ...existing options...
+  spa: { enabled: true },
+}),
 ```
 
-The `vercel.json` rewrite keeps client-side routing working on deep links.
+The build pipeline then publishes `_shell.html` as `index.html` (Vercel
+`buildCommand` and the portal Dockerfile both do this). Until the flag is set the
+admin image build stops with an explicit error and the Vercel build has no
+`index.html`.
 
-## 5. Deploy the admin portal as its own production app
+## 5. Mobile app: Expo EAS
 
-- Service: `admin-portal/`
-- Recommended host: Cloudflare Workers / Pages because the repo already includes `wrangler.jsonc` and a TanStack Start server entry.
+- Env template: `mobile_patient/.env.production.example`
+- `EXPO_PUBLIC_API_URL=https://api.miqorai.com`
 
-Required env:
+## 6. Domains
 
-```env
-VITE_API_URL=https://api.miqorai.com
+- `api.miqorai.com` -> Render API
+- `patient.miqorai.com`, `hospital.miqorai.com`, `insurance.miqorai.com`,
+  `pharmacy.miqorai.com`, `admin.miqorai.com` -> the portal projects
+
+Set `CORS_ORIGINS` and the five `*_PORTAL_URL` variables to exactly those origins.
+
+## 7. Portable alternative: Docker images + Kubernetes
+
+- Docker builds images only, always from the repo root:
+  `deploy/docker/portal.Dockerfile` (all five portals, `--build-arg PORTAL=<folder>`,
+  `--build-arg VITE_API_URL=...`), `deploy/docker/server.Dockerfile` (API; worker via
+  `node dist/worker.js`), `deploy/docker/ai-service.Dockerfile`. One root `.dockerignore`
+  keeps `.env*`, `node_modules`, build output, mobile and training files out of every image.
+- Kubernetes describes how everything runs: `deploy/k8s` (base + `dev`/`prod` overlays).
+- CI: `.github/workflows/build-images.yml` builds all seven images (no push);
+  `.github/workflows/validate-k8s.yml` renders and schema-validates every overlay.
+
+## 8. Checks
+
+```sh
+npm run test:production:wiring   # static: env templates vs code, deploy layout, vercel/render config
 ```
 
-If you choose a different host, keep the same env and make sure the host supports the TanStack Start server entry defined in:
-- [admin-portal/src/server.ts](./admin-portal/src/server.ts)
-- [admin-portal/wrangler.jsonc](./admin-portal/wrangler.jsonc)
-
-## 6. Deploy the mobile patient app through Expo / EAS
-
-- Service: `mobile_patient/`
-- Release system: Expo EAS
-- Env template: [mobile_patient/.env.production.example](./mobile_patient/.env.production.example)
-
-Required env:
-
-```env
-EXPO_PUBLIC_API_URL=https://api.miqorai.com
-```
-
-The mobile app now has a production-safe fallback and should never ship pointing to localhost.
-
-## 7. Production domain map
-
-Use one domain per surface:
-
-- `api.miqorai.com` -> Render backend
-- `patient.miqorai.com` -> patient web portal
-- `hospital.miqorai.com` -> hospital portal
-- `insurance.miqorai.com` -> insurance portal
-- `pharmacy.miqorai.com` -> pharmacy portal
-- `admin.miqorai.com` -> admin portal
-
-Then set backend `CORS_ORIGINS` to exactly those public domains.
-
-## 8. Current code changes that now link the portals through the backend
-
-These clients now use production-safe backend resolution instead of raw localhost fallbacks:
-
-- [patient-portal-desktop/src/lib/api/client.ts](./patient-portal-desktop/src/lib/api/client.ts)
-- [hospital-portal/src/lib/api/client.ts](./hospital-portal/src/lib/api/client.ts)
-- [insurance-portal/src/lib/api/client.ts](./insurance-portal/src/lib/api/client.ts)
-- [pharmacy-portal/src/lib/api/client.ts](./pharmacy-portal/src/lib/api/client.ts)
-- [admin-portal/src/lib/api/client.ts](./admin-portal/src/lib/api/client.ts)
-- [mobile_patient/src/lib/api.ts](./mobile_patient/src/lib/api.ts)
-
-For local development, the following Vite apps are now also explicitly proxied to the backend API:
-
-- [hospital-portal/vite.config.ts](./hospital-portal/vite.config.ts)
-- [insurance-portal/vite.config.ts](./insurance-portal/vite.config.ts)
-- [pharmacy-portal/vite.config.ts](./pharmacy-portal/vite.config.ts)
-- [admin-portal/vite.config.ts](./admin-portal/vite.config.ts)
-- [patient-portal-desktop/vite.config.ts](./patient-portal-desktop/vite.config.ts)
-
-## 9. Commands for you to run manually after this task
-
-I did not run install, test, or push commands. Run these yourself after you fill the production envs:
-
-```powershell
-npm run build --prefix patient-portal-desktop
-npm run build --prefix hospital-portal
-npm run build --prefix insurance-portal
-npm run build --prefix pharmacy-portal
-npm run build --prefix admin-portal
-npm run build --prefix server
-npm run typecheck --prefix mobile_patient
-```
-
-Then deploy in this order:
-
-1. Backend
-2. AI service
-3. Patient web
-4. Hospital web
-5. Insurance web
-6. Pharmacy web
-7. Admin portal
-8. Mobile app release
+Deploy order: backend (API + worker) -> AI service -> portals -> mobile release.

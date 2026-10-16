@@ -1,30 +1,69 @@
-# Dependencies
-node_modules
-npm-debug.log*
+# Single build context for every image in deploy/docker/ (builds run from the repo root).
+# Allow-list: ignore everything, re-include only what an image needs, then
+# re-exclude generated, secret and bulky files inside those folders.
 
-# Build output (rebuilt inside Docker)
-dist
-.output
-.vinxi
-.tanstack
+*
 
-# Dev / IDE
-.git
-.gitignore
-.vscode
-.idea
-*.md
-!README.md
+# Shared Docker assets (nginx config)
+!deploy/docker/
 
-# Tests & coverage
-coverage
-*.test.*
-*.spec.*
+# npm workspace root + shared packages + portals (portal.Dockerfile)
+!package.json
+!package-lock.json
+!packages/
+!admin-portal/
+!hospital-portal/
+!insurance-portal/
+!pharmacy-portal/
+!patient-portal-desktop/
 
-# Environment
-.env
-.env.*
+# API + worker (server.Dockerfile)
+!server/
 
-# OS
-.DS_Store
-Thumbs.db
+# AI service incl. the LoRA adapter in model/ (ai-service.Dockerfile)
+!miqorai-ai-service/
+
+# --- Re-excluded inside the folders above -----------------------------------
+# Dependencies and build output are always rebuilt inside the image.
+**/node_modules
+**/dist
+**/dist-ssr
+**/.output
+**/.vinxi
+**/.tanstack
+**/.vite
+**/coverage
+**/*.tsbuildinfo
+
+# Environment files and secrets must never enter an image (VITE_* come from build args).
+**/.env
+**/.env.*
+**/*.local
+**/*.pem
+**/*.key
+
+# VCS, editor and OS noise
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+**/.DS_Store
+**/Thumbs.db
+**/npm-debug.log*
+**/*.log
+
+# Server runtime data and test-only files
+server/uploads
+server/tests
+server/scripts
+
+# Python caches and model training artifacts not needed at inference time
+**/__pycache__
+**/*.pyc
+**/.venv
+miqorai-ai-service/model/**/checkpoint-*
+miqorai-ai-service/model/**/training_args.bin
+miqorai-ai-service/model/**/training_meta.json
+
+# Documentation is not part of any image
+**/*.md

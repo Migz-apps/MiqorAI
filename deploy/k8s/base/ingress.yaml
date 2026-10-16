@@ -1,0 +1,124 @@
+# One host per portal; on every portal host /api goes to the API, the rest to
+# the portal. api.<domain> serves the API alone (mobile app, partner API, and
+# the VITE_API_URL the portal images are built with).
+# Written for ingress-nginx. Body size: the API accepts JSON up to 2 MB
+# (express.json limit) and multipart uploads up to 10 MB (multer fileSize in
+# server/src/shared/routes/files.routes.ts); 11m leaves room for multipart overhead.
+# Overlays replace the hosts (prod: overlays/prod/ingress-hosts.yaml).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: miqorai
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "11m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+    # With cert-manager installed, uncomment to issue the TLS certificate automatically:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - secretName: miqorai-tls
+      hosts:
+        - api.miqorai.local
+        - patient.miqorai.local
+        - hospital.miqorai.local
+        - insurance.miqorai.local
+        - pharmacy.miqorai.local
+        - admin.miqorai.local
+  rules:
+    - host: api.miqorai.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+    - host: patient.miqorai.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: patient-portal
+                port:
+                  name: http
+    - host: hospital.miqorai.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hospital-portal
+                port:
+                  name: http
+    - host: insurance.miqorai.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: insurance-portal
+                port:
+                  name: http
+    - host: pharmacy.miqorai.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pharmacy-portal
+                port:
+                  name: http
+    - host: admin.miqorai.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-portal
+                port:
+                  name: http

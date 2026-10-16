@@ -1,0 +1,108 @@
+name: Build container images
+
+# Builds (never pushes) all seven images from the repository root with the
+# Dockerfiles in deploy/docker. Publishing to ghcr.io is a separate, explicit step.
+on:
+  pull_request:
+    paths:
+      - "deploy/docker/**"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - "admin-portal/**"
+      - "hospital-portal/**"
+      - "insurance-portal/**"
+      - "pharmacy-portal/**"
+      - "patient-portal-desktop/**"
+      - "server/**"
+      - "miqorai-ai-service/**"
+      - ".github/workflows/build-images.yml"
+  push:
+    branches: [master, main]
+    paths:
+      - "deploy/docker/**"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - "admin-portal/**"
+      - "hospital-portal/**"
+      - "insurance-portal/**"
+      - "pharmacy-portal/**"
+      - "patient-portal-desktop/**"
+      - "server/**"
+      - "miqorai-ai-service/**"
+      - ".github/workflows/build-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: miqorai-patient-portal
+            dockerfile: deploy/docker/portal.Dockerfile
+            build-args: |
+              PORTAL=patient-portal-desktop
+              VITE_API_URL=https://api.miqorai.com
+          - image: miqorai-hospital-portal
+            dockerfile: deploy/docker/portal.Dockerfile
+            build-args: |
+              PORTAL=hospital-portal
+              VITE_API_URL=https://api.miqorai.com
+          - image: miqorai-insurance-portal
+            dockerfile: deploy/docker/portal.Dockerfile
+            build-args: |
+              PORTAL=insurance-portal
+              VITE_API_URL=https://api.miqorai.com
+          - image: miqorai-pharmacy-portal
+            dockerfile: deploy/docker/portal.Dockerfile
+            build-args: |
+              PORTAL=pharmacy-portal
+              VITE_API_URL=https://api.miqorai.com
+          - image: miqorai-admin-portal
+            dockerfile: deploy/docker/portal.Dockerfile
+            build-args: |
+              PORTAL=admin-portal
+              VITE_API_URL=https://api.miqorai.com
+          - image: miqorai-api
+            dockerfile: deploy/docker/server.Dockerfile
+            build-args: ""
+          - image: miqorai-ai-service
+            dockerfile: deploy/docker/ai-service.Dockerfile
+            # CPU-only torch wheels keep the image within the runner's disk budget.
+            build-args: |
+              TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free runner disk space (AI image)
+        if: matrix.image == 'miqorai-ai-service'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.image }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.build-args }}
+          push: false
+          tags: ${{ matrix.image }}:ci-${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

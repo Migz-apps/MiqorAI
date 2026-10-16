@@ -1,0 +1,14 @@
+# patient portal = shared template + name, selector label and image.
+# Image is built with: --build-arg PORTAL=patient-portal-desktop
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../template
+namePrefix: patient-
+labels:
+  - pairs:
+      app.kubernetes.io/name: patient-portal
+    includeSelectors: true
+images:
+  - name: miqorai-portal
+    newName: miqorai-patient-portal

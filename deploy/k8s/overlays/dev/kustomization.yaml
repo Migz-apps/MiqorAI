@@ -1,0 +1,73 @@
+# Dev / local cluster (kind, minikube): in-cluster Postgres + Redis, one replica
+# each, *.miqorai.local hosts from the base. Build: kustomize build deploy/k8s/overlays/dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Also places the optional component's resources in the namespace.
+namespace: miqorai
+
+resources:
+  - ../../base
+
+components:
+  # OPTIONAL data stores; production uses managed Supabase/Redis instead.
+  - ../../components/in-cluster-data
+
+# Registry/tag per image. Replace your-github-owner with the lowercase GitHub
+# owner (ghcr.io/<owner>/miqorai-*). For kind, images loaded with
+# "kind load docker-image" can keep the plain names instead.
+images:
+  - name: miqorai-api
+    newName: ghcr.io/your-github-owner/miqorai-api
+    newTag: "dev"
+  - name: miqorai-ai-service
+    newName: ghcr.io/your-github-owner/miqorai-ai-service
+    newTag: "dev"
+  - name: miqorai-patient-portal
+    newName: ghcr.io/your-github-owner/miqorai-patient-portal
+    newTag: "dev"
+  - name: miqorai-hospital-portal
+    newName: ghcr.io/your-github-owner/miqorai-hospital-portal
+    newTag: "dev"
+  - name: miqorai-insurance-portal
+    newName: ghcr.io/your-github-owner/miqorai-insurance-portal
+    newTag: "dev"
+  - name: miqorai-pharmacy-portal
+    newName: ghcr.io/your-github-owner/miqorai-pharmacy-portal
+    newTag: "dev"
+  - name: miqorai-admin-portal
+    newName: ghcr.io/your-github-owner/miqorai-admin-portal
+    newTag: "dev"
+
+patches:
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: api
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target:
+      kind: Deployment
+      labelSelector: app.kubernetes.io/component=portal
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: api
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: ai-service
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 500m

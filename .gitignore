@@ -15,13 +15,21 @@ web_modules/
 # -----------------------------------------------------------------------------
 # Environment, secrets, and local credentials
 # -----------------------------------------------------------------------------
+# Real env files are ignored at every depth; *.example templates are tracked.
 .env
 .env.*
+*.env
 !.env.example
 !**/.env.example
 !.env.production.example
 !**/.env.production.example
+!.env.local.example
 !**/.env.local.example
+!*.env.production.example
+!*.env.local.example
+# Filled-in Kubernetes secrets (deploy/k8s/base/secret.template.yaml stays tracked)
+deploy/k8s/**/*secret*.y*ml
+!deploy/k8s/base/secret.template.yaml
 .dev.vars
 *.pem
 *.key

@@ -37,27 +37,6 @@ async function waitForRedis(maxAttempts = 60) {
   return false;
 }
 
-function runCommand(command, args) {
-  return new Promise((resolve) => {
-    const child = spawn(command, args, { stdio: "ignore", shell: process.platform === "win32" });
-    child.on("error", () => resolve(false));
-    child.on("exit", (code) => resolve(code === 0));
-  });
-}
-
-async function tryDockerRedis() {
-  const composeArgs = ["compose", "-f", "docker-compose.dev.yml", "up", "-d", "--wait", "redis"];
-  for (const command of ["docker", "docker.exe"]) {
-    const started = await runCommand(command, composeArgs);
-    if (!started) continue;
-    if (await waitForRedis()) {
-      log(`Docker Redis ready on ${REDIS_HOST}:${REDIS_PORT}`);
-      return true;
-    }
-  }
-  return false;
-}
-
 function spawnBackgroundRedisServer() {
   const script = join(__dirname, "redis-server.mjs");
   const child = spawn(process.execPath, [script], {
@@ -72,10 +51,6 @@ function spawnBackgroundRedisServer() {
 async function main() {
   if (await isPortOpen(REDIS_HOST, REDIS_PORT)) {
     log(`Already running on ${REDIS_HOST}:${REDIS_PORT}`);
-    return;
-  }
-
-  if (await tryDockerRedis()) {
     return;
   }
 

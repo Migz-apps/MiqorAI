@@ -1,0 +1,14 @@
+# insurance portal = shared template + name, selector label and image.
+# Image is built with: --build-arg PORTAL=insurance-portal
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../template
+namePrefix: insurance-
+labels:
+  - pairs:
+      app.kubernetes.io/name: insurance-portal
+    includeSelectors: true
+images:
+  - name: miqorai-portal
+    newName: miqorai-insurance-portal

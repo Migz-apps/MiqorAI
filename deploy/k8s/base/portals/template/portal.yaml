@@ -1,0 +1,97 @@
+# Static portal served by unprivileged nginx (deploy/docker/portal.Dockerfile).
+# nginx renders its config at start-up into /etc/nginx/conf.d, so that path,
+# /tmp and /var/cache/nginx are writable emptyDirs on a read-only root FS.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal
+  labels:
+    app.kubernetes.io/component: portal
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: portal
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: portal
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nginx
+          image: miqorai-portal
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # CSP connect-src origin for the API (see deploy/docker/nginx/security-headers.inc).
+            - name: API_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: miqorai-config
+                  key: PORTAL_API_ORIGIN
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: nginx-conf
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal
+  labels:
+    app.kubernetes.io/component: portal
+spec:
+  selector:
+    app.kubernetes.io/component: portal
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
