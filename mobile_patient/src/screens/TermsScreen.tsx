@@ -3,11 +3,13 @@ import React from 'react'
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { useTranslation } from '../i18n'
 import { useResponsive } from '../responsive'
 import { colors, spacing } from '../theme'
 
 export function TermsScreen({ onBack }: { onBack: () => void }) {
   const { horizontalPadding, contentMaxWidth } = useResponsive()
+  const { t } = useTranslation()
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -17,33 +19,25 @@ export function TermsScreen({ onBack }: { onBack: () => void }) {
           { paddingHorizontal: horizontalPadding + spacing.md, maxWidth: Math.min(contentMaxWidth, 560) },
         ]}
       >
-        <Pressable style={styles.backLink} onPress={onBack}>
+        <Pressable
+          style={styles.backLink}
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back')}
+          accessibilityHint={t('terms.backHint')}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+        >
           <ChevronLeft color={colors.textSecondary} size={18} />
-          <Text style={styles.backLinkText}>Back</Text>
+          <Text style={styles.backLinkText}>{t('common.back')}</Text>
         </Pressable>
 
-        <Text style={styles.title}>Terms of Service</Text>
+        <Text style={styles.title} accessibilityRole="header">{t('terms.title')}</Text>
 
-        <Text style={styles.paragraph}>
-          MiqorAI gives you mobile access to your health records. Your records are stored on
-          MiqorAI servers and shown in this app when you sign in.
-        </Text>
-        <Text style={styles.paragraph}>
-          You are responsible for keeping your account credentials and your device PIN private.
-          Anyone who can unlock this app on your device can view the records stored in it.
-        </Text>
-        <Text style={styles.paragraph}>
-          The information in this app is a record of your care. It does not replace professional
-          medical advice, diagnosis or treatment from a qualified health provider.
-        </Text>
-        <Text style={styles.paragraph}>
-          You control who can access your records. Grants you give to hospitals, pharmacies and
-          other providers can be revoked at any time from the app.
-        </Text>
-        <Text style={styles.paragraph}>
-          You can delete your account from the Profile screen. Deleting your account permanently
-          removes your data from MiqorAI servers.
-        </Text>
+        <Text style={styles.paragraph}>{t('terms.p1')}</Text>
+        <Text style={styles.paragraph}>{t('terms.p2')}</Text>
+        <Text style={styles.paragraph}>{t('terms.p3')}</Text>
+        <Text style={styles.paragraph}>{t('terms.p4')}</Text>
+        <Text style={styles.paragraph}>{t('terms.p5')}</Text>
       </ScrollView>
     </SafeAreaView>
   )

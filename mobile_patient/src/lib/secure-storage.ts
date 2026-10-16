@@ -4,6 +4,8 @@ import * as Crypto from 'expo-crypto'
 import * as SecureStore from 'expo-secure-store'
 import type { StateStorage } from 'zustand/middleware'
 
+import { createChunkedStorage } from './persist-layout'
+
 const ENCRYPTION_KEY_NAME = 'miqorai.storage.key'
 const ENCRYPTED_PREFIX = 'miqorai.enc.v1:'
 
@@ -29,6 +31,10 @@ async function loadEncryptionKey(): Promise<string | null> {
   }
 }
 
+// Ciphertext above ~512 KB is split across numbered keys plus a manifest, so no
+// single AsyncStorage row approaches Android's ~2 MB read limit.
+const chunkedStorage = createChunkedStorage(AsyncStorage)
+
 let keyPromise: Promise<string | null> | null = null
 
 function getEncryptionKey() {
@@ -42,12 +48,12 @@ async function writeEncrypted(name: string, value: string) {
   const key = await getEncryptionKey()
   if (!key) {
     // SecureStore is unavailable (e.g. web); keep the app working unencrypted.
-    await AsyncStorage.setItem(name, value)
+    await chunkedStorage.setItem(name, value)
     return
   }
 
   const ciphertext = CryptoJS.AES.encrypt(value, key).toString()
-  await AsyncStorage.setItem(name, `${ENCRYPTED_PREFIX}${ciphertext}`)
+  await chunkedStorage.setItem(name, `${ENCRYPTED_PREFIX}${ciphertext}`)
 }
 
 // AES-encrypts the persisted store before it touches AsyncStorage. Values
@@ -56,7 +62,7 @@ async function writeEncrypted(name: string, value: string) {
 export const secureStorage: StateStorage = {
   async getItem(name) {
     try {
-      const stored = await AsyncStorage.getItem(name)
+      const stored = await chunkedStorage.getItem(name)
       if (stored == null) {
         return null
       }
@@ -90,7 +96,7 @@ export const secureStorage: StateStorage = {
   },
   async removeItem(name) {
     try {
-      await AsyncStorage.removeItem(name)
+      await chunkedStorage.removeItem(name)
     } catch {
       // Ignore: nothing recoverable to do if the removal fails.
     }

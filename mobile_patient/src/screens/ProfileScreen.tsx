@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import {
   AlertCircle,
   Bell,
+  Check,
   CreditCard,
   Download,
   Edit2,
@@ -32,13 +33,24 @@ import {
   SecondaryButton,
   useAppToast,
 } from '../components/ui'
+import { useTranslation } from '../i18n'
 import { useResponsive } from '../responsive'
 import { mobileApi } from '../lib/api'
 import { hasPin, setPin as savePin, verifyPin } from '../lib/pin'
 import { usePatientStore } from '../store'
-import appConfig from '../../app.json'
+// Shared with app.config.ts so the displayed version matches the build.
+import versionInfo from '../version.json'
 import { colors, radius, shadows, spacing } from '../theme'
 import { formatDate } from '../utils'
+
+type LanguageOption = { code: 'en' | 'rw' | 'fr'; name: string }
+
+// Language names are shown in their own language on purpose.
+const LANGUAGE_OPTIONS: LanguageOption[] = [
+  { code: 'en', name: 'English' },
+  { code: 'rw', name: 'Kinyarwanda' },
+  { code: 'fr', name: 'Français' },
+]
 
 export function ProfileScreen() {
   const {
@@ -50,7 +62,9 @@ export function ProfileScreen() {
     deleteAccount,
     addEmergencyContact,
     updateProfile,
+    setLanguage,
   } = usePatientStore()
+  const { t, language } = useTranslation()
 
   const { showToast } = useAppToast()
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
@@ -63,6 +77,7 @@ export function ProfileScreen() {
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [showEmergencyContacts, setShowEmergencyContacts] = useState(false)
   const [showChangePin, setShowChangePin] = useState(false)
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false)
   const [devicePinSet, setDevicePinSet] = useState(false)
   const [currentPin, setCurrentPin] = useState('')
   const [newPin, setNewPin] = useState('')
@@ -78,7 +93,7 @@ export function ProfileScreen() {
   const handleLogout = async () => {
     await logout()
     setShowLogoutConfirm(false)
-    showToast("You've been signed out.", 'info')
+    showToast(t('profile.signedOut'), 'info')
   }
 
   const handleDelete = async () => {
@@ -96,19 +111,19 @@ export function ProfileScreen() {
 
   const handleChangePin = async () => {
     if (newPin.length !== 6) {
-      setPinError('PIN must be 6 digits')
+      setPinError(t('profile.pin.mustBeSix'))
       return
     }
 
     if (newPin !== confirmNewPin) {
-      setPinError('PINs do not match')
+      setPinError(t('profile.pin.mismatch'))
       return
     }
 
     setIsSavingPin(true)
     if (devicePinSet && !(await verifyPin(currentPin))) {
       setIsSavingPin(false)
-      setPinError('Current PIN is incorrect')
+      setPinError(t('profile.pin.currentIncorrect'))
       return
     }
 
@@ -116,17 +131,17 @@ export function ProfileScreen() {
     setIsSavingPin(false)
 
     if (!saved) {
-      setPinError('Could not save your PIN on this device.')
+      setPinError(t('profile.pin.saveFailed'))
       return
     }
 
     closeChangePin()
-    showToast('PIN updated.', 'success')
+    showToast(t('profile.pin.updated'), 'success')
   }
 
   return (
     <ScreenContainer>
-      <Header title="Profile" subtitle="Manage your account" />
+      <Header title={t('profile.title')} subtitle={t('profile.subtitle')} />
 
       <View style={styles.headerSpacing}>
 
@@ -149,12 +164,12 @@ export function ProfileScreen() {
         <View style={styles.heroBadges}>
           {activePatient?.bloodType ? (
             <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeText}>Blood: {activePatient.bloodType}</Text>
+              <Text style={styles.heroBadgeText}>{t('profile.bloodBadge', { type: activePatient.bloodType })}</Text>
             </View>
           ) : null}
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>
-              Member since {activePatient?.createdAt ? formatDate(activePatient.createdAt) : 'N/A'}
+              {t('profile.memberSince', { date: activePatient?.createdAt ? formatDate(activePatient.createdAt) : t('profile.notAvailable') })}
             </Text>
           </View>
         </View>
@@ -162,40 +177,40 @@ export function ProfileScreen() {
       </View>
 
       <View style={styles.sectionStack}>
-        <SectionHeader title="Personal Information" />
+        <SectionHeader title={t('profile.sections.personal')} />
         <View style={styles.settingsCard}>
           <SettingRow
             icon={<Edit2 color={colors.textSecondary} size={18} />}
-            label="Edit Profile"
-            description="Update your personal details"
+            label={t('profile.editProfile')}
+            description={t('profile.editProfileDesc')}
             onPress={() => setShowEditProfile(true)}
           />
           <SettingRow
             icon={<CreditCard color={colors.textSecondary} size={18} />}
-            label="National ID"
-            description={activePatient?.nationalId || 'Not set'}
+            label={t('profile.nationalId')}
+            description={activePatient?.nationalId || t('profile.notSet')}
           />
           <SettingRow
             icon={<FileText color={colors.textSecondary} size={18} />}
-            label="Insurance ID"
-            description={activePatient?.insuranceId || 'Not set'}
+            label={t('profile.insuranceId')}
+            description={activePatient?.insuranceId || t('profile.notSet')}
           />
           <SettingRow
             icon={<Heart color={colors.textSecondary} size={18} />}
-            label="Blood Type"
-            description={activePatient?.bloodType || 'Not set'}
+            label={t('profile.bloodType')}
+            description={activePatient?.bloodType || t('profile.notSet')}
             last
           />
         </View>
       </View>
 
       <View style={styles.sectionStack}>
-        <SectionHeader title="Emergency Contacts" />
+        <SectionHeader title={t('profile.sections.emergency')} />
         <View style={styles.settingsCard}>
           <SettingRow
             icon={<Phone color={colors.textSecondary} size={18} />}
-            label="Manage Emergency Contacts"
-            description={`${emergencyContacts.length} contact${emergencyContacts.length !== 1 ? 's' : ''} saved`}
+            label={t('profile.manageContacts')}
+            description={t('profile.contactsSaved', { count: emergencyContacts.length })}
             onPress={() => setShowEmergencyContacts(true)}
             last
           />
@@ -203,12 +218,12 @@ export function ProfileScreen() {
       </View>
 
       <View style={styles.sectionStack}>
-        <SectionHeader title="Security" />
+        <SectionHeader title={t('profile.sections.security')} />
         <View style={styles.settingsCard}>
           <SettingRow
             icon={<Lock color={colors.textSecondary} size={18} />}
-            label="Change PIN"
-            description="Update your security PIN"
+            label={t('profile.changePin')}
+            description={t('profile.changePinDesc')}
             onPress={() => {
               void hasPin().then(setDevicePinSet)
               setShowChangePin(true)
@@ -219,12 +234,12 @@ export function ProfileScreen() {
       </View>
 
       <View style={styles.sectionSpacing}>
-        <SectionHeader title="App Settings" />
+        <SectionHeader title={t('profile.sections.appSettings')} />
         <View style={styles.settingsCard}>
           <SettingRow
             icon={<Bell color={colors.textSecondary} size={18} />}
-            label="Notifications"
-            description="Appointment reminders and alerts"
+            label={t('profile.notifications')}
+            description={t('profile.notificationsDesc')}
             toggle
             value={notificationsEnabled}
             onToggle={(v) => {
@@ -234,34 +249,37 @@ export function ProfileScreen() {
           />
           <SettingRow
             icon={<Globe color={colors.textSecondary} size={18} />}
-            label="Language"
-            description="English"
+            label={t('profile.language')}
+            description={LANGUAGE_OPTIONS.find((option) => option.code === language)?.name ?? 'English'}
+            hint={t('profile.languageHint')}
+            onPress={() => setShowLanguagePicker(true)}
             last
           />
         </View>
       </View>
 
       <View style={styles.sectionSpacing}>
-        <SectionHeader title="Data & Privacy" />
+        <SectionHeader title={t('profile.sections.dataPrivacy')} />
         <View style={styles.settingsCard}>
           <SettingRow
             icon={<Download color={colors.textSecondary} size={18} />}
-            label="Export My Data"
-            description="Download all your health records"
+            label={t('profile.exportData')}
+            description={t('profile.exportDataDesc')}
             onPress={async () => {
               try {
                 const downloadUrl = await requestExportData()
                 await Linking.openURL(downloadUrl)
-                showToast('Your export is ready to download.', 'success')
+                showToast(t('profile.exportReady'), 'success')
               } catch (error) {
-                showToast(error instanceof Error ? error.message : 'Unable to prepare export.', 'error')
+                showToast(error instanceof Error ? error.message : t('profile.exportFailed'), 'error')
               }
             }}
           />
           <SettingRow
             icon={<Trash2 color={colors.error} size={18} />}
-            label="Delete Account"
-            description="Permanently delete all data"
+            label={t('profile.deleteAccount')}
+            description={t('profile.deleteAccountDesc')}
+            hint={t('profile.deleteAccountHint')}
             danger
             onPress={() => setShowDeleteConfirm(true)}
             last
@@ -270,12 +288,12 @@ export function ProfileScreen() {
       </View>
 
       <View style={styles.sectionSpacing}>
-        <SectionHeader title="About" />
+        <SectionHeader title={t('profile.sections.about')} />
         <View style={styles.settingsCard}>
           <SettingRow
             icon={<AlertCircle color={colors.textSecondary} size={18} />}
-            label="App Version"
-            description={appConfig.expo.version}
+            label={t('profile.appVersion')}
+            description={versionInfo.version}
             last
           />
         </View>
@@ -287,24 +305,24 @@ export function ProfileScreen() {
         leftIcon={<LogOut color={colors.error} size={18} />}
         onPress={() => setShowLogoutConfirm(true)}
       >
-        Log Out
+        {t('profile.logOut')}
       </PrimaryButton>
 
-      <BottomSheet isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} title="Edit Profile" height="half">
+      <BottomSheet isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} title={t('profile.editProfile')} height="half">
         <View style={styles.sheetStack}>
           <View style={[styles.row, !isLargePhone ? styles.rowStacked : null]}>
             <View style={styles.half}>
-              <InputField label="First Name" value={editFirstName} onChangeText={setEditFirstName} />
+              <InputField label={t('profile.firstName')} value={editFirstName} onChangeText={setEditFirstName} />
             </View>
             <View style={styles.half}>
-              <InputField label="Last Name" value={editLastName} onChangeText={setEditLastName} />
+              <InputField label={t('profile.lastName')} value={editLastName} onChangeText={setEditLastName} />
             </View>
           </View>
-          <InputField label="Phone Number" value={editPhone} onChangeText={setEditPhone} keyboardType="phone-pad" />
-          <InputField label="Email" value={editEmail} onChangeText={setEditEmail} keyboardType="email-address" />
+          <InputField label={t('profile.phoneNumber')} value={editPhone} onChangeText={setEditPhone} keyboardType="phone-pad" />
+          <InputField label={t('profile.email')} value={editEmail} onChangeText={setEditEmail} keyboardType="email-address" />
           <View style={[styles.sheetActions, stackedActions ? styles.sheetActionsStacked : null]}>
             <SecondaryButton fullWidth onPress={() => setShowEditProfile(false)}>
-              Cancel
+              {t('common.cancel')}
             </SecondaryButton>
             <PrimaryButton
               fullWidth
@@ -317,13 +335,13 @@ export function ProfileScreen() {
                     email: editEmail,
                   })
                   setShowEditProfile(false)
-                  showToast('Profile updated.', 'success')
+                  showToast(t('profile.profileUpdated'), 'success')
                 } catch (error) {
-                  showToast(error instanceof Error ? error.message : 'Unable to update profile.', 'error')
+                  showToast(error instanceof Error ? error.message : t('profile.profileUpdateFailed'), 'error')
                 }
               }}
             >
-              Save Changes
+              {t('profile.saveChanges')}
             </PrimaryButton>
           </View>
         </View>
@@ -332,7 +350,7 @@ export function ProfileScreen() {
       <BottomSheet
         isOpen={showEmergencyContacts}
         onClose={() => setShowEmergencyContacts(false)}
-        title="Emergency Contacts"
+        title={t('profile.contacts.title')}
         height="half"
       >
         <View style={styles.sheetStack}>
@@ -346,7 +364,7 @@ export function ProfileScreen() {
                   <Text style={styles.contactName}>{contact.name}</Text>
                   {contact.isPrimary ? (
                     <View style={styles.primaryBadge}>
-                      <Text style={styles.primaryBadgeText}>Primary</Text>
+                      <Text style={styles.primaryBadgeText}>{t('profile.contacts.primary')}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -354,21 +372,26 @@ export function ProfileScreen() {
                   {contact.relationship} | {contact.phoneNumber}
                 </Text>
               </View>
-              <Pressable onPress={() => Linking.openURL(`tel:${contact.phoneNumber}`)} style={isCompact ? styles.contactActionCompact : null}>
+              <Pressable
+                onPress={() => Linking.openURL(`tel:${contact.phoneNumber}`)}
+                style={[styles.contactAction, isCompact ? styles.contactActionCompact : null]}
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.contacts.call', { name: contact.name })}
+              >
                 <Phone color={colors.primary} size={18} />
               </Pressable>
             </View>
           ))}
           <View style={{ gap: spacing.sm }}>
-            <InputField label="Name" value={newContactName} onChangeText={setNewContactName} />
-            <InputField label="Phone" value={newContactPhone} onChangeText={setNewContactPhone} keyboardType="phone-pad" />
-            <InputField label="Relationship" value={newContactRelation} onChangeText={setNewContactRelation} placeholder="e.g. Spouse" />
+            <InputField label={t('profile.contacts.name')} value={newContactName} onChangeText={setNewContactName} />
+            <InputField label={t('profile.contacts.phone')} value={newContactPhone} onChangeText={setNewContactPhone} keyboardType="phone-pad" />
+            <InputField label={t('profile.contacts.relationship')} value={newContactRelation} onChangeText={setNewContactRelation} placeholder={t('profile.contacts.relationshipPlaceholder')} />
             <PrimaryButton
               fullWidth
               isLoading={isSavingContact}
               onPress={async () => {
                 if (!newContactName.trim() || !newContactPhone.trim()) {
-                  showToast('Name and phone are required.', 'error')
+                  showToast(t('profile.contacts.required'), 'error')
                   return
                 }
                 setIsSavingContact(true)
@@ -383,25 +406,25 @@ export function ProfileScreen() {
                   setNewContactName('')
                   setNewContactPhone('')
                   setNewContactRelation('')
-                  showToast('Emergency contact added.', 'success')
+                  showToast(t('profile.contacts.added'), 'success')
                 } catch (error) {
-                  showToast(error instanceof Error ? error.message : 'Could not add contact.', 'error')
+                  showToast(error instanceof Error ? error.message : t('profile.contacts.addFailed'), 'error')
                 } finally {
                   setIsSavingContact(false)
                 }
               }}
             >
-              Add Emergency Contact
+              {t('profile.contacts.add')}
             </PrimaryButton>
           </View>
         </View>
       </BottomSheet>
 
-      <BottomSheet isOpen={showChangePin} onClose={closeChangePin} title="Change PIN" height="half">
+      <BottomSheet isOpen={showChangePin} onClose={closeChangePin} title={t('profile.changePin')} height="half">
         <View style={styles.sheetStack}>
           {devicePinSet ? (
             <>
-              <Text style={styles.pinLabel}>Current PIN</Text>
+              <Text style={styles.pinLabel}>{t('profile.pin.current')}</Text>
               <PinInput
                 value={currentPin}
                 onChange={(value) => {
@@ -412,7 +435,7 @@ export function ProfileScreen() {
             </>
           ) : null}
 
-          <Text style={styles.pinLabel}>New PIN</Text>
+          <Text style={styles.pinLabel}>{t('profile.pin.new')}</Text>
           <PinInput
             value={newPin}
             onChange={(value) => {
@@ -421,7 +444,7 @@ export function ProfileScreen() {
             }}
           />
 
-          <Text style={styles.pinLabel}>Confirm New PIN</Text>
+          <Text style={styles.pinLabel}>{t('profile.pin.confirm')}</Text>
           <PinInput
             value={confirmNewPin}
             onChange={(value) => {
@@ -437,8 +460,37 @@ export function ProfileScreen() {
             onPress={handleChangePin}
             disabled={newPin.length !== 6 || confirmNewPin.length !== 6 || (devicePinSet && currentPin.length !== 6)}
           >
-            Save PIN
+            {t('profile.pin.save')}
           </PrimaryButton>
+        </View>
+      </BottomSheet>
+
+      <BottomSheet
+        isOpen={showLanguagePicker}
+        onClose={() => setShowLanguagePicker(false)}
+        title={t('profile.chooseLanguage')}
+        height="half"
+      >
+        <View style={styles.languageList} accessibilityRole="radiogroup">
+          {LANGUAGE_OPTIONS.map((option) => {
+            const checked = option.code === language
+            return (
+              <Pressable
+                key={option.code}
+                style={[styles.languageOption, checked ? styles.languageOptionActive : null]}
+                onPress={() => {
+                  setLanguage(option.code)
+                  setShowLanguagePicker(false)
+                }}
+                accessibilityRole="radio"
+                accessibilityLabel={option.name}
+                accessibilityState={{ checked }}
+              >
+                <Text style={[styles.languageName, checked ? styles.languageNameActive : null]}>{option.name}</Text>
+                {checked ? <Check color={colors.primary} size={18} /> : null}
+              </Pressable>
+            )
+          })}
         </View>
       </BottomSheet>
 
@@ -446,18 +498,18 @@ export function ProfileScreen() {
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={handleLogout}
-        title="Log Out?"
-        message="You will need to sign in again with your email and password."
-        confirmLabel="Log Out"
+        title={t('profile.logoutConfirm.title')}
+        message={t('profile.logoutConfirm.message')}
+        confirmLabel={t('profile.logOut')}
       />
 
       <ConfirmSheet
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
-        title="Delete Account?"
-        message="This action cannot be undone. All your medical records will be permanently deleted."
-        confirmLabel="Delete Everything"
+        title={t('profile.deleteConfirm.title')}
+        message={t('profile.deleteConfirm.message')}
+        confirmLabel={t('profile.deleteConfirm.confirm')}
         variant="danger"
       />
     </ScreenContainer>
@@ -475,6 +527,7 @@ function SettingRow({
   badge,
   danger = false,
   last = false,
+  hint,
 }: {
   icon: React.ReactNode
   label: string
@@ -486,6 +539,7 @@ function SettingRow({
   badge?: string
   danger?: boolean
   last?: boolean
+  hint?: string
 }) {
   const { isCompact } = useResponsive()
 
@@ -493,6 +547,10 @@ function SettingRow({
     <Pressable
       style={[styles.settingRow, isCompact ? styles.settingRowCompact : null, !last ? styles.settingDivider : null]}
       onPress={onPress}
+      accessible={!toggle}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={description ? `${label}, ${description}` : label}
+      accessibilityHint={hint}
     >
       <View style={[styles.settingIcon, danger ? styles.settingIconDanger : null]}>{icon}</View>
       <View style={styles.settingCopy}>
@@ -507,7 +565,15 @@ function SettingRow({
         {description ? <Text style={styles.settingDescription}>{description}</Text> : null}
       </View>
       {toggle ? (
-        <Switch value={value} onValueChange={onToggle} trackColor={{ true: colors.primary }} />
+        <Switch
+          value={value}
+          onValueChange={onToggle}
+          trackColor={{ true: colors.primary }}
+          accessibilityRole="switch"
+          accessibilityLabel={label}
+          accessibilityHint={description}
+          accessibilityState={{ checked: value }}
+        />
       ) : onPress ? (
         <Text style={styles.chevron}>{'>'}</Text>
       ) : null}
@@ -683,6 +749,12 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'flex-start',
   },
+  contactAction: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   contactActionCompact: {
     alignSelf: 'flex-end',
   },
@@ -727,6 +799,34 @@ const styles = StyleSheet.create({
   contactMeta: {
     color: colors.textSecondary,
     fontSize: 13,
+  },
+  languageList: {
+    gap: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  languageOption: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    paddingHorizontal: spacing.lg,
+  },
+  languageOptionActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  languageName: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  languageNameActive: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   pinLabel: {
     color: colors.textPrimary,

@@ -1,0 +1,55 @@
+import type { LocaleModule } from './translate'
+
+export const homeStrings: LocaleModule = {
+  en: {
+    home: {
+      appointments: 'Appointments',
+      labResults: 'Lab Results',
+      openRecordsHint: 'Opens your medical records',
+      openShareHint: 'Opens sharing options',
+      upcoming: 'Upcoming',
+      viewLess: 'View Less',
+      noUpcoming: 'No upcoming appointments',
+      noUpcomingMessage: 'Schedule your next checkup',
+      noActivity: 'No recent activity',
+      noActivityMessage: 'Your access log will appear here',
+      healthInsights: 'Health Insights',
+      appointmentA11y: '{{title}}, {{date}} at {{time}}, {{facility}}, {{doctor}}',
+      insightChange: 'Changed from {{previous}} to {{current}}',
+    },
+  },
+  rw: {
+    home: {
+      appointments: 'Gahunda kwa muganga',
+      labResults: 'Ibisubizo bya laboratwari',
+      openRecordsHint: 'Ifungura amakuru yawe y\'ubuvuzi',
+      openShareHint: 'Ifungura uburyo bwo gusangiza',
+      upcoming: 'Ibiteganyijwe',
+      viewLess: 'Reba bike',
+      noUpcoming: 'Nta gahunda kwa muganga iteganyijwe',
+      noUpcomingMessage: 'Teganya isuzuma ritaha',
+      noActivity: 'Nta bikorwa bya vuba',
+      noActivityMessage: 'Urutonde rw\'abarebye amakuru yawe ruzagaragara hano',
+      healthInsights: 'Inama ku buzima',
+      appointmentA11y: '{{title}}, {{date}} saa {{time}}, {{facility}}, {{doctor}}',
+      insightChange: 'Byavuye kuri {{previous}} bigera kuri {{current}}',
+    },
+  },
+  fr: {
+    home: {
+      appointments: 'Rendez-vous',
+      labResults: 'Résultats d’analyses',
+      openRecordsHint: 'Ouvre votre dossier médical',
+      openShareHint: 'Ouvre les options de partage',
+      upcoming: 'À venir',
+      viewLess: 'Voir moins',
+      noUpcoming: 'Aucun rendez-vous à venir',
+      noUpcomingMessage: 'Planifiez votre prochain bilan',
+      noActivity: 'Aucune activité récente',
+      noActivityMessage: 'Votre historique d’accès apparaîtra ici',
+      healthInsights: 'Aperçus santé',
+      appointmentA11y: '{{title}}, {{date}} à {{time}}, {{facility}}, {{doctor}}',
+      insightChange: 'Passé de {{previous}} à {{current}}',
+    },
+  },
+}

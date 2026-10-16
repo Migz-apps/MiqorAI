@@ -30,6 +30,7 @@ import {
   SectionHeader,
   useAppToast,
 } from '../components/ui'
+import { useTranslation } from '../i18n'
 import { useResponsive } from '../responsive'
 import { AccessGrant, usePatientStore } from '../store'
 import { colors, radius, shadows, spacing } from '../theme'
@@ -50,6 +51,7 @@ export function ShareScreen() {
   const { grants, activityLog, revokeGrant, grantAccess } = usePatientStore()
   const { isCompact } = useResponsive()
   const { showToast } = useAppToast()
+  const { t } = useTranslation()
 
   const [viewMode, setViewMode] = useState<ViewMode>('grants')
   const [showNewGrantSheet, setShowNewGrantSheet] = useState(false)
@@ -87,9 +89,9 @@ export function ShareScreen() {
       setShowNewGrantSheet(false)
       setProviderId('')
       setAccessDuration('7d')
-      showToast('Access granted successfully.', 'success')
+      showToast(t('share.grantSuccess'), 'success')
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Unable to grant access.', 'error')
+      showToast(error instanceof Error ? error.message : t('share.grantError'), 'error')
     } finally {
       setIsGranting(false)
     }
@@ -105,9 +107,9 @@ export function ShareScreen() {
       await revokeGrant(grantToRevoke.id)
       setShowRevokeConfirm(false)
       setGrantToRevoke(null)
-      showToast('Access revoked.', 'success')
+      showToast(t('share.revokeSuccess'), 'success')
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Unable to revoke access.', 'error')
+      showToast(error instanceof Error ? error.message : t('share.revokeError'), 'error')
     } finally {
       setIsRevoking(false)
     }
@@ -115,15 +117,15 @@ export function ShareScreen() {
 
   return (
     <ScreenContainer>
-      <Header title="Access Control" subtitle="Manage who can see your records" />
+      <Header title={t('share.title')} subtitle={t('share.subtitle')} />
 
       <View style={styles.headerSpacing}>
         <SegmentedControl
           value={viewMode}
           onChange={setViewMode}
           options={[
-            { value: 'grants', label: `Active Grants (${activeGrants.length})` },
-            { value: 'log', label: 'Access Log' },
+            { value: 'grants', label: t('share.activeGrants', { count: activeGrants.length }) },
+            { value: 'log', label: t('tabs.share_access_log') },
           ]}
         />
       </View>
@@ -139,6 +141,8 @@ export function ShareScreen() {
                 <Pressable
                   key={grant.id}
                   style={[styles.grantCard, isCompact ? styles.grantCardCompact : null]}
+                  accessibilityRole="button"
+                  accessibilityHint={t('share.a11y.grantCardHint')}
                   onPress={() => {
                     setSelectedGrant(grant)
                     setShowGrantDetail(true)
@@ -151,7 +155,7 @@ export function ShareScreen() {
                     <View style={[styles.grantTop, isCompact ? styles.grantTopCompact : null]}>
                       <View>
                         <Text style={styles.grantTitle}>{grant.providerName}</Text>
-                        <Text style={styles.grantSubtitle}>{grant.providerType}</Text>
+                        <Text style={styles.grantSubtitle}>{t(`share.providerType.${grant.providerType}`)}</Text>
                       </View>
                       <View
                         style={[
@@ -173,7 +177,7 @@ export function ShareScreen() {
                               : styles.levelBadgeDangerText,
                           ]}
                         >
-                          {grant.accessLevel}
+                          {t(`share.accessLevel.${grant.accessLevel}`)}
                         </Text>
                       </View>
                     </View>
@@ -181,12 +185,12 @@ export function ShareScreen() {
                     <View style={styles.grantMetaRow}>
                       <View style={styles.inlineMeta}>
                         <Clock3 color={colors.mutedForeground} size={12} />
-                        <Text style={styles.metaText}>Expires {formatDistanceText(grant.expiresAt)}</Text>
+                        <Text style={styles.metaText}>{t('share.expiresIn', { when: formatDistanceText(grant.expiresAt) })}</Text>
                       </View>
                       {grant.lastUsed ? (
                         <View style={styles.inlineMeta}>
                           <Eye color={colors.mutedForeground} size={12} />
-                          <Text style={styles.metaText}>Used {formatDistanceText(grant.lastUsed)}</Text>
+                          <Text style={styles.metaText}>{t('share.usedAgo', { when: formatDistanceText(grant.lastUsed) })}</Text>
                         </View>
                       ) : null}
                     </View>
@@ -197,14 +201,14 @@ export function ShareScreen() {
           ) : (
             <EmptyState
               icon={<Shield color={colors.mutedForeground} size={26} />}
-              title="No active grants"
-              message="You haven't granted access to any providers yet."
+              title={t('share.noGrantsTitle')}
+              message={t('share.noGrantsMessage')}
             />
           )}
 
           {expiredGrants.length ? (
             <View style={styles.stack}>
-              <SectionHeader title={`Expired (${expiredGrants.length})`} />
+              <SectionHeader title={t('share.expiredSection', { count: expiredGrants.length })} />
               {expiredGrants.map((grant) => {
                 const Icon = providerIcons[grant.providerType]
                 return (
@@ -214,10 +218,10 @@ export function ShareScreen() {
                     </View>
                     <View style={styles.expiredCopy}>
                       <Text style={styles.expiredTitle}>{grant.providerName}</Text>
-                      <Text style={styles.metaText}>Expired {formatDistanceText(grant.expiresAt)}</Text>
+                      <Text style={styles.metaText}>{t('share.expiredAgo', { when: formatDistanceText(grant.expiresAt) })}</Text>
                     </View>
                     <View style={styles.expiredBadge}>
-                      <Text style={styles.expiredBadgeText}>Expired</Text>
+                      <Text style={styles.expiredBadgeText}>{t('share.expiredBadge')}</Text>
                     </View>
                   </View>
                 )
@@ -225,12 +229,17 @@ export function ShareScreen() {
             </View>
           ) : null}
 
-          <Pressable style={styles.newGrantCard} onPress={() => setShowNewGrantSheet(true)}>
+          <Pressable
+            style={styles.newGrantCard}
+            accessibilityRole="button"
+            accessibilityHint={t('share.a11y.newGrantHint')}
+            onPress={() => setShowNewGrantSheet(true)}
+          >
             <View style={styles.newGrantIcon}>
               <Plus color={colors.primary} size={22} />
             </View>
-            <Text style={styles.newGrantTitle}>Grant New Access</Text>
-            <Text style={styles.newGrantText}>Scan hospital QR code or enter provider ID</Text>
+            <Text style={styles.newGrantTitle}>{t('share.newGrantTitle')}</Text>
+            <Text style={styles.newGrantText}>{t('share.newGrantText')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -248,8 +257,8 @@ export function ShareScreen() {
           ) : (
             <EmptyState
               icon={<History color={colors.mutedForeground} size={26} />}
-              title="No activity yet"
-              message="Access logs will appear here when providers view your records."
+              title={t('share.noActivityTitle')}
+              message={t('share.noActivityMessage')}
             />
           )}
         </View>
@@ -259,8 +268,8 @@ export function ShareScreen() {
       <BottomSheet
         isOpen={showNewGrantSheet}
         onClose={() => setShowNewGrantSheet(false)}
-        title="Grant Access"
-        subtitle="Allow a provider to view your records"
+        title={t('share.grantAccess')}
+        subtitle={t('share.grantSheetSubtitle')}
         height="half"
       >
         <View style={styles.sheetStack}>
@@ -268,24 +277,25 @@ export function ShareScreen() {
             value={grantMethod}
             onChange={setGrantMethod}
             options={[
-              { value: 'qr', label: 'Scan QR Code' },
-              { value: 'manual', label: 'Enter Provider ID' },
+              { value: 'qr', label: t('share.methodQr') },
+              { value: 'manual', label: t('share.methodManual') },
             ]}
           />
 
           {grantMethod === 'qr' ? (
             <View style={styles.qrPlaceholder}>
               <QrCode color={colors.mutedForeground} size={42} />
-              <Text style={styles.qrPlaceholderTitle}>Camera access required</Text>
-              <Text style={styles.qrPlaceholderText}>Point your camera at the provider&apos;s QR code.</Text>
+              <Text style={styles.qrPlaceholderTitle}>{t('share.cameraRequired')}</Text>
+              <Text style={styles.qrPlaceholderText}>{t('share.cameraHint')}</Text>
               <PrimaryButton
                 variant="outline"
+                accessibilityHint={t('share.a11y.useManualHint')}
                 onPress={() => {
                   setGrantMethod('manual')
-                  showToast('QR camera scanning is not enabled in Expo Go yet. Use manual provider entry for this test pass.', 'info')
+                  showToast(t('share.qrNotAvailable'), 'info')
                 }}
               >
-                Use Manual Entry
+                {t('share.useManualEntry')}
               </PrimaryButton>
             </View>
           ) : (
@@ -293,29 +303,33 @@ export function ShareScreen() {
               <SearchInput
                 value={providerId}
                 onChangeText={setProviderId}
-                placeholder="e.g., MediClinic Hospital"
+                placeholder={t('share.providerPlaceholder')}
               />
 
               <OptionCards
                 value={accessDuration}
                 onChange={setAccessDuration}
                 options={[
-                  { value: '24h', label: '24 Hours' },
-                  { value: '7d', label: '7 Days' },
-                  { value: '30d', label: '30 Days' },
-                  { value: '1y', label: '1 Year' },
+                  { value: '24h', label: t('share.duration.24h') },
+                  { value: '7d', label: t('share.duration.7d') },
+                  { value: '30d', label: t('share.duration.30d') },
+                  { value: '1y', label: t('share.duration.1y') },
                 ]}
               />
 
               <View style={styles.infoCard}>
                 <AlertCircle color={colors.info} size={18} />
-                <Text style={styles.infoCardText}>
-                  The provider will only be able to view your records during this time period. You can revoke access at any time.
-                </Text>
+                <Text style={styles.infoCardText}>{t('share.infoText')}</Text>
               </View>
 
-              <PrimaryButton fullWidth onPress={handleGrantAccess} isLoading={isGranting} disabled={!providerId.trim()}>
-                Grant Access
+              <PrimaryButton
+                fullWidth
+                onPress={handleGrantAccess}
+                isLoading={isGranting}
+                disabled={!providerId.trim()}
+                accessibilityHint={t('share.a11y.grantHint')}
+              >
+                {t('share.grantAccess')}
               </PrimaryButton>
             </View>
           )}
@@ -325,20 +339,23 @@ export function ShareScreen() {
       <BottomSheet
         isOpen={showGrantDetail}
         onClose={() => setShowGrantDetail(false)}
-        title={selectedGrant?.providerName || 'Grant Details'}
+        title={selectedGrant?.providerName || t('share.grantDetails')}
         height="half"
       >
         {selectedGrant ? (
           <View style={styles.sheetStack}>
-            <DetailRow label="Provider Type" value={selectedGrant.providerType} />
-            <DetailRow label="Access Level" value={selectedGrant.accessLevel} />
-            <DetailRow label="Granted On" value={formatDateTime(selectedGrant.grantedAt)} />
-            <DetailRow label="Expires On" value={formatDateTime(selectedGrant.expiresAt)} />
-            <DetailRow label="Last Accessed" value={selectedGrant.lastUsed ? formatDateTime(selectedGrant.lastUsed) : undefined} />
+            <DetailRow label={t('share.detail.providerType')} value={t(`share.providerType.${selectedGrant.providerType}`)} />
+            <DetailRow label={t('share.detail.accessLevel')} value={t(`share.accessLevel.${selectedGrant.accessLevel}`)} />
+            <DetailRow label={t('share.detail.grantedOn')} value={formatDateTime(selectedGrant.grantedAt)} />
+            <DetailRow label={t('share.detail.expiresOn')} value={formatDateTime(selectedGrant.expiresAt)} />
+            <DetailRow
+              label={t('share.detail.lastAccessed')}
+              value={selectedGrant.lastUsed ? formatDateTime(selectedGrant.lastUsed) : undefined}
+            />
 
             {selectedGrant.recordsAccessed?.length ? (
               <View style={styles.recordsAccessed}>
-                <Text style={styles.detailLabel}>Records Accessed</Text>
+                <Text style={styles.detailLabel}>{t('share.detail.recordsAccessed')}</Text>
                 <View style={styles.recordsAccessedRow}>
                   {selectedGrant.recordsAccessed.map((record) => (
                     <View key={record} style={styles.recordPill}>
@@ -352,13 +369,14 @@ export function ShareScreen() {
             <PrimaryButton
               fullWidth
               variant="danger"
+              accessibilityHint={t('share.a11y.revokeHint')}
               onPress={() => {
                 setGrantToRevoke(selectedGrant)
                 setShowGrantDetail(false)
                 setShowRevokeConfirm(true)
               }}
             >
-              Revoke Access
+              {t('share.revokeAccess')}
             </PrimaryButton>
           </View>
         ) : null}
@@ -371,9 +389,9 @@ export function ShareScreen() {
           setGrantToRevoke(null)
         }}
         onConfirm={handleRevoke}
-        title="Revoke Access?"
-        message={`${grantToRevoke?.providerName} will no longer be able to view your medical records.`}
-        confirmLabel="Revoke"
+        title={t('share.revokeTitle')}
+        message={t('share.revokeMessage', { name: grantToRevoke?.providerName ?? '' })}
+        confirmLabel={t('share.revokeConfirm')}
         variant="danger"
         isLoading={isRevoking}
       />

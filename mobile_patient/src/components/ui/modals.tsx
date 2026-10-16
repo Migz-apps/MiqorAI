@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useTranslation } from '../../i18n'
 import { useResponsive } from '../../responsive'
 import { colors, radius, spacing } from '../../theme'
 import { PrimaryButton, SecondaryButton } from './buttons'
@@ -37,6 +38,7 @@ export function BottomSheet({
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
   const { modalMaxWidth, isSmallPhone } = useResponsive()
+  const { t } = useTranslation()
   const maxHeight =
     height === 'quarter'
       ? windowHeight * 0.36
@@ -47,7 +49,12 @@ export function BottomSheet({
   return (
     <Modal visible={isOpen} transparent animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalRoot}>
-        <Pressable style={styles.modalBackdrop} onPress={onClose} />
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t('ui.modals.dismiss')}
+        />
         <View
           style={[
             styles.sheet,
@@ -64,10 +71,20 @@ export function BottomSheet({
           {title || subtitle ? (
             <View style={styles.sheetHeader}>
               <View style={styles.sheetHeaderCopy}>
-                {title ? <Text style={styles.sheetTitle}>{title}</Text> : null}
+                {title ? (
+                  <Text style={styles.sheetTitle} accessibilityRole="header">
+                    {title}
+                  </Text>
+                ) : null}
                 {subtitle ? <Text style={styles.sheetSubtitle}>{subtitle}</Text> : null}
               </View>
-              <Pressable onPress={onClose} style={styles.sheetClose}>
+              <Pressable
+                onPress={onClose}
+                style={styles.sheetClose}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.close')}
+                hitSlop={6}
+              >
                 <X color={colors.mutedForeground} size={18} />
               </Pressable>
             </View>
@@ -101,15 +118,18 @@ export function ConfirmSheet({
   isLoading?: boolean
 }) {
   const { stackedActions } = useResponsive()
+  const { t } = useTranslation()
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} height="quarter">
       <View style={styles.confirmContent}>
-        <Text style={styles.confirmTitle}>{title}</Text>
+        <Text style={styles.confirmTitle} accessibilityRole="header">
+          {title}
+        </Text>
         <Text style={styles.confirmMessage}>{message}</Text>
         <View style={[styles.confirmActions, stackedActions ? styles.confirmActionsStacked : null]}>
           <SecondaryButton onPress={onClose} fullWidth>
-            Cancel
+            {t('common.cancel')}
           </SecondaryButton>
           <PrimaryButton onPress={onConfirm} variant={variant} fullWidth isLoading={isLoading}>
             {confirmLabel}

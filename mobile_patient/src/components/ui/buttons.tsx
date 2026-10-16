@@ -18,6 +18,9 @@ export interface ButtonProps {
   rightIcon?: ReactNode
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  // Defaults to the visible text when children is a string.
+  accessibilityLabel?: string
+  accessibilityHint?: string
 }
 
 export function PrimaryButton({
@@ -30,6 +33,8 @@ export function PrimaryButton({
   leftIcon,
   rightIcon,
   size = 'md',
+  accessibilityLabel,
+  accessibilityHint,
 }: ButtonProps) {
   const variantStyle = {
     primary: styles.buttonPrimary,
@@ -60,6 +65,10 @@ export function PrimaryButton({
         onPress?.()
       }}
       disabled={disabled || isLoading}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? (typeof children === 'string' ? children : undefined)}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: disabled || isLoading, busy: isLoading }}
       style={[
         styles.buttonBase,
         variantStyle,
@@ -82,12 +91,21 @@ export function SecondaryButton(props: ButtonProps) {
 export function TextButton({
   children,
   onPress,
+  accessibilityLabel,
+  accessibilityHint,
 }: {
   children: ReactNode
   onPress?: () => void
+  accessibilityLabel?: string
+  accessibilityHint?: string
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? (typeof children === 'string' ? children : undefined)}
+      accessibilityHint={accessibilityHint}
+      hitSlop={8}
+      style={styles.textButtonTarget}
       onPress={() => {
         void Haptics.selectionAsync()
         onPress?.()
@@ -103,11 +121,13 @@ export function QuickAction({
   label,
   onPress,
   variant = 'default',
+  accessibilityHint,
 }: {
   icon: ReactNode
   label: string
   onPress?: () => void
   variant?: 'default' | 'danger' | 'warning'
+  accessibilityHint?: string
 }) {
   const { isCompact, isTablet } = useResponsive()
   const background = {
@@ -124,6 +144,9 @@ export function QuickAction({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
       onPress={() => {
         void Haptics.selectionAsync()
         onPress?.()
@@ -144,7 +167,12 @@ export function QuickAction({
 }
 
 const styles = StyleSheet.create({
+  textButtonTarget: {
+    minHeight: 44,
+    justifyContent: 'center',
+  },
   buttonBase: {
+    minHeight: 44,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',

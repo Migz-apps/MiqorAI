@@ -3,11 +3,13 @@ import React from 'react'
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { useTranslation } from '../i18n'
 import { useResponsive } from '../responsive'
 import { colors, spacing } from '../theme'
 
 export function PrivacyScreen({ onBack }: { onBack: () => void }) {
   const { horizontalPadding, contentMaxWidth } = useResponsive()
+  const { t } = useTranslation()
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -17,30 +19,24 @@ export function PrivacyScreen({ onBack }: { onBack: () => void }) {
           { paddingHorizontal: horizontalPadding + spacing.md, maxWidth: Math.min(contentMaxWidth, 560) },
         ]}
       >
-        <Pressable style={styles.backLink} onPress={onBack}>
+        <Pressable
+          style={styles.backLink}
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back')}
+          accessibilityHint={t('privacy.backHint')}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+        >
           <ChevronLeft color={colors.textSecondary} size={18} />
-          <Text style={styles.backLinkText}>Back</Text>
+          <Text style={styles.backLinkText}>{t('common.back')}</Text>
         </Pressable>
 
-        <Text style={styles.title}>Privacy Policy</Text>
+        <Text style={styles.title} accessibilityRole="header">{t('privacy.title')}</Text>
 
-        <Text style={styles.paragraph}>
-          Your health records are stored on MiqorAI servers and synced to this device so you can
-          view them. Data saved on this device is encrypted at rest, and data sent between the app
-          and MiqorAI servers is encrypted in transit.
-        </Text>
-        <Text style={styles.paragraph}>
-          Hospitals, pharmacies and other providers can only see your records while you have
-          granted them access. Every access is recorded in your activity log.
-        </Text>
-        <Text style={styles.paragraph}>
-          We collect the information needed to run the service: your profile details, your medical
-          records as submitted by your care providers, and access logs. We do not sell your data.
-        </Text>
-        <Text style={styles.paragraph}>
-          You can export a copy of your data or delete your account at any time from the Profile
-          screen. Deleting your account permanently removes your data from MiqorAI servers.
-        </Text>
+        <Text style={styles.paragraph}>{t('privacy.p1')}</Text>
+        <Text style={styles.paragraph}>{t('privacy.p2')}</Text>
+        <Text style={styles.paragraph}>{t('privacy.p3')}</Text>
+        <Text style={styles.paragraph}>{t('privacy.p4')}</Text>
       </ScrollView>
     </SafeAreaView>
   )

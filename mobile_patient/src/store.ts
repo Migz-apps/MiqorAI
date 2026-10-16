@@ -1,7 +1,11 @@
+import { AppState } from 'react-native'
 import { registerAuthHooks } from './lib/api'
+import { nextRetryAt, qrRefreshMarginMs } from './lib/backoff'
+import { capLatest, createSplitPersistStorage } from './lib/persist-layout'
 import { secureStorage } from './lib/secure-storage'
+import { translateFor } from './locales'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 
 import {
   ApiError,
@@ -195,6 +199,9 @@ interface PatientStore {
   qrValue: string
   qrExpiresAt: number
   qrTtlSeconds: number
+  // Not persisted: consecutive QR refresh failures and the earliest next retry.
+  qrFailureCount: number
+  qrRetryAt: number
   language: LanguageCode
   theme: ThemeMode
   authTokens: AuthTokens | null
@@ -205,7 +212,8 @@ interface PatientStore {
   setActiveFamilyMember: (value: string | null) => void
   setOnlineStatus: (value: boolean) => void
   setLanguage: (value: LanguageCode) => void
-  regenerateQR: () => void
+  // `force` (manual refresh, app foregrounded) skips the backoff wait.
+  regenerateQR: (options?: { force?: boolean }) => void
   refreshDerivedState: () => void
   login: (credentials: { email: string; password: string }) => Promise<void>
   logout: () => Promise<void>
@@ -265,6 +273,8 @@ const initialState = {
   qrValue: '',
   qrExpiresAt: 0,
   qrTtlSeconds: 300,
+  qrFailureCount: 0,
+  qrRetryAt: 0,
   language: 'en' as LanguageCode,
   theme: 'system' as ThemeMode,
   authTokens: null as AuthTokens | null,
@@ -569,8 +579,16 @@ function mapAccessGrants(grants: PatientAccessGrantResponse[]) {
   }))
 }
 
+// The access log grows without bound on the server; only the newest entries
+// are kept on the device.
+export const MAX_ACTIVITY_LOG_ENTRIES = 500
+
+function capActivityLog(entries: ActivityLogEntry[]) {
+  return capLatest(entries, MAX_ACTIVITY_LOG_ENTRIES, (entry) => entry.timestamp)
+}
+
 function mapAccessLogs(logs: PatientAccessLogResponse[]) {
-  return logs.map((entry) => ({
+  return capActivityLog(logs.map((entry) => ({
     id: entry.id,
     timestamp: entry.createdAt,
     action:
@@ -584,7 +602,7 @@ function mapAccessLogs(logs: PatientAccessLogResponse[]) {
     provider: entry.accessor.email,
     details: entry.action.replace(/_/g, ' '),
     recordType: entry.accessor.role,
-  } satisfies ActivityLogEntry))
+  } satisfies ActivityLogEntry)))
 }
 
 function mapFamilyMembers(members: PatientFamilyResponse[]) {
@@ -651,7 +669,7 @@ function toApiMessage(error: unknown) {
     return error.message
   }
 
-  return 'Something went wrong'
+  return translateFor(usePatientStore.getState().language, 'errors.generic')
 }
 
 async function syncAllRemoteData() {
@@ -711,6 +729,69 @@ async function syncAllRemoteData() {
   }
 }
 
+let qrRequestInFlight = false
+
+const PERSIST_NAME = 'MiqorAI-mobile-storage'
+
+// Large collections live under their own keys so no single storage row grows
+// past Android's read limit; see lib/persist-layout.ts for the key layout.
+const PERSISTED_COLLECTIONS = [
+  'conditions',
+  'medications',
+  'allergies',
+  'labResults',
+  'immunizations',
+  'procedures',
+  'appointments',
+  'grants',
+  'activityLog',
+  'familyMembers',
+  'emergencyContacts',
+  'healthInsights',
+] as const
+
+type PersistedPatientState = Pick<
+  PatientStore,
+  | 'isAuthenticated'
+  | 'hasCompletedOnboarding'
+  | 'lastUnlockTime'
+  | 'profile'
+  | (typeof PERSISTED_COLLECTIONS)[number]
+  | 'activeFamilyMemberId'
+  | 'lastSyncTime'
+  | 'qrValue'
+  | 'qrExpiresAt'
+  | 'qrTtlSeconds'
+  | 'language'
+  | 'theme'
+  | 'authTokens'
+>
+
+const persistStorage = createSplitPersistStorage<PersistedPatientState>({
+  storage: secureStorage,
+  collections: PERSISTED_COLLECTIONS,
+  debounceMs: 500,
+  // Session changes (sign-in/out, rotated refresh tokens) are written at once:
+  // losing a rotated refresh token to a debounce window would sign the user out.
+  isUrgent: (previous, next) =>
+    !previous ||
+    previous.isAuthenticated !== next.isAuthenticated ||
+    previous.hasCompletedOnboarding !== next.hasCompletedOnboarding ||
+    previous.authTokens?.refresh_token !== next.authTokens?.refresh_token ||
+    previous.authTokens?.access_token !== next.authTokens?.access_token,
+})
+
+// Flush pending debounced writes before the OS may suspend or kill the app.
+AppState.addEventListener('change', (state) => {
+  if (state !== 'active') {
+    void persistStorage.flush()
+  }
+})
+
+export function flushPersistedState() {
+  return persistStorage.flush()
+}
+
 export const usePatientStore = create<PatientStore>()(
   persist(
     (set, get) => ({
@@ -741,22 +822,42 @@ export const usePatientStore = create<PatientStore>()(
           void mobileApi.updateSettings({ language: value }).catch(() => undefined)
         }
       },
-      regenerateQR: () => {
-        if (get().activeFamilyMemberId) {
+      regenerateQR: (options) => {
+        const state = get()
+        if (state.activeFamilyMemberId || qrRequestInFlight) {
+          return
+        }
+        if (!options?.force && Date.now() < state.qrRetryAt) {
           return
         }
 
+        qrRequestInFlight = true
         void mobileApi.qrCode()
           .then((qr) => {
+            const ttlSeconds = qrTtlSecondsOf(qr)
             set({
               qrValue: buildQrPayload(qr),
-              qrExpiresAt: Math.max(qrExpiryMs(qr), Date.now() + 15_000),
-              qrTtlSeconds: qrTtlSecondsOf(qr),
+              // Keep the next scheduled refresh at least 15s away even if the
+              // device clock disagrees with the server's expiry.
+              qrExpiresAt: Math.max(qrExpiryMs(qr), Date.now() + qrRefreshMarginMs(ttlSeconds) + 15_000),
+              qrTtlSeconds: ttlSeconds,
+              qrFailureCount: 0,
+              qrRetryAt: 0,
+              isOnline: true,
             })
           })
-          .catch(() => {
-            // Back off instead of refetching every second while offline/failing.
-            set({ qrExpiresAt: Date.now() + 30_000 })
+          .catch((error) => {
+            // Exponential backoff (2s doubling to a 60s cap) instead of retrying
+            // every second; a network failure also marks the app offline.
+            const failures = get().qrFailureCount + 1
+            set({
+              qrFailureCount: failures,
+              qrRetryAt: nextRetryAt(Date.now(), failures),
+              ...(error instanceof ApiError ? {} : { isOnline: false }),
+            })
+          })
+          .finally(() => {
+            qrRequestInFlight = false
           })
       },
       refreshDerivedState: () =>
@@ -835,9 +936,13 @@ export const usePatientStore = create<PatientStore>()(
         const provider = exact ?? (providers.length === 1 ? providers[0] : undefined)
         if (!provider) {
           if (providers.length > 1) {
-            throw new Error(`Multiple providers match. Type the full name: ${providers.slice(0, 3).map((p) => p.name).join(', ')}`)
+            throw new Error(
+              translateFor(get().language, 'errors.multipleProviders', {
+                names: providers.slice(0, 3).map((p) => p.name).join(', '),
+              }),
+            )
           }
-          throw new Error('No matching provider found')
+          throw new Error(translateFor(get().language, 'errors.noProvider'))
         }
 
         await mobileApi.createAccessGrant({
@@ -921,9 +1026,9 @@ export const usePatientStore = create<PatientStore>()(
       },
     }),
     {
-      name: 'MiqorAI-mobile-storage',
-      storage: createJSONStorage(() => secureStorage),
-      partialize: (state) => ({
+      name: PERSIST_NAME,
+      storage: persistStorage,
+      partialize: (state): PersistedPatientState => ({
         isAuthenticated: state.isAuthenticated,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         lastUnlockTime: state.lastUnlockTime,
@@ -936,7 +1041,7 @@ export const usePatientStore = create<PatientStore>()(
         procedures: state.procedures,
         appointments: state.appointments,
         grants: state.grants,
-        activityLog: state.activityLog,
+        activityLog: capActivityLog(state.activityLog),
         familyMembers: state.familyMembers,
         emergencyContacts: state.emergencyContacts,
         healthInsights: state.healthInsights,

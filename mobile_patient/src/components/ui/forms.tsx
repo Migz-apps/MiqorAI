@@ -3,6 +3,7 @@ import { Check, Search, X } from 'lucide-react-native'
 import React, { useRef } from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 
+import { useTranslation } from '../../i18n'
 import { useResponsive } from '../../responsive'
 import { colors, radius, shadows, spacing } from '../../theme'
 
@@ -17,7 +18,11 @@ export function InputField({
   error,
   leftIcon,
   autoCapitalize,
+  accessibilityLabel,
+  accessibilityHint,
 }: {
+  accessibilityLabel?: string
+  accessibilityHint?: string
   label?: string
   value: string
   onChangeText: (value: string) => void
@@ -43,6 +48,8 @@ export function InputField({
           secureTextEntry={secureTextEntry}
           multiline={multiline}
           autoCapitalize={autoCapitalize}
+          accessibilityLabel={accessibilityLabel ?? label ?? placeholder}
+          accessibilityHint={accessibilityHint ?? error}
           style={[
             styles.input,
             leftIcon ? styles.inputWithIcon : null,
@@ -50,7 +57,11 @@ export function InputField({
           ]}
         />
       </View>
-      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+      {error ? (
+        <Text style={styles.fieldError} accessibilityLiveRegion="polite" accessibilityRole="alert">
+          {error}
+        </Text>
+      ) : null}
     </View>
   )
 }
@@ -65,6 +76,7 @@ export function SearchInput({
   placeholder: string
 }) {
   const { isCompact } = useResponsive()
+  const { t } = useTranslation()
 
   return (
     <View style={[styles.searchWrap, isCompact ? styles.searchWrapCompact : null]}>
@@ -74,10 +86,17 @@ export function SearchInput({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.mutedForeground}
+        accessibilityRole="search"
+        accessibilityLabel={placeholder}
         style={styles.searchInput}
       />
       {value ? (
-        <Pressable onPress={() => onChangeText('')}>
+        <Pressable
+          onPress={() => onChangeText('')}
+          accessibilityRole="button"
+          accessibilityLabel={t('ui.forms.clearSearch')}
+          style={styles.searchClear}
+        >
           <X color={colors.mutedForeground} size={18} />
         </Pressable>
       ) : null}
@@ -97,6 +116,9 @@ export function CheckboxField({
   return (
     <Pressable
       style={styles.checkboxRow}
+      accessibilityRole="checkbox"
+      accessibilityLabel={label}
+      accessibilityState={{ checked }}
       onPress={() => {
         void Haptics.selectionAsync()
         onChange(!checked)
@@ -123,9 +145,18 @@ export function PinInput({
 }) {
   const inputRef = useRef<TextInput>(null)
   const digits = value.split('').slice(0, length)
+  const { t } = useTranslation()
+  const pinLabel = t('ui.forms.pinLabel', { count: length })
+  const pinValue = t('ui.forms.pinValue', { entered: digits.length, length })
 
   return (
-    <Pressable style={styles.pinContainer} onPress={() => inputRef.current?.focus()}>
+    <Pressable
+      style={styles.pinContainer}
+      onPress={() => inputRef.current?.focus()}
+      accessibilityLabel={pinLabel}
+      accessibilityHint={t('ui.forms.pinHint')}
+      accessibilityValue={{ text: pinValue }}
+    >
       <TextInput
         ref={inputRef}
         value={value}
@@ -133,15 +164,21 @@ export function PinInput({
         keyboardType="number-pad"
         style={styles.hiddenInput}
         maxLength={length}
+        accessibilityLabel={pinLabel}
+        accessibilityValue={{ text: pinValue }}
       />
-      <View style={styles.pinRow}>
+      <View style={styles.pinRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         {Array.from({ length }).map((_, index) => (
           <View key={index} style={[styles.pinBox, error ? styles.pinBoxError : null]}>
             <Text style={styles.pinDigit}>{digits[index] || ''}</Text>
           </View>
         ))}
       </View>
-      {error ? <Text style={styles.fieldErrorCentered}>{error}</Text> : null}
+      {error ? (
+        <Text style={styles.fieldErrorCentered} accessibilityLiveRegion="polite" accessibilityRole="alert">
+          {error}
+        </Text>
+      ) : null}
     </Pressable>
   )
 }
@@ -158,13 +195,16 @@ export function SegmentedControl<T extends string>({
   const { isCompact, isSmallPhone, isTablet } = useResponsive()
 
   return (
-    <View style={[styles.segmented, isSmallPhone ? styles.segmentedCompact : null]}>
+    <View style={[styles.segmented, isSmallPhone ? styles.segmentedCompact : null]} accessibilityRole="tablist">
       {options.map((option) => {
         const active = option.value === value
 
         return (
           <Pressable
             key={option.value}
+            accessibilityRole="tab"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected: active }}
             onPress={() => {
               void Haptics.selectionAsync()
               onChange(option.value)
@@ -201,12 +241,16 @@ export function OptionCards<T extends string>({
   const { isCompact } = useResponsive()
 
   return (
-    <View style={styles.optionCards}>
+    <View style={styles.optionCards} accessibilityRole="radiogroup">
       {options.map((option) => {
         const active = option.value === value
         return (
           <Pressable
             key={option.value}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityHint={option.description}
+            accessibilityState={{ checked: active, selected: active }}
             onPress={() => {
               void Haptics.selectionAsync()
               onChange(option.value)
@@ -296,6 +340,13 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.textPrimary,
     fontSize: 15,
+  },
+  searchClear: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -spacing.md,
   },
   checkboxRow: {
     flexDirection: 'row',

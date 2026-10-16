@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, Info, AlertTriangle, X } from 'lucide-react-
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { translate, useTranslation } from '../../i18n'
 import { colors, radius, spacing } from '../../theme'
 
 export type ToastTone = 'success' | 'error' | 'info' | 'warning'
@@ -46,24 +47,28 @@ const Ctx = createContext<{
 const TECHNICAL =
   /(\b(401|403|404|500|502|503)\b|stack|syntaxerror|typeerror|referenceerror|unhandled|rejection|fetch failed|network error|econnrefused|cors|json\.parse|undefined|null is not|sql|postgres|mongodb|firebase|supabase|axios|exception|internal server)/i
 
-function toUserMessage(input: string) {
+function toUserMessage(input: string, fallback: string) {
   const trimmed = input.trim()
   if (!trimmed || TECHNICAL.test(trimmed) || trimmed.length > 160) {
-    return 'Something went wrong. Please try again.'
+    return fallback
   }
   return trimmed
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets()
+  const { t } = useTranslation()
   const [items, setItems] = useState<ToastItem[]>([])
 
-  const showToast = useCallback((message: string, tone: ToastTone = 'success') => {
-    const id = Date.now() + Math.random()
-    const safe = toUserMessage(message)
-    setItems((prev) => [...prev, { id, message: safe, tone }])
-    setTimeout(() => setItems((prev) => prev.filter((item) => item.id !== id)), 4000)
-  }, [])
+  const showToast = useCallback(
+    (message: string, tone: ToastTone = 'success') => {
+      const id = Date.now() + Math.random()
+      const safe = toUserMessage(message, translate('ui.toast.fallback'))
+      setItems((prev) => [...prev, { id, message: safe, tone }])
+      setTimeout(() => setItems((prev) => prev.filter((item) => item.id !== id)), 4000)
+    },
+    [],
+  )
 
   return (
     <Ctx.Provider value={{ showToast }}>
@@ -71,7 +76,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <View
         pointerEvents="box-none"
         style={[styles.host, { bottom: insets.bottom + spacing.lg }]}
-        accessibilityLiveRegion="polite"
       >
         {items.map((item) => {
           const tone = TONE_STYLES[item.tone]
@@ -79,6 +83,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <View
               key={item.id}
+              accessibilityRole="alert"
+              accessibilityLiveRegion={item.tone === 'error' ? 'assertive' : 'polite'}
               style={[
                 styles.toast,
                 { borderColor: tone.border, backgroundColor: tone.background },
@@ -87,9 +93,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <Icon color={tone.text} size={18} />
               <Text style={[styles.message, { color: colors.textPrimary }]}>{item.message}</Text>
               <Pressable
-                accessibilityLabel="Dismiss"
+                accessibilityRole="button"
+                accessibilityLabel={t('ui.toast.dismiss')}
                 onPress={() => setItems((prev) => prev.filter((x) => x.id !== item.id))}
-                hitSlop={8}
+                hitSlop={14}
               >
                 <X color={colors.textSecondary} size={16} />
               </Pressable>

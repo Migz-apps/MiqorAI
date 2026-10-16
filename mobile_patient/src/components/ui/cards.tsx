@@ -2,6 +2,7 @@ import { AlertCircle, AlertTriangle, ChevronRight, Clock3, Info } from 'lucide-r
 import React, { ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
+import { useTranslation } from '../../i18n'
 import { colors, radius, shadows, spacing } from '../../theme'
 import { formatDateTime, formatShortDate } from '../../utils'
 
@@ -23,9 +24,19 @@ export function HealthCard({
   children?: ReactNode
 }) {
   const badgeStyles = getBadgeStyles(badge?.variant)
+  const { t } = useTranslation()
+  const a11yLabel = [title, subtitle, badge?.label, timestamp ? formatShortDate(timestamp) : undefined]
+    .filter(Boolean)
+    .join(', ')
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? a11yLabel : undefined}
+      accessibilityHint={onPress ? t('ui.cards.openDetails') : undefined}
+    >
       <View style={styles.healthCardRow}>
         {icon ? <View style={styles.healthCardIcon}>{icon}</View> : null}
         <View style={styles.healthCardBody}>
@@ -67,17 +78,22 @@ export function ActivityCard({
   details: string
   timestamp: string
 }) {
+  const { t } = useTranslation()
   const config = {
-    viewed: { label: 'Viewed', variant: 'info' as const },
-    updated: { label: 'Updated', variant: 'success' as const },
-    shared: { label: 'Shared', variant: 'warning' as const },
-    downloaded: { label: 'Downloaded', variant: 'default' as const },
+    viewed: { label: t('ui.cards.activity.viewed'), variant: 'info' as const },
+    updated: { label: t('ui.cards.activity.updated'), variant: 'success' as const },
+    shared: { label: t('ui.cards.activity.shared'), variant: 'warning' as const },
+    downloaded: { label: t('ui.cards.activity.downloaded'), variant: 'default' as const },
   }[action]
   const badge = getBadgeStyles(config.variant)
 
   return (
     <View style={styles.activityCard}>
-      <View style={[styles.activityAvatar, badge.container]}>
+      <View
+        style={[styles.activityAvatar, badge.container]}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         <Text style={[styles.activityAvatarText, badge.text]}>{provider.charAt(0).toUpperCase()}</Text>
       </View>
       <View style={styles.activityBody}>
@@ -111,15 +127,16 @@ export function MedicationCard({
   instructions?: string
   onPress?: () => void
 }) {
+  const { t } = useTranslation()
   const statusConfig = {
-    current: { label: 'Current', variant: 'success' as const },
-    completed: { label: 'Completed', variant: 'default' as const },
-    discontinued: { label: 'Discontinued', variant: 'error' as const },
+    current: { label: t('ui.cards.medicationStatus.current'), variant: 'success' as const },
+    completed: { label: t('ui.cards.medicationStatus.completed'), variant: 'default' as const },
+    discontinued: { label: t('ui.cards.medicationStatus.discontinued'), variant: 'error' as const },
   }[status]
 
   return (
     <HealthCard title={name} subtitle={`${dosage} - ${frequency}`} badge={statusConfig} onPress={onPress}>
-      <Text style={styles.cardSecondaryText}>Prescribed by: {prescribedBy}</Text>
+      <Text style={styles.cardSecondaryText}>{t('ui.cards.prescribedBy', { name: prescribedBy })}</Text>
       {instructions ? <Text style={styles.cardMutedItalic}>{instructions}</Text> : null}
     </HealthCard>
   )
@@ -140,33 +157,41 @@ export function AllergyBadge({
   onPress?: () => void
   compact?: boolean
 }) {
+  const { t } = useTranslation()
   const config = {
     severe: {
       backgroundColor: colors.allergyBg,
       borderColor: '#F3B6B1',
       textColor: colors.error,
-      label: 'Severe',
+      label: t('ui.cards.severity.severe'),
       icon: <AlertTriangle color={colors.error} size={16} />,
     },
     moderate: {
       backgroundColor: '#FFF7E5',
       borderColor: '#F5D7A7',
       textColor: '#A56700',
-      label: 'Moderate',
+      label: t('ui.cards.severity.moderate'),
       icon: <AlertCircle color="#A56700" size={16} />,
     },
     mild: {
       backgroundColor: '#F8F9FA',
       borderColor: colors.border,
       textColor: colors.textSecondary,
-      label: 'Mild',
+      label: t('ui.cards.severity.mild'),
       icon: <Info color={colors.textSecondary} size={16} />,
     },
   }[severity]
+  const a11yLabel = t('ui.cards.allergyLabel', { name, severity: config.label })
 
   if (compact) {
     return (
-      <Pressable onPress={onPress} style={[styles.compactAllergy, { backgroundColor: config.backgroundColor }]}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole={onPress ? 'button' : 'text'}
+        accessibilityLabel={a11yLabel}
+        accessibilityHint={onPress ? t('ui.cards.openDetails') : undefined}
+        style={[styles.compactAllergy, { backgroundColor: config.backgroundColor }]}
+      >
         {config.icon}
         <Text style={[styles.compactAllergyText, { color: config.textColor }]}>{name}</Text>
       </Pressable>
@@ -176,6 +201,15 @@ export function AllergyBadge({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole={onPress ? 'button' : 'text'}
+      accessibilityLabel={[
+        a11yLabel,
+        type ? t('ui.cards.allergyType', { type }) : undefined,
+        reaction ? t('ui.cards.reaction', { reaction }) : undefined,
+      ]
+        .filter(Boolean)
+        .join(', ')}
+      accessibilityHint={onPress ? t('ui.cards.openDetails') : undefined}
       style={[styles.allergyCard, { backgroundColor: config.backgroundColor, borderColor: config.borderColor }]}
     >
       <View style={styles.allergyIconWrap}>{config.icon}</View>
@@ -186,8 +220,12 @@ export function AllergyBadge({
             <Text style={styles.badgeTextInverse}>{config.label}</Text>
           </View>
         </View>
-        {type ? <Text style={styles.allergyType}>{type} allergy</Text> : null}
-        {reaction ? <Text style={[styles.allergyReaction, { color: config.textColor }]}>Reaction: {reaction}</Text> : null}
+        {type ? <Text style={styles.allergyType}>{t('ui.cards.allergyType', { type })}</Text> : null}
+        {reaction ? (
+          <Text style={[styles.allergyReaction, { color: config.textColor }]}>
+            {t('ui.cards.reaction', { reaction })}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   )
@@ -202,20 +240,33 @@ export function AllergyAlertCard({
   onViewAll?: () => void
   showAll?: boolean
 }) {
+  const { t } = useTranslation()
+
   if (!allergies.length) {
     return null
   }
+
+  const toggleLabel = showAll ? t('ui.cards.viewLess') : t('home.viewAll')
 
   return (
     <View style={styles.allergyAlert}>
       <View style={styles.allergyAlertHeader}>
         <View style={styles.allergyAlertTitleWrap}>
           <AlertTriangle color={colors.error} size={18} />
-          <Text style={styles.allergyAlertTitle}>ALLERGY ALERT</Text>
+          <Text style={styles.allergyAlertTitle} accessibilityRole="header">
+            {t('home.allergyAlert')}
+          </Text>
         </View>
         {onViewAll ? (
-          <Pressable onPress={onViewAll}>
-            <Text style={styles.sectionAction}>{showAll ? 'View Less' : 'View All'}</Text>
+          <Pressable
+            onPress={onViewAll}
+            accessibilityRole="button"
+            accessibilityLabel={toggleLabel}
+            accessibilityState={{ expanded: showAll }}
+            hitSlop={12}
+            style={styles.sectionActionTarget}
+          >
+            <Text style={styles.sectionAction}>{toggleLabel}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -236,9 +287,7 @@ export function AllergyAlertCard({
                 },
               ]}
             >
-              <Text style={styles.badgeTextInverse}>
-                {allergy.severity === 'severe' ? 'Severe' : allergy.severity === 'moderate' ? 'Moderate' : 'Mild'}
-              </Text>
+              <Text style={styles.badgeTextInverse}>{t(`ui.cards.severity.${allergy.severity}`)}</Text>
             </View>
           </View>
         ))}
@@ -460,6 +509,10 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: 15,
     fontWeight: '900',
+  },
+  sectionActionTarget: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   sectionAction: {
     color: colors.primary,

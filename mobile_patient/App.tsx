@@ -3,7 +3,9 @@ import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View } from 'react-native'
 
+import { ErrorBoundary } from './src/components/ErrorBoundary'
 import { LoadingOverlay, OfflineBanner, SplashScreen, TabBar, ToastProvider, type TabId } from './src/components/ui'
+import { useTranslation } from './src/i18n'
 import { usePatientStore } from './src/store'
 import { colors } from './src/theme'
 import { hasPin } from './src/lib/pin'
@@ -28,6 +30,7 @@ function MiqorAIApp() {
     syncRemoteData,
   } = usePatientStore()
 
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabId>('home')
   const [isHydrated, setIsHydrated] = useState(usePatientStore.persist.hasHydrated())
   const [showSplash, setShowSplash] = useState(true)
@@ -84,7 +87,7 @@ function MiqorAIApp() {
   }, [isAuthenticated, isHydrated, syncRemoteData])
 
   if (!isHydrated) {
-    return <LoadingOverlay fullScreen message="Loading MiqorAI..." />
+    return <LoadingOverlay fullScreen message={t('app.loading')} />
   }
 
   if (showSplash) {
@@ -100,7 +103,7 @@ function MiqorAIApp() {
   }
 
   if (lockState === 'checking') {
-    return <LoadingOverlay fullScreen message="Loading MiqorAI..." />
+    return <LoadingOverlay fullScreen message={t('app.loading')} />
   }
 
   if (lockState === 'locked') {
@@ -129,11 +132,13 @@ function MiqorAIApp() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <ToastProvider>
-        <StatusBar style="dark" />
-        <MiqorAIApp />
-      </ToastProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <ToastProvider>
+          <StatusBar style="dark" />
+          <MiqorAIApp />
+        </ToastProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   )
 }

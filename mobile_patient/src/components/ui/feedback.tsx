@@ -3,6 +3,7 @@ import React, { ReactNode } from 'react'
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useTranslation } from '../../i18n'
 import { colors, radius, spacing } from '../../theme'
 import { PrimaryButton } from './buttons'
 
@@ -10,27 +11,45 @@ export function LoadingOverlay({
   message,
   fullScreen = false,
 }: {
-  message: string
+  message?: string
   fullScreen?: boolean
 }) {
+  const { t } = useTranslation()
+  const text = message ?? t('ui.feedback.loading')
+
   return (
     <View style={[styles.loadingRoot, fullScreen ? styles.loadingRootFull : null]}>
-      <View style={styles.loadingBadge}>
+      <View
+        style={styles.loadingBadge}
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={text}
+        accessibilityState={{ busy: true }}
+        accessibilityLiveRegion="polite"
+      >
         <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={styles.loadingText}>{message}</Text>
+        <Text style={styles.loadingText}>{text}</Text>
       </View>
     </View>
   )
 }
 
 export function SplashScreen() {
+  const { t } = useTranslation()
+
   return (
-    <View style={styles.splashRoot}>
+    <View
+      style={styles.splashRoot}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={t('ui.feedback.splashLabel')}
+      accessibilityState={{ busy: true }}
+    >
       <View style={styles.splashMark}>
         <Text style={styles.splashMarkText}>M+</Text>
       </View>
       <Text style={styles.splashTitle}>MiqorAI</Text>
-      <Text style={styles.splashSubtitle}>Patient Portal</Text>
+      <Text style={styles.splashSubtitle}>{t('ui.brand.patientPortal')}</Text>
       <View style={styles.splashLoaderTrack}>
         <View style={styles.splashLoaderFill} />
       </View>
@@ -61,8 +80,12 @@ export function EmptyState({
 }) {
   return (
     <View style={styles.emptyState}>
-      <View style={styles.emptyIcon}>{icon}</View>
-      <Text style={styles.emptyTitle}>{title}</Text>
+      <View style={styles.emptyIcon} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        {icon}
+      </View>
+      <Text style={styles.emptyTitle} accessibilityRole="header">
+        {title}
+      </Text>
       {message ? <Text style={styles.emptyMessage}>{message}</Text> : null}
       {action ? <PrimaryButton onPress={action.onPress}>{action.label}</PrimaryButton> : null}
     </View>
@@ -77,14 +100,19 @@ export function OfflineBanner({
   lastSync?: string
 }) {
   const insets = useSafeAreaInsets()
+  const { t } = useTranslation()
 
   return (
-    <View style={[styles.offlineBanner, { paddingTop: insets.top + spacing.sm }]}>
+    <View
+      style={[styles.offlineBanner, { paddingTop: insets.top + spacing.sm }]}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <WifiOff color={colors.secondaryForeground} size={16} />
       <Text style={styles.offlineBannerText}>
-        You&apos;re offline.
-        {queueCount ? ` ${queueCount} changes pending.` : ''}
-        {lastSync ? ` Last synced: ${lastSync}` : ''}
+        {t('ui.feedback.offline')}
+        {queueCount ? ` ${t('ui.feedback.pending', { count: queueCount })}` : ''}
+        {lastSync ? ` ${t('ui.feedback.lastSynced', { time: lastSync })}` : ''}
       </Text>
     </View>
   )

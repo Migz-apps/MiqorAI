@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { InputField, PrimaryButton, TextButton } from '../components/ui'
+import { useTranslation } from '../i18n'
 import { mobileApi } from '../lib/api'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
@@ -25,6 +26,7 @@ interface LoginScreenProps {
 export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
     const login = usePatientStore((s) => s.login)
     const { isCompact, horizontalPadding, contentMaxWidth } = useResponsive()
+    const { t } = useTranslation()
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -33,7 +35,7 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            setError('Please enter both email and password')
+            setError(t('login.missingFields'))
             return
         }
 
@@ -43,17 +45,14 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
         try {
             await login({ email, password })
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Invalid credentials. Please try again.')
+            setError(err instanceof Error ? err.message : t('login.invalidCredentials'))
         } finally {
             setIsLoading(false)
         }
     }
 
     const handleForgotPassword = () => {
-        Alert.alert(
-            'Reset your password',
-            'Password reset is available on the MiqorAI patient web portal. Sign in there with your email to receive a reset code.',
-        )
+        Alert.alert(t('login.resetTitle'), t('login.resetMessage'))
     }
 
     return (
@@ -74,16 +73,16 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
                                     <Text style={styles.logoText}>M+</Text>
                                 </View>
                                 <Text style={[styles.title, isCompact && styles.titleCompact]}>
-                                    Welcome Back
+                                    {t('login.title')}
                                 </Text>
                                 <Text style={styles.subtitle}>
-                                    Sign in to access your secure health records
+                                    {t('login.subtitle')}
                                 </Text>
                             </View>
 
                             <View style={styles.form}>
                                 <InputField
-                                    label="Email Address"
+                                    label={t('login.emailLabel')}
                                     placeholder="name@example.com"
                                     value={email}
                                     onChangeText={(text) => {
@@ -97,8 +96,8 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
 
                                 <View>
                                     <InputField
-                                        label="Password"
-                                        placeholder="Enter your password"
+                                        label={t('login.passwordLabel')}
+                                        placeholder={t('login.passwordPlaceholder')}
                                         value={password}
                                         onChangeText={(text) => {
                                             setPassword(text)
@@ -107,12 +106,23 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
                                         secureTextEntry
                                         leftIcon={<Lock color={colors.textSecondary} size={20} />}
                                     />
-                                    <Pressable style={styles.forgot} onPress={handleForgotPassword}>
-                                        <Text style={styles.forgotText}>Forgot Password?</Text>
+                                    <Pressable
+                                        style={styles.forgot}
+                                        onPress={handleForgotPassword}
+                                        hitSlop={12}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={t('login.forgotPassword')}
+                                        accessibilityHint={t('login.forgotPasswordHint')}
+                                    >
+                                        <Text style={styles.forgotText}>{t('login.forgotPassword')}</Text>
                                     </Pressable>
                                 </View>
 
-                                {error ? <Text style={styles.error}>{error}</Text> : null}
+                                {error ? (
+                                    <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+                                        {error}
+                                    </Text>
+                                ) : null}
 
                                 <PrimaryButton
                                     fullWidth
@@ -120,27 +130,23 @@ export function LoginScreen({ onNavigateToSignup }: LoginScreenProps) {
                                     onPress={handleLogin}
                                     isLoading={isLoading}
                                 >
-                                    Sign In
+                                    {t('login.signIn')}
                                 </PrimaryButton>
                             </View>
 
                             {onNavigateToSignup ? (
                                 <View style={styles.signupRow}>
                                     <Text style={styles.signupText}>
-                                        {"Don't have an account? "}
+                                        {t('login.noAccount')}
                                     </Text>
-                                    <TextButton onPress={onNavigateToSignup}>Sign Up</TextButton>
+                                    <TextButton onPress={onNavigateToSignup}>{t('common.signup')}</TextButton>
                                 </View>
                             ) : null}
 
                             {__DEV__ ? (
                                 <View style={styles.devBox}>
-                                    <Text style={styles.devTitle}>Dev API: {mobileApi.apiUrl}</Text>
-                                    <Text style={styles.devBody}>
-                                        Production defaults to the deployed backend. For local phone testing, set
-                                        EXPO_PUBLIC_API_URL to your computer hotspot IP and keep the backend on port
-                                        3000.
-                                    </Text>
+                                    <Text style={styles.devTitle}>{t('login.devApi', { url: mobileApi.apiUrl })}</Text>
+                                    <Text style={styles.devBody}>{t('login.devHelp')}</Text>
                                 </View>
                             ) : null}
                         </View>

@@ -1,0 +1,118 @@
+import type { LocaleModule } from './translate'
+
+export const appStrings: LocaleModule = {
+  en: {
+    errors: {
+      generic: 'Something went wrong',
+      multipleProviders: 'Multiple providers match. Type the full name: {{names}}',
+      noProvider: 'No matching provider found',
+    },
+    dates: {
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+    },
+    app: {
+      loading: 'Loading MiqorAI...',
+    },
+    errorBoundary: {
+      title: 'Something went wrong',
+      message: 'The app ran into an unexpected problem. Your health records are safe. Try again, and if the problem continues, sign out and restart.',
+      retry: 'Try again',
+      retryHint: 'Reloads the app screens',
+      signOut: 'Sign out and restart',
+      signOutHint: 'Signs you out and clears data stored on this device. Your records stay safe on the server.',
+      details: 'Error details',
+    },
+    qr: {
+      refreshesInSeconds: 'Refreshes in {{seconds}}s',
+      retryingIn: 'Offline. Retrying in {{seconds}}s',
+      retryingNow: 'Offline. Retrying...',
+      unavailable: 'No QR available',
+      patientId: 'MiqorAI Patient ID',
+      imageLabel: 'QR code for {{name}}. Show it at a hospital or pharmacy to share your records.',
+      enlargeHint: 'Opens the QR code full screen',
+      statusOnline: 'Online',
+      statusOffline: 'Offline',
+      refreshLabel: 'Refresh QR code',
+      refreshHint: 'Gets a new QR code now',
+      fullscreenLabel: 'Show QR code full screen',
+      shareLabel: 'Share QR code',
+    },
+  },
+  rw: {
+    errors: {
+      generic: 'Habaye ikibazo',
+      multipleProviders: "Hari abatanga serivisi benshi bahuye n'ibyo washakishije. Andika izina ryuzuye: {{names}}",
+      noProvider: 'Nta utanga serivisi wabonetse',
+    },
+    dates: {
+      today: 'Uyu munsi',
+      tomorrow: 'Ejo',
+    },
+    app: {
+      loading: 'MiqorAI irimo gufunguka...',
+    },
+    errorBoundary: {
+      title: 'Habaye ikibazo',
+      message: 'Porogaramu yahuye n\'ikibazo kitari cyitezwe. Amakuru yawe y\'ubuzima arinzwe. Ongera ugerageze; ikibazo nigikomeza, sohoka hanyuma wongere utangire.',
+      retry: 'Ongera ugerageze',
+      retryHint: 'Yongera gufungura ibice bya porogaramu',
+      signOut: 'Sohoka wongere utangire',
+      signOutHint: 'Biragusohora kandi bigasiba amakuru abitswe kuri iyi telefoni. Amadosiye yawe akomeza kubikwa neza kuri seriveri.',
+      details: 'Ibisobanuro by\'ikibazo',
+    },
+    qr: {
+      refreshesInSeconds: 'Irahinduka mu masegonda {{seconds}}',
+      retryingIn: 'Nta murongo wa interineti. Turongera kugerageza mu masegonda {{seconds}}',
+      retryingNow: 'Nta murongo wa interineti. Turongera kugerageza...',
+      unavailable: 'Nta QR ihari',
+      patientId: 'Nimero y\'umurwayi kuri MiqorAI',
+      imageLabel: 'QR code ya {{name}}. Yereke ibitaro cyangwa farumasi kugira ngo usangize amadosiye yawe.',
+      enlargeHint: 'Ifungura QR code kuri ecran yose',
+      statusOnline: 'Kuri interineti',
+      statusOffline: 'Nta interineti',
+      refreshLabel: 'Hindura QR code',
+      refreshHint: 'Ibona QR code nshya ubu',
+      fullscreenLabel: 'Erekana QR code kuri ecran yose',
+      shareLabel: 'Sangiza QR code',
+    },
+  },
+  fr: {
+    errors: {
+      generic: 'Une erreur est survenue',
+      multipleProviders: 'Plusieurs prestataires correspondent. Saisissez le nom complet : {{names}}',
+      noProvider: 'Aucun prestataire correspondant',
+    },
+    dates: {
+      today: "Aujourd'hui",
+      tomorrow: 'Demain',
+    },
+    app: {
+      loading: 'Chargement de MiqorAI...',
+    },
+    errorBoundary: {
+      title: 'Une erreur est survenue',
+      message: 'L\'application a rencontré un problème inattendu. Vos dossiers de santé sont en sécurité. Réessayez ; si le problème persiste, déconnectez-vous et redémarrez.',
+      retry: 'Réessayer',
+      retryHint: 'Recharge les écrans de l\'application',
+      signOut: 'Se déconnecter et redémarrer',
+      signOutHint: 'Vous déconnecte et efface les données enregistrées sur cet appareil. Vos dossiers restent en sécurité sur le serveur.',
+      details: 'Détails de l\'erreur',
+    },
+    qr: {
+      refreshesInSeconds: 'S\'actualise dans {{seconds}} s',
+      retryingIn: 'Hors ligne. Nouvel essai dans {{seconds}} s',
+      retryingNow: 'Hors ligne. Nouvel essai...',
+      unavailable: 'Aucun code QR disponible',
+      patientId: 'Identifiant patient MiqorAI',
+      imageLabel: 'Code QR de {{name}}. Présentez-le à l\'hôpital ou à la pharmacie pour partager vos dossiers.',
+      enlargeHint: 'Affiche le code QR en plein écran',
+      statusOnline: 'En ligne',
+      statusOffline: 'Hors ligne',
+      refreshLabel: 'Actualiser le code QR',
+      refreshHint: 'Génère un nouveau code QR maintenant',
+      fullscreenLabel: 'Afficher le code QR en plein écran',
+      shareLabel: 'Partager le code QR',
+    },
+  },
+}

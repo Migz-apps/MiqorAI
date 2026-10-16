@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { AppState, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
+import { useTranslation } from '../../i18n'
+import { qrRefreshMarginMs, shouldAutoRefresh } from '../../lib/backoff'
 import { useResponsive } from '../../responsive'
 import { usePatientStore } from '../../store'
 import { colors, radius, shadows, spacing } from '../../theme'
@@ -15,9 +17,12 @@ export function QRDisplay({
   size?: number
   showActions?: boolean
 }) {
-  const { qrValue, qrExpiresAt, qrTtlSeconds, regenerateQR, isOnline, activePatient } = usePatientStore()
+  const { qrValue, qrExpiresAt, qrTtlSeconds, qrRetryAt, qrFailureCount, regenerateQR, isOnline, activePatient } =
+    usePatientStore()
+  const { t } = useTranslation()
   const { width, modalMaxWidth, isCompact, isTablet } = useResponsive()
   const [timeLeft, setTimeLeft] = useState(qrTtlSeconds)
+  const [retryIn, setRetryIn] = useState(0)
   const [showFullscreen, setShowFullscreen] = useState(false)
   const qrSize = Math.min(size, isTablet ? 220 : isCompact ? 140 : Math.max(156, width - 140))
   const fullscreenQrSize = Math.min(isTablet ? 320 : 280, width - (isCompact ? 80 : 96))
@@ -25,35 +30,49 @@ export function QRDisplay({
 
   // Refresh at half the server TTL so the code on screen never reaches its
   // expiry while the app is open: the countdown runs to the renewal point, not
-  // to the moment the server stops accepting the code.
-  const regeneratedForExpiry = useRef(0)
+  // to the moment the server stops accepting the code. Failed refreshes wait
+  // for the store's backoff (2s doubling to 60s) instead of retrying each tick.
+  const attemptedFor = useRef('')
   useEffect(() => {
-    const refreshMarginMs = Math.max(15, Math.floor(qrTtlSeconds / 2)) * 1000
-    const timer = setInterval(() => {
-      const untilRefresh = Math.max(0, Math.floor((qrExpiresAt - refreshMarginMs - Date.now()) / 1000))
-      setTimeLeft(untilRefresh)
-      // Fire the refresh once per code, not on every tick at zero.
-      if (untilRefresh === 0 && regeneratedForExpiry.current !== qrExpiresAt) {
-        regeneratedForExpiry.current = qrExpiresAt
+    const refreshDueAt = qrExpiresAt - qrRefreshMarginMs(qrTtlSeconds)
+    const tick = () => {
+      const now = Date.now()
+      setTimeLeft(Math.max(0, Math.floor((refreshDueAt - now) / 1000)))
+      setRetryIn(Math.max(0, Math.ceil((qrRetryAt - now) / 1000)))
+      // One automatic attempt per code and per failure, never one per tick.
+      const attemptKey = `${qrExpiresAt}:${qrFailureCount}`
+      if (
+        attemptedFor.current !== attemptKey &&
+        shouldAutoRefresh({ now, refreshDueAt, retryAt: qrRetryAt, inFlight: false })
+      ) {
+        attemptedFor.current = attemptKey
         regenerateQR()
       }
-    }, 1000)
+    }
+    tick()
+    const timer = setInterval(tick, 1000)
 
     return () => clearInterval(timer)
-  }, [qrExpiresAt, qrTtlSeconds, regenerateQR])
+  }, [qrExpiresAt, qrTtlSeconds, qrRetryAt, qrFailureCount, regenerateQR])
 
   // Returning from the background: the code may have aged past its window
-  // while the app slept, so fetch a fresh one immediately.
+  // while the app slept, so fetch a fresh one immediately (skipping backoff).
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && Date.now() >= qrExpiresAt - (qrTtlSeconds * 1000) / 2) {
-        regenerateQR()
+      if (state === 'active' && Date.now() >= qrExpiresAt - qrRefreshMarginMs(qrTtlSeconds)) {
+        regenerateQR({ force: true })
       }
     })
     return () => subscription.remove()
   }, [qrExpiresAt, qrTtlSeconds, regenerateQR])
 
   const badgeColor = timeLeft > 30 ? colors.success : timeLeft > 10 ? colors.secondary : colors.error
+  const retrying = qrFailureCount > 0
+  const timerText = retrying
+    ? retryIn > 0
+      ? t('qr.retryingIn', { seconds: retryIn })
+      : t('qr.retryingNow')
+    : t('qr.refreshesInSeconds', { seconds: timeLeft })
 
   // The QR SVG re-encodes only when its value or size changes — not every second.
   const qrCode = useMemo(
@@ -64,15 +83,29 @@ export function QRDisplay({
   if (!activePatient || !qrValue) {
     return (
       <View style={[styles.card, styles.qrFallback]}>
-        <Text style={styles.emptyMessage}>No QR available</Text>
+        <Text style={styles.emptyMessage}>{t('qr.unavailable')}</Text>
       </View>
     )
   }
 
+  const patientName = `${activePatient.firstName} ${activePatient.lastName}`.trim()
+  const qrImageLabel = t('qr.imageLabel', { name: patientName })
+
   return (
     <>
-      <Pressable style={[styles.qrCard, { maxWidth: qrCardMaxWidth }]} onPress={() => setShowFullscreen(true)}>
-        <View style={styles.qrStatus}>
+      <Pressable
+        style={[styles.qrCard, { maxWidth: qrCardMaxWidth }]}
+        onPress={() => setShowFullscreen(true)}
+        accessibilityRole="imagebutton"
+        accessibilityLabel={qrImageLabel}
+        accessibilityHint={t('qr.enlargeHint')}
+      >
+        <View
+          style={styles.qrStatus}
+          accessible
+          accessibilityRole="text"
+          accessibilityLabel={isOnline ? t('qr.statusOnline') : t('qr.statusOffline')}
+        >
           {isOnline ? (
             <View style={styles.qrStatusBadge}>
               <Wifi color={colors.success} size={14} />
@@ -83,7 +116,7 @@ export function QRDisplay({
             </View>
           )}
         </View>
-        <View style={styles.qrBox}>
+        <View style={styles.qrBox} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
           {qrCode}
           <View style={styles.qrCenterLogo}>
             <View style={styles.qrCenterLogoInner}>
@@ -92,11 +125,13 @@ export function QRDisplay({
           </View>
         </View>
         <View style={styles.qrTimer}>
-          <View style={[styles.qrTimerDot, { backgroundColor: badgeColor }]} />
-          <Text style={styles.cardSecondaryText}>Refreshes in {timeLeft}s</Text>
+          <View style={[styles.qrTimerDot, { backgroundColor: retrying ? colors.secondary : badgeColor }]} />
+          <Text style={styles.cardSecondaryText} accessibilityLiveRegion={retrying ? 'polite' : 'none'}>
+            {timerText}
+          </Text>
         </View>
-        <Text style={styles.qrInstruction}>Scan at hospital or pharmacy</Text>
-        <Text style={styles.qrHint}>Tap to enlarge</Text>
+        <Text style={styles.qrInstruction}>{t('qr.instruction')}</Text>
+        <Text style={styles.qrHint}>{t('qr.tapToEnlarge')}</Text>
 
         {showActions ? (
           <View style={styles.qrActions}>
@@ -104,30 +139,34 @@ export function QRDisplay({
               variant="ghost"
               size="sm"
               leftIcon={<RefreshCw color={colors.textPrimary} size={14} />}
-              onPress={() => regenerateQR()}
+              onPress={() => regenerateQR({ force: true })}
+              accessibilityLabel={t('qr.refreshLabel')}
+              accessibilityHint={t('qr.refreshHint')}
             >
-              Refresh
+              {t('qr.refresh')}
             </PrimaryButton>
             <PrimaryButton
               variant="ghost"
               size="sm"
               leftIcon={<Maximize2 color={colors.textPrimary} size={14} />}
               onPress={() => setShowFullscreen(true)}
+              accessibilityLabel={t('qr.fullscreenLabel')}
             >
-              Fullscreen
+              {t('qr.fullscreen')}
             </PrimaryButton>
             <PrimaryButton
               variant="ghost"
               size="sm"
               leftIcon={<Share2 color={colors.textPrimary} size={14} />}
+              accessibilityLabel={t('qr.shareLabel')}
               onPress={async () => {
                 await Share.share({
-                  title: 'My MiqorAI QR Code',
-                  message: 'Scan this MiqorAI QR code to securely access my medical records.',
+                  title: t('qr.shareTitle'),
+                  message: t('qr.shareMessage'),
                 })
               }}
             >
-              Share
+              {t('qr.share')}
             </PrimaryButton>
           </View>
         ) : null}
@@ -135,21 +174,26 @@ export function QRDisplay({
 
       <Modal visible={showFullscreen} transparent animationType="fade" onRequestClose={() => setShowFullscreen(false)}>
         <View style={styles.qrFullRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setShowFullscreen(false)} />
-          <View style={[styles.qrFullCard, { width: modalMaxWidth }]}>
-            <Text style={styles.qrFullName}>
-              {activePatient.firstName} {activePatient.lastName}
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setShowFullscreen(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close')}
+          />
+          <View style={[styles.qrFullCard, { width: modalMaxWidth }]} accessibilityViewIsModal>
+            <Text style={styles.qrFullName} accessibilityRole="header">
+              {patientName}
             </Text>
-            <Text style={styles.qrFullSubtitle}>MiqorAI Patient ID</Text>
-            <View style={styles.qrFullBox}>
+            <Text style={styles.qrFullSubtitle}>{t('qr.patientId')}</Text>
+            <View style={styles.qrFullBox} accessible accessibilityRole="image" accessibilityLabel={qrImageLabel}>
               <QRCode value={qrValue} size={fullscreenQrSize} color={colors.primary} backgroundColor="#FFFFFF" />
             </View>
             <View style={styles.qrTimer}>
-              <View style={[styles.qrTimerDot, { backgroundColor: badgeColor }]} />
-              <Text style={styles.cardSecondaryText}>Refreshes in {timeLeft}s</Text>
+              <View style={[styles.qrTimerDot, { backgroundColor: retrying ? colors.secondary : badgeColor }]} />
+              <Text style={styles.cardSecondaryText}>{timerText}</Text>
             </View>
             <PrimaryButton onPress={() => setShowFullscreen(false)} fullWidth>
-              Close
+              {t('common.close')}
             </PrimaryButton>
           </View>
         </View>

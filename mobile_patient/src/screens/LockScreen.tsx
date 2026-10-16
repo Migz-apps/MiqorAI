@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { PinInput, TextButton } from '../components/ui'
+import { useTranslation } from '../i18n'
 import { clearPin, verifyPin } from '../lib/pin'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
@@ -12,6 +13,7 @@ import { colors, spacing } from '../theme'
 export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
   const { logout, setLastUnlockTime } = usePatientStore()
   const { horizontalPadding, isCompact } = useResponsive()
+  const { t } = useTranslation()
 
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
@@ -37,7 +39,7 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
       }
 
       setPin('')
-      setError('Incorrect PIN. Please try again.')
+      setError(t('lock.incorrect'))
     })
 
     return () => {
@@ -57,8 +59,8 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
         <View style={[styles.mark, isCompact ? styles.markCompact : null]}>
           <Lock color="#FFFFFF" size={36} />
         </View>
-        <Text style={styles.title}>Enter Your PIN</Text>
-        <Text style={styles.subtitle}>Unlock MiqorAI to view your health records.</Text>
+        <Text style={styles.title} accessibilityRole="header">{t('lock.title')}</Text>
+        <Text style={styles.subtitle}>{t('lock.subtitle')}</Text>
 
         <View style={styles.pinWrap}>
           <PinInput
@@ -71,7 +73,9 @@ export function LockScreen({ onUnlocked }: { onUnlocked: () => void }) {
           />
         </View>
 
-        <TextButton onPress={handleForgotPin}>Forgot PIN? Sign out</TextButton>
+        <TextButton onPress={handleForgotPin} accessibilityHint={t('lock.forgotPinHint')}>
+          {t('lock.forgotPin')}
+        </TextButton>
       </View>
     </SafeAreaView>
   )

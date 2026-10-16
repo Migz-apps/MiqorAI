@@ -26,16 +26,19 @@ import {
   ScreenContainer,
   SearchInput,
 } from '../components/ui'
+import { useTranslation } from '../i18n'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
 import { colors, radius, spacing } from '../theme'
 import { formatDate } from '../utils'
 
 type RecordTab = 'conditions' | 'medications' | 'allergies' | 'labs' | 'immunizations' | 'procedures'
+type Translate = ReturnType<typeof useTranslation>['t']
 
 export function RecordsScreen() {
   const { conditions, medications, allergies, labResults, immunizations, procedures } = usePatientStore()
   const { isCompact, isLargePhone, isTablet, stackedActions } = useResponsive()
+  const { t } = useTranslation()
   const tabChipWidth = isTablet ? '31.5%' : '48.2%'
 
   const [activeTab, setActiveTab] = useState<RecordTab>('conditions')
@@ -44,12 +47,12 @@ export function RecordsScreen() {
   const [selectedType, setSelectedType] = useState<RecordTab | null>(null)
 
   const tabs = [
-    { id: 'conditions' as const, label: 'Conditions', icon: Stethoscope, count: conditions.length },
-    { id: 'medications' as const, label: 'Medications', icon: Pill, count: medications.length },
-    { id: 'allergies' as const, label: 'Allergies', icon: AlertTriangle, count: allergies.length },
-    { id: 'labs' as const, label: 'Lab Results', icon: FlaskConical, count: labResults.length },
-    { id: 'immunizations' as const, label: 'Vaccines', icon: Syringe, count: immunizations.length },
-    { id: 'procedures' as const, label: 'Procedures', icon: Scissors, count: procedures.length },
+    { id: 'conditions' as const, label: t('tabs.records_conditions'), icon: Stethoscope, count: conditions.length },
+    { id: 'medications' as const, label: t('tabs.records_medications'), icon: Pill, count: medications.length },
+    { id: 'allergies' as const, label: t('tabs.records_allergies'), icon: AlertTriangle, count: allergies.length },
+    { id: 'labs' as const, label: t('records.tabLabs'), icon: FlaskConical, count: labResults.length },
+    { id: 'immunizations' as const, label: t('records.tabVaccines'), icon: Syringe, count: immunizations.length },
+    { id: 'procedures' as const, label: t('tabs.records_procedures'), icon: Scissors, count: procedures.length },
   ]
 
   const filteredData = useMemo(() => {
@@ -94,10 +97,10 @@ export function RecordsScreen() {
 
   return (
     <ScreenContainer>
-      <Header title="Medical Records" subtitle="Your complete health history" />
+      <Header title={t('records.title')} subtitle={t('records.subtitle')} />
 
       <View style={styles.headerSpacing}>
-        <SearchInput value={searchQuery} onChangeText={setSearchQuery} placeholder="Search records..." />
+        <SearchInput value={searchQuery} onChangeText={setSearchQuery} placeholder={t('records.searchPlaceholder')} />
       </View>
 
       <View style={styles.tabSection}>
@@ -110,6 +113,10 @@ export function RecordsScreen() {
               <Pressable
                 key={tab.id}
                 style={[styles.tabChip, styles.tabChipGrid, { flexBasis: tabChipWidth }, active ? styles.tabChipActive : null]}
+                accessibilityRole="tab"
+                accessibilityLabel={t('records.tabA11y', { label: tab.label, count: tab.count })}
+                accessibilityHint={t('records.tabHint')}
+                accessibilityState={{ selected: active }}
                 onPress={() => {
                   setActiveTab(tab.id)
                   setSearchQuery('')
@@ -135,6 +142,10 @@ export function RecordsScreen() {
               <Pressable
                 key={tab.id}
                 style={[styles.tabChip, active ? styles.tabChipActive : null]}
+                accessibilityRole="tab"
+                accessibilityLabel={t('records.tabA11y', { label: tab.label, count: tab.count })}
+                accessibilityHint={t('records.tabHint')}
+                accessibilityState={{ selected: active }}
                 onPress={() => {
                   setActiveTab(tab.id)
                   setSearchQuery('')
@@ -166,7 +177,7 @@ export function RecordsScreen() {
                   timestamp={condition.diagnosedDate}
                   icon={<Stethoscope color={colors.primary} size={20} />}
                   badge={{
-                    label: condition.status.charAt(0).toUpperCase() + condition.status.slice(1),
+                    label: t(`records.conditionStatus.${condition.status}`),
                     variant: condition.status === 'resolved' ? 'success' : 'warning',
                   }}
                   onPress={() => openDetail(condition, 'conditions')}
@@ -175,8 +186,8 @@ export function RecordsScreen() {
             ) : (
               <EmptyState
                 icon={<Stethoscope color={colors.mutedForeground} size={26} />}
-                title={searchQuery ? 'No conditions found' : 'No conditions recorded'}
-                message={searchQuery ? 'Try a different search term' : 'Your medical conditions will appear here'}
+                title={searchQuery ? t('records.empty.conditionsNotFound') : t('records.empty.conditionsNone')}
+                message={searchQuery ? t('records.empty.tryDifferent') : t('records.empty.conditionsMessage')}
               />
             )
           ) : null}
@@ -198,8 +209,8 @@ export function RecordsScreen() {
           ) : (
             <EmptyState
               icon={<Pill color={colors.mutedForeground} size={26} />}
-              title={searchQuery ? 'No medications found' : 'No medications recorded'}
-              message={searchQuery ? 'Try a different search term' : 'Your prescriptions will appear here'}
+              title={searchQuery ? t('records.empty.medicationsNotFound') : t('records.empty.medicationsNone')}
+              message={searchQuery ? t('records.empty.tryDifferent') : t('records.empty.medicationsMessage')}
             />
           )
         ) : null}
@@ -219,8 +230,8 @@ export function RecordsScreen() {
           ) : (
             <EmptyState
               icon={<AlertTriangle color={colors.mutedForeground} size={26} />}
-              title={searchQuery ? 'No allergies found' : 'No allergies recorded'}
-              message={searchQuery ? 'Try a different search term' : 'Your allergies will appear here'}
+              title={searchQuery ? t('records.empty.allergiesNotFound') : t('records.empty.allergiesNone')}
+              message={searchQuery ? t('records.empty.tryDifferent') : t('records.empty.allergiesMessage')}
             />
           )
         ) : null}
@@ -235,7 +246,7 @@ export function RecordsScreen() {
                 timestamp={lab.date}
                 icon={<FlaskConical color={colors.primary} size={20} />}
                 badge={{
-                  label: lab.status === 'normal' ? 'Normal' : lab.status === 'abnormal' ? 'Abnormal' : 'Critical',
+                  label: t(`records.labStatus.${lab.status}`),
                   variant: lab.status === 'normal' ? 'success' : lab.status === 'abnormal' ? 'warning' : 'error',
                 }}
                 onPress={() => openDetail(lab, 'labs')}
@@ -256,8 +267,8 @@ export function RecordsScreen() {
           ) : (
             <EmptyState
               icon={<FlaskConical color={colors.mutedForeground} size={26} />}
-              title={searchQuery ? 'No lab results found' : 'No lab results'}
-              message={searchQuery ? 'Try a different search term' : 'Your test results will appear here'}
+              title={searchQuery ? t('records.empty.labsNotFound') : t('records.empty.labsNone')}
+              message={searchQuery ? t('records.empty.tryDifferent') : t('records.empty.labsMessage')}
             />
           )
         ) : null}
@@ -271,19 +282,19 @@ export function RecordsScreen() {
                 subtitle={immunization.facility}
                 timestamp={immunization.dateAdministered}
                 icon={<Syringe color={colors.primary} size={20} />}
-                badge={immunization.nextDoseDate ? { label: 'Next dose scheduled', variant: 'info' } : undefined}
+                badge={immunization.nextDoseDate ? { label: t('records.nextDoseScheduled'), variant: 'info' } : undefined}
                 onPress={() => openDetail(immunization, 'immunizations')}
               >
                 {immunization.nextDoseDate ? (
-                  <Text style={styles.helperText}>Next dose: {formatDate(immunization.nextDoseDate)}</Text>
+                  <Text style={styles.helperText}>{t('records.nextDoseOn', { date: formatDate(immunization.nextDoseDate) })}</Text>
                 ) : null}
               </HealthCard>
             ))
           ) : (
             <EmptyState
               icon={<Syringe color={colors.mutedForeground} size={26} />}
-              title={searchQuery ? 'No immunizations found' : 'No immunizations recorded'}
-              message={searchQuery ? 'Try a different search term' : 'Your vaccination history will appear here'}
+              title={searchQuery ? t('records.empty.immunizationsNotFound') : t('records.empty.immunizationsNone')}
+              message={searchQuery ? t('records.empty.tryDifferent') : t('records.empty.immunizationsMessage')}
             />
           )
         ) : null}
@@ -298,7 +309,7 @@ export function RecordsScreen() {
                 timestamp={procedure.date}
                 icon={<Scissors color={colors.primary} size={20} />}
                 badge={{
-                  label: procedure.status.charAt(0).toUpperCase() + procedure.status.slice(1),
+                  label: t(`records.procedureStatus.${procedure.status}`),
                   variant:
                     procedure.status === 'completed'
                       ? 'success'
@@ -308,14 +319,14 @@ export function RecordsScreen() {
                 }}
                 onPress={() => openDetail(procedure, 'procedures')}
               >
-                {procedure.surgeon ? <Text style={styles.helperText}>Surgeon: {procedure.surgeon}</Text> : null}
+                {procedure.surgeon ? <Text style={styles.helperText}>{t('records.surgeonName', { name: procedure.surgeon })}</Text> : null}
               </HealthCard>
             ))
           ) : (
             <EmptyState
               icon={<Scissors color={colors.mutedForeground} size={26} />}
-              title={searchQuery ? 'No procedures found' : 'No procedures recorded'}
-              message={searchQuery ? 'Try a different search term' : 'Your surgical history will appear here'}
+              title={searchQuery ? t('records.empty.proceduresNotFound') : t('records.empty.proceduresNone')}
+              message={searchQuery ? t('records.empty.tryDifferent') : t('records.empty.proceduresMessage')}
             />
           )
         ) : null}
@@ -328,16 +339,16 @@ export function RecordsScreen() {
           setSelectedItem(null)
           setSelectedType(null)
         }}
-        title={getDetailTitle(selectedItem, selectedType)}
+        title={getDetailTitle(selectedItem, selectedType, t)}
         height="half"
       >
         {selectedItem && selectedType ? (
           <View style={styles.detailSheetContent}>
-            {renderDetailContent(selectedItem, selectedType)}
+            {renderDetailContent(selectedItem, selectedType, t)}
             <View style={[styles.detailActions, stackedActions ? styles.detailActionsStacked : null]}>
-              <SecondaryAction label="Share with Provider" icon={<Share2 color={colors.primary} size={16} />} />
+              <SecondaryAction label={t('records.shareWithProvider')} icon={<Share2 color={colors.primary} size={16} />} />
               <PrimaryButton fullWidth leftIcon={<ExternalLink color="#FFFFFF" size={16} />}>
-                View Full Report
+                {t('records.viewFullReport')}
               </PrimaryButton>
             </View>
           </View>
@@ -355,9 +366,9 @@ function SecondaryAction({ label, icon }: { label: string; icon: React.ReactNode
   )
 }
 
-function getDetailTitle(item: unknown, type: RecordTab | null) {
+function getDetailTitle(item: unknown, type: RecordTab | null, t: Translate) {
   if (!item || !type) {
-    return 'Details'
+    return t('common.details')
   }
 
   switch (type) {
@@ -376,14 +387,14 @@ function DetailRow({ label, value }: { label: string; value?: string }) {
   }
 
   return (
-    <View style={styles.detailRow}>
+    <View style={styles.detailRow} accessible>
       <Text style={styles.detailLabel}>{label}</Text>
       <Text style={styles.detailValue}>{value}</Text>
     </View>
   )
 }
 
-function renderDetailContent(item: unknown, type: RecordTab) {
+function renderDetailContent(item: unknown, type: RecordTab, t: Translate) {
   switch (type) {
     case 'conditions': {
       const entry = item as {
@@ -394,12 +405,12 @@ function renderDetailContent(item: unknown, type: RecordTab) {
       }
       return (
         <View style={styles.detailContent}>
-          <DetailRow label="Status" value={entry.status} />
-          <DetailRow label="Diagnosed" value={formatDate(entry.diagnosedDate)} />
-          <DetailRow label="Treating Doctor" value={entry.treatingDoctor} />
+          <DetailRow label={t('records.detail.status')} value={t(`records.conditionStatus.${entry.status}`)} />
+          <DetailRow label={t('records.detail.diagnosed')} value={formatDate(entry.diagnosedDate)} />
+          <DetailRow label={t('records.detail.treatingDoctor')} value={entry.treatingDoctor} />
           {entry.notes ? (
             <View>
-              <Text style={styles.detailLabel}>Notes</Text>
+              <Text style={styles.detailLabel}>{t('records.detail.notes')}</Text>
               <Text style={styles.detailParagraph}>{entry.notes}</Text>
             </View>
           ) : null}
@@ -418,15 +429,15 @@ function renderDetailContent(item: unknown, type: RecordTab) {
       }
       return (
         <View style={styles.detailContent}>
-          <DetailRow label="Dosage" value={entry.dosage} />
-          <DetailRow label="Frequency" value={entry.frequency} />
-          <DetailRow label="Status" value={entry.status} />
-          <DetailRow label="Prescribed By" value={entry.prescribedBy} />
-          <DetailRow label="Start Date" value={formatDate(entry.prescribedDate)} />
-          <DetailRow label="End Date" value={entry.endDate ? formatDate(entry.endDate) : undefined} />
+          <DetailRow label={t('records.detail.dosage')} value={entry.dosage} />
+          <DetailRow label={t('records.detail.frequency')} value={entry.frequency} />
+          <DetailRow label={t('records.detail.status')} value={t(`records.medicationStatus.${entry.status}`)} />
+          <DetailRow label={t('records.detail.prescribedBy')} value={entry.prescribedBy} />
+          <DetailRow label={t('records.detail.startDate')} value={formatDate(entry.prescribedDate)} />
+          <DetailRow label={t('records.detail.endDate')} value={entry.endDate ? formatDate(entry.endDate) : undefined} />
           {entry.instructions ? (
             <View>
-              <Text style={styles.detailLabel}>Instructions</Text>
+              <Text style={styles.detailLabel}>{t('records.detail.instructions')}</Text>
               <Text style={styles.detailParagraph}>{entry.instructions}</Text>
             </View>
           ) : null}
@@ -442,12 +453,12 @@ function renderDetailContent(item: unknown, type: RecordTab) {
       }
       return (
         <View style={styles.detailContent}>
-          <DetailRow label="Severity" value={entry.severity} />
-          <DetailRow label="Type" value={entry.type} />
-          <DetailRow label="Diagnosed" value={formatDate(entry.diagnosedDate)} />
+          <DetailRow label={t('records.detail.severity')} value={t(`records.severity.${entry.severity}`)} />
+          <DetailRow label={t('records.detail.type')} value={t(`records.allergyType.${entry.type}`)} />
+          <DetailRow label={t('records.detail.diagnosed')} value={formatDate(entry.diagnosedDate)} />
           {entry.reaction ? (
             <View>
-              <Text style={styles.detailLabel}>Reaction</Text>
+              <Text style={styles.detailLabel}>{t('records.detail.reaction')}</Text>
               <Text style={styles.detailParagraph}>{entry.reaction}</Text>
             </View>
           ) : null}
@@ -472,11 +483,11 @@ function renderDetailContent(item: unknown, type: RecordTab) {
               {entry.unit ? ` ${entry.unit}` : ''}
             </Text>
           </View>
-          <DetailRow label="Status" value={entry.status} />
-          <DetailRow label="Reference Range" value={entry.referenceRange} />
-          <DetailRow label="Date" value={formatDate(entry.date)} />
-          <DetailRow label="Ordered By" value={entry.orderedBy} />
-          <DetailRow label="Facility" value={entry.facility} />
+          <DetailRow label={t('records.detail.status')} value={t(`records.labStatus.${entry.status}`)} />
+          <DetailRow label={t('records.detail.referenceRange')} value={entry.referenceRange} />
+          <DetailRow label={t('records.detail.date')} value={formatDate(entry.date)} />
+          <DetailRow label={t('records.detail.orderedBy')} value={entry.orderedBy} />
+          <DetailRow label={t('records.detail.facility')} value={entry.facility} />
         </View>
       )
     }
@@ -490,11 +501,11 @@ function renderDetailContent(item: unknown, type: RecordTab) {
       }
       return (
         <View style={styles.detailContent}>
-          <DetailRow label="Administered" value={formatDate(entry.dateAdministered)} />
-          <DetailRow label="Facility" value={entry.facility} />
-          <DetailRow label="Administered By" value={entry.administeredBy} />
-          <DetailRow label="Lot Number" value={entry.lotNumber} />
-          <DetailRow label="Next Dose" value={entry.nextDoseDate ? formatDate(entry.nextDoseDate) : undefined} />
+          <DetailRow label={t('records.detail.administered')} value={formatDate(entry.dateAdministered)} />
+          <DetailRow label={t('records.detail.facility')} value={entry.facility} />
+          <DetailRow label={t('records.detail.administeredBy')} value={entry.administeredBy} />
+          <DetailRow label={t('records.detail.lotNumber')} value={entry.lotNumber} />
+          <DetailRow label={t('records.detail.nextDose')} value={entry.nextDoseDate ? formatDate(entry.nextDoseDate) : undefined} />
         </View>
       )
     }
@@ -508,13 +519,13 @@ function renderDetailContent(item: unknown, type: RecordTab) {
       }
       return (
         <View style={styles.detailContent}>
-          <DetailRow label="Status" value={entry.status} />
-          <DetailRow label="Date" value={formatDate(entry.date)} />
-          <DetailRow label="Facility" value={entry.facility} />
-          <DetailRow label="Surgeon" value={entry.surgeon} />
+          <DetailRow label={t('records.detail.status')} value={t(`records.procedureStatus.${entry.status}`)} />
+          <DetailRow label={t('records.detail.date')} value={formatDate(entry.date)} />
+          <DetailRow label={t('records.detail.facility')} value={entry.facility} />
+          <DetailRow label={t('records.detail.surgeon')} value={entry.surgeon} />
           {entry.notes ? (
             <View>
-              <Text style={styles.detailLabel}>Notes</Text>
+              <Text style={styles.detailLabel}>{t('records.detail.notes')}</Text>
               <Text style={styles.detailParagraph}>{entry.notes}</Text>
             </View>
           ) : null}

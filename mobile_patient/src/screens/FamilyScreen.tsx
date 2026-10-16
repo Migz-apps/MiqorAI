@@ -25,24 +25,30 @@ import {
   SecondaryButton,
   useAppToast,
 } from '../components/ui'
+import { useTranslation } from '../i18n'
 import { useResponsive } from '../responsive'
 import { FamilyMember, usePatientStore } from '../store'
 import { colors, radius, shadows, spacing } from '../theme'
 import { formatDate } from '../utils'
 
-const relationshipOptions = [
-  { value: 'child', label: 'Child', description: 'Under 18, you manage their records' },
-  { value: 'parent', label: 'Parent', description: 'Elderly parent you care for' },
-  { value: 'spouse', label: 'Spouse', description: 'Partner with shared access' },
-  { value: 'sibling', label: 'Sibling', description: 'Brother or sister' },
-  { value: 'other', label: 'Other', description: 'Other family member or dependent' },
-] as const
+const relationshipValues = ['child', 'parent', 'spouse', 'sibling', 'other'] as const
 
 export function FamilyScreen() {
   const { profile, familyMembers, activeFamilyMemberId, setActiveFamilyMember, addFamilyMember, removeFamilyMember } =
     usePatientStore()
   const { isCompact, isLargePhone, stackedActions } = useResponsive()
   const { showToast } = useAppToast()
+  const { t } = useTranslation()
+
+  const relationshipOptions = useMemo(
+    () =>
+      relationshipValues.map((value) => ({
+        value,
+        label: t(`family.relationship.${value}`),
+        description: t(`family.relationshipDesc.${value}`),
+      })),
+    [t],
+  )
 
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [showMemberDetail, setShowMemberDetail] = useState(false)
@@ -90,9 +96,9 @@ export function FamilyScreen() {
       })
       setShowAddSheet(false)
       resetForm()
-      showToast('Family member added.', 'success')
+      showToast(t('family.addSuccess'), 'success')
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Unable to add family member.', 'error')
+      showToast(error instanceof Error ? error.message : t('family.addError'), 'error')
     } finally {
       setIsAdding(false)
     }
@@ -106,13 +112,22 @@ export function FamilyScreen() {
     }
   }
 
+  const describeMember = (member: FamilyMember) =>
+    `${t(`family.relationship.${member.relationship}`)} | ${t('family.age', { count: getAge(member.profile.dateOfBirth) })}`
+
+  const accessLevelLabel = (level: FamilyMember['accessLevel'], caregiverKey: string) =>
+    level === 'full' ? t('family.fullAccess') : level === 'caregiver' ? t(caregiverKey) : t('family.viewOnly')
+
   return (
     <ScreenContainer>
-      <Header title="Your Family" subtitle="Manage family member profiles" />
+      <Header title={t('family.yourFamily')} subtitle={t('family.subtitle')} />
 
       <View style={styles.headerSpacing}>
         <Pressable
           style={[styles.meCard, isCompact ? styles.meCardCompact : null, !activeFamilyMemberId ? styles.activeCard : null]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: !activeFamilyMemberId }}
+          accessibilityHint={t('family.a11y.ownProfileHint')}
           onPress={() => setActiveFamilyMember(null)}
         >
         <View style={[styles.meLeft, isCompact ? styles.meLeftCompact : null]}>
@@ -130,29 +145,31 @@ export function FamilyScreen() {
                 {profile?.firstName} {profile?.lastName}
               </Text>
               <View style={styles.meBadge}>
-                <Text style={styles.meBadgeText}>You</Text>
+                <Text style={styles.meBadgeText}>{t('family.me')}</Text>
               </View>
             </View>
-            <Text style={styles.meSubtitle}>Primary Account Holder</Text>
-            <Text style={styles.meMeta}>Full access to all features</Text>
+            <Text style={styles.meSubtitle}>{t('family.primaryAccount')}</Text>
+            <Text style={styles.meMeta}>{t('family.fullAccessFeatures')}</Text>
           </View>
         </View>
-        {!activeFamilyMemberId ? <Text style={styles.activeText}>Active</Text> : null}
+        {!activeFamilyMemberId ? <Text style={styles.activeText}>{t('common.active')}</Text> : null}
         </Pressable>
       </View>
 
       <View style={styles.sectionSpacing}>
-        <SectionHeader title="Family Members" action={{ label: 'Add', onPress: () => setShowAddSheet(true) }} />
+        <SectionHeader title={t('family.familyMembers')} action={{ label: t('family.add'), onPress: () => setShowAddSheet(true) }} />
 
       {familyMembers.length ? (
         <View style={styles.stack}>
           {familyMembers.map((member) => {
             const Icon = relationshipIcons[member.relationship]
             const isActive = activeFamilyMemberId === member.id
+            const memberName = `${member.profile.firstName} ${member.profile.lastName}`
 
             return (
               <Pressable
                 key={member.id}
+                accessible={false}
                 style={[styles.memberCard, isCompact ? styles.memberCardCompact : null, isActive ? styles.activeCard : null]}
               >
                 <View style={[styles.memberLeft, isCompact ? styles.memberLeftCompact : null]}>
@@ -168,17 +185,9 @@ export function FamilyScreen() {
                     <Text style={styles.memberName}>
                       {member.profile.firstName} {member.profile.lastName}
                     </Text>
-                    <Text style={styles.memberMeta}>
-                      {member.relationship} | {getAge(member.profile.dateOfBirth)} years old
-                    </Text>
+                    <Text style={styles.memberMeta}>{describeMember(member)}</Text>
                     <View style={styles.accessPill}>
-                      <Text style={styles.accessPillText}>
-                        {member.accessLevel === 'full'
-                          ? 'Full Access'
-                          : member.accessLevel === 'caregiver'
-                          ? 'Caregiver'
-                          : 'View Only'}
-                      </Text>
+                      <Text style={styles.accessPillText}>{accessLevelLabel(member.accessLevel, 'family.caregiver')}</Text>
                     </View>
                   </View>
                 </View>
@@ -190,19 +199,28 @@ export function FamilyScreen() {
                   ]}
                 >
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.details')}
+                    accessibilityHint={t('family.a11y.detailsHint', { name: memberName })}
                     onPress={() => {
                       setSelectedMember(member)
                       setShowMemberDetail(true)
                     }}
                   >
-                    <Text style={styles.linkText}>Details</Text>
+                    <Text style={styles.linkText}>{t('common.details')}</Text>
                   </Pressable>
                   <Pressable
                     style={styles.switchLink}
+                    accessibilityRole="button"
+                    accessibilityLabel={isActive ? t('family.switchBack') : t('family.switch')}
+                    accessibilityHint={
+                      isActive ? t('family.a11y.ownProfileHint') : t('family.a11y.switchHint', { name: memberName })
+                    }
+                    accessibilityState={{ selected: isActive }}
                     onPress={() => setActiveFamilyMember(isActive ? null : member.id)}
                   >
                     <ArrowLeftRight color={colors.textSecondary} size={13} />
-                    <Text style={styles.switchText}>{isActive ? 'Switch Back' : 'Switch'}</Text>
+                    <Text style={styles.switchText}>{isActive ? t('family.switchBack') : t('family.switch')}</Text>
                   </Pressable>
                 </View>
               </Pressable>
@@ -212,9 +230,9 @@ export function FamilyScreen() {
       ) : (
         <EmptyState
           icon={<Users color={colors.mutedForeground} size={26} />}
-          title="No family members yet"
-          message="Add family members to manage their health records from your account."
-          action={{ label: 'Add Family Member', onPress: () => setShowAddSheet(true) }}
+          title={t('family.noMembers')}
+          message={t('family.addDesc')}
+          action={{ label: t('family.addMember'), onPress: () => setShowAddSheet(true) }}
         />
       )}
       </View>
@@ -224,11 +242,11 @@ export function FamilyScreen() {
           <Shield color={colors.primary} size={18} />
         </View>
         <View style={styles.infoCopy}>
-          <Text style={styles.infoTitle}>Why add family members?</Text>
-          <Text style={styles.infoLine}>- Manage children&apos;s health records until they turn 13</Text>
-          <Text style={styles.infoLine}>- Act as caregiver for elderly parents</Text>
-          <Text style={styles.infoLine}>- One QR code per family member</Text>
-          <Text style={styles.infoLine}>- Quick profile switching</Text>
+          <Text style={styles.infoTitle} accessibilityRole="header">{t('family.whyAdd')}</Text>
+          <Text style={styles.infoLine}>- {t('family.why.children')}</Text>
+          <Text style={styles.infoLine}>- {t('family.why.caregiver')}</Text>
+          <Text style={styles.infoLine}>- {t('family.why.qr')}</Text>
+          <Text style={styles.infoLine}>- {t('family.why.switching')}</Text>
         </View>
       </View>
 
@@ -238,23 +256,38 @@ export function FamilyScreen() {
           setShowAddSheet(false)
           resetForm()
         }}
-        title="Add Family Member"
-        subtitle="Create a profile for a family member"
+        title={t('family.addMember')}
+        subtitle={t('family.addSubtitle')}
         height="full"
       >
         <View style={styles.sheetStack}>
           <OptionCards value={relationship} onChange={setRelationship} options={relationshipOptions as never} />
           <View style={[styles.row, !isLargePhone ? styles.rowStacked : null]}>
             <View style={styles.half}>
-              <InputField label="First Name" value={firstName} onChangeText={setFirstName} placeholder="First name" />
+              <InputField
+                label={t('family.firstName')}
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder={t('family.firstNamePlaceholder')}
+              />
             </View>
             <View style={styles.half}>
-              <InputField label="Last Name" value={lastName} onChangeText={setLastName} placeholder="Last name" />
+              <InputField
+                label={t('family.lastName')}
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder={t('family.lastNamePlaceholder')}
+              />
             </View>
           </View>
-          <InputField label="Date of Birth" value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="YYYY-MM-DD" />
           <InputField
-            label="Phone Number (Optional)"
+            label={t('family.dateOfBirth')}
+            value={dateOfBirth}
+            onChangeText={setDateOfBirth}
+            placeholder={t('family.dobPlaceholder')}
+          />
+          <InputField
+            label={t('family.phoneOptional')}
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             placeholder="+250 788 123 456"
@@ -262,14 +295,12 @@ export function FamilyScreen() {
           />
 
           {relationship ? (
-            <View style={styles.relationshipInfo}>
+            <View style={styles.relationshipInfo} accessibilityLiveRegion="polite">
               <Text style={styles.relationshipInfoTitle}>
-                {relationship === 'child' ? 'Full Access Granted' : 'Caregiver Access'}
+                {relationship === 'child' ? t('family.childInfoTitle') : t('family.caregiverAccess')}
               </Text>
               <Text style={styles.relationshipInfoText}>
-                {relationship === 'child'
-                  ? 'As a parent, you will have full control over this profile until they turn 13.'
-                  : 'You will be able to view records and manage appointments, but cannot share access without their consent.'}
+                {relationship === 'child' ? t('family.childInfoText') : t('family.caregiverInfoText')}
               </Text>
             </View>
           ) : null}
@@ -281,7 +312,7 @@ export function FamilyScreen() {
             isLoading={isAdding}
             disabled={!relationship || !firstName || !lastName}
           >
-            Add Family Member
+            {t('family.addMember')}
           </PrimaryButton>
         </View>
       </BottomSheet>
@@ -292,7 +323,7 @@ export function FamilyScreen() {
           setShowMemberDetail(false)
           setSelectedMember(null)
         }}
-        title={selectedMember ? `${selectedMember.profile.firstName} ${selectedMember.profile.lastName}` : 'Member Details'}
+        title={selectedMember ? `${selectedMember.profile.firstName} ${selectedMember.profile.lastName}` : t('family.memberDetails')}
         height="half"
       >
         {selectedMember ? (
@@ -303,36 +334,36 @@ export function FamilyScreen() {
                 <Text style={styles.detailHeroName}>
                   {selectedMember.profile.firstName} {selectedMember.profile.lastName}
                 </Text>
-                <Text style={styles.detailHeroMeta}>
-                  {selectedMember.relationship} | {getAge(selectedMember.profile.dateOfBirth)} years old
-                </Text>
+                <Text style={styles.detailHeroMeta}>{describeMember(selectedMember)}</Text>
               </View>
             </View>
 
-            <DetailRow label="Date of Birth" value={formatDate(selectedMember.profile.dateOfBirth)} />
+            <DetailRow label={t('family.dateOfBirth')} value={formatDate(selectedMember.profile.dateOfBirth)} />
             <DetailRow
-              label="Access Level"
-              value={
-                selectedMember.accessLevel === 'full'
-                  ? 'Full Access'
-                  : selectedMember.accessLevel === 'caregiver'
-                  ? 'Caregiver Access'
-                  : 'View Only'
-              }
+              label={t('family.detail.accessLevel')}
+              value={accessLevelLabel(selectedMember.accessLevel, 'family.caregiverAccess')}
             />
-            <DetailRow label="Added" value={formatDate(selectedMember.addedAt)} />
-            <DetailRow label="Phone" value={selectedMember.profile.phoneNumber} />
+            <DetailRow label={t('family.detail.added')} value={formatDate(selectedMember.addedAt)} />
+            <DetailRow label={t('family.detail.phone')} value={selectedMember.profile.phoneNumber} />
 
             <View style={styles.sheetActions}>
               <SecondaryButton
                 fullWidth
                 onPress={() => setActiveFamilyMember(selectedMember.id)}
                 leftIcon={<ArrowLeftRight color={colors.primary} size={16} />}
+                accessibilityHint={t('family.a11y.switchHint', {
+                  name: `${selectedMember.profile.firstName} ${selectedMember.profile.lastName}`,
+                })}
               >
-                Switch to Profile
+                {t('family.switchToProfile')}
               </SecondaryButton>
-              <PrimaryButton fullWidth variant="danger" onPress={() => setShowRemoveConfirm(true)}>
-                Remove
+              <PrimaryButton
+                fullWidth
+                variant="danger"
+                onPress={() => setShowRemoveConfirm(true)}
+                accessibilityHint={t('family.a11y.removeHint')}
+              >
+                {t('common.remove')}
               </PrimaryButton>
             </View>
           </View>
@@ -352,14 +383,14 @@ export function FamilyScreen() {
             setShowRemoveConfirm(false)
             setShowMemberDetail(false)
             setSelectedMember(null)
-            showToast('Family member removed.', 'success')
+            showToast(t('family.removeSuccess'), 'success')
           } catch (error) {
-            showToast(error instanceof Error ? error.message : 'Unable to remove family member.', 'error')
+            showToast(error instanceof Error ? error.message : t('family.removeError'), 'error')
           }
         }}
-        title="Remove Family Member?"
-        message={`${selectedMember?.profile.firstName} will be removed from your family account. Their medical records will remain in their own profile.`}
-        confirmLabel="Remove"
+        title={t('family.removeTitle')}
+        message={t('family.removeMessage', { name: selectedMember?.profile.firstName ?? '' })}
+        confirmLabel={t('common.remove')}
         variant="danger"
       />
     </ScreenContainer>

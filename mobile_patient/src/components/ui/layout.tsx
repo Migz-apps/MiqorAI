@@ -4,6 +4,7 @@ import React, { ReactNode, useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useTranslation } from '../../i18n'
 import { useResponsive } from '../../responsive'
 import { colors, radius, shadows, spacing } from '../../theme'
 import { getInitials } from '../../utils'
@@ -61,25 +62,30 @@ interface HeaderProps {
 
 export function Header({ title, subtitle, avatar, actions, showLogo = false, leftAction }: HeaderProps) {
   const { isSmallPhone } = useResponsive()
+  const { t } = useTranslation()
 
   return (
     <View style={[styles.header, isSmallPhone ? styles.headerCompact : null]}>
       <View style={[styles.headerLeft, isSmallPhone ? styles.headerLeftCompact : null]}>
         {showLogo ? (
           <>
-            <View style={styles.logoBadge}>
+            <View style={styles.logoBadge} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
               <Text style={styles.logoText}>M+</Text>
             </View>
-            <View>
+            <View accessible accessibilityRole="header">
               <Text style={styles.logoTitle}>MiqorAI</Text>
-              <Text style={styles.logoSubtitle}>Patient Portal</Text>
+              <Text style={styles.logoSubtitle}>{t('ui.brand.patientPortal')}</Text>
             </View>
           </>
         ) : (
           <>
             {leftAction}
             <View>
-              {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
+              {title ? (
+                <Text style={styles.headerTitle} accessibilityRole="header">
+                  {title}
+                </Text>
+              ) : null}
               {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
             </View>
           </>
@@ -105,9 +111,20 @@ export function SectionHeader({
 
   return (
     <View style={[styles.sectionHeader, isSmallPhone ? styles.sectionHeaderCompact : null]}>
-      <Text style={[styles.sectionTitle, isSmallPhone ? styles.sectionTitleCompact : null]}>{title}</Text>
+      <Text
+        style={[styles.sectionTitle, isSmallPhone ? styles.sectionTitleCompact : null]}
+        accessibilityRole="header"
+      >
+        {title}
+      </Text>
       {action ? (
-        <Pressable onPress={action.onPress}>
+        <Pressable
+          onPress={action.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={action.label}
+          hitSlop={12}
+          style={styles.sectionActionTarget}
+        >
           <Text style={styles.sectionAction}>{action.label}</Text>
         </Pressable>
       ) : null}
@@ -125,6 +142,7 @@ export function Avatar({
   onPress?: () => void
 }) {
   const { isCompact } = useResponsive()
+  const { t } = useTranslation()
   const sizes = {
     sm: isCompact ? 32 : 36,
     md: isCompact ? 38 : 42,
@@ -134,6 +152,15 @@ export function Avatar({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole={onPress ? 'button' : 'image'}
+      accessibilityLabel={
+        onPress
+          ? name
+            ? t('ui.layout.openProfileFor', { name })
+            : t('ui.layout.openProfile')
+          : name
+      }
+      hitSlop={onPress ? Math.max(0, Math.ceil((44 - sizes[size]) / 2)) : undefined}
       style={[styles.avatar, { width: sizes[size], height: sizes[size], borderRadius: sizes[size] / 2 }]}
     >
       <Text style={[styles.avatarText, size === 'lg' ? styles.avatarTextLarge : null]}>
@@ -152,15 +179,16 @@ export function TabBar({
 }) {
   const insets = useSafeAreaInsets()
   const { contentMaxWidth, horizontalPadding, isTablet, isCompact } = useResponsive()
+  const { t } = useTranslation()
   const tabs = useMemo(
     () => [
-      { id: 'home' as const, label: 'Home', icon: Home },
-      { id: 'records' as const, label: 'Records', icon: FileText },
-      { id: 'share' as const, label: 'Share', icon: Share2 },
-      { id: 'family' as const, label: 'Family', icon: Users },
-      { id: 'profile' as const, label: 'Profile', icon: User },
+      { id: 'home' as const, label: t('tabs.home'), icon: Home },
+      { id: 'records' as const, label: t('tabs.records'), icon: FileText },
+      { id: 'share' as const, label: t('tabs.share'), icon: Share2 },
+      { id: 'family' as const, label: t('tabs.family'), icon: Users },
+      { id: 'profile' as const, label: t('tabs.profile'), icon: User },
     ],
-    [],
+    [t],
   )
 
   return (
@@ -173,13 +201,19 @@ export function TabBar({
         },
       ]}
     >
-      <View style={[styles.tabBar, { maxWidth: contentMaxWidth }, isTablet ? styles.tabBarTablet : null]}>
+      <View
+        style={[styles.tabBar, { maxWidth: contentMaxWidth }, isTablet ? styles.tabBarTablet : null]}
+        accessibilityRole="tablist"
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon
           const active = tab.id === activeTab
           return (
             <Pressable
               key={tab.id}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: active }}
               onPress={() => {
                 void Haptics.selectionAsync()
                 onTabChange(tab.id)
@@ -298,6 +332,10 @@ const styles = StyleSheet.create({
   },
   sectionTitleCompact: {
     fontSize: 16,
+  },
+  sectionActionTarget: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   sectionAction: {
     color: colors.primary,

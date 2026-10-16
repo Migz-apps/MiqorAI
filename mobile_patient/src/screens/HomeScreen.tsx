@@ -26,6 +26,7 @@ import {
   SectionHeader,
   type TabId,
 } from '../components/ui'
+import { useTranslation } from '../i18n'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
 import { colors, radius, shadows, spacing } from '../theme'
@@ -34,6 +35,7 @@ import { getAppointmentLabel } from '../utils'
 export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
   const { activePatient, allergies, appointments, activityLog, healthInsights } = usePatientStore()
   const { isCompact, isLargePhone, isTablet, cardColumns } = useResponsive()
+  const { t } = useTranslation()
   const quickActionWidth = isTablet ? '23%' : cardColumns >= 2 ? '31.5%' : '48.2%'
   
   // State for expandable sections
@@ -75,13 +77,19 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
         {isLargePhone ? (
           <View style={[styles.quickActionsGrid, { gap: spacing.md }]}>
             {[
-              { icon: <Pill color={colors.primary} size={20} />, label: 'Medications', variant: 'default' as const, tab: 'records' as const },
-              { icon: <Share2 color={colors.primary} size={20} />, label: 'Share', variant: 'default' as const, tab: 'share' as const },
-              { icon: <Calendar color={colors.primary} size={20} />, label: 'Appointments', variant: 'default' as const, tab: 'records' as const },
-              { icon: <Activity color={colors.primary} size={20} />, label: 'Lab Results', variant: 'default' as const, tab: 'records' as const },
+              { key: 'medications', icon: <Pill color={colors.primary} size={20} />, label: t('tabs.records_medications'), variant: 'default' as const, tab: 'records' as const },
+              { key: 'share', icon: <Share2 color={colors.primary} size={20} />, label: t('tabs.share'), variant: 'default' as const, tab: 'share' as const },
+              { key: 'appointments', icon: <Calendar color={colors.primary} size={20} />, label: t('home.appointments'), variant: 'default' as const, tab: 'records' as const },
+              { key: 'labs', icon: <Activity color={colors.primary} size={20} />, label: t('home.labResults'), variant: 'default' as const, tab: 'records' as const },
             ].map((action) => (
-              <View key={action.label} style={{ width: quickActionWidth }}>
-                <QuickAction icon={action.icon} label={action.label} variant={action.variant} onPress={() => onNavigate(action.tab)} />
+              <View key={action.key} style={{ width: quickActionWidth }}>
+                <QuickAction
+                  icon={action.icon}
+                  label={action.label}
+                  variant={action.variant}
+                  onPress={() => onNavigate(action.tab)}
+                  accessibilityHint={t(action.tab === 'share' ? 'home.openShareHint' : 'home.openRecordsHint')}
+                />
               </View>
             ))}
           </View>
@@ -89,23 +97,27 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickActionsRow}>
             <QuickAction
               icon={<Pill color={colors.primary} size={20} />}
-              label="Medications"
+              label={t('tabs.records_medications')}
               onPress={() => onNavigate('records')}
+              accessibilityHint={t('home.openRecordsHint')}
             />
             <QuickAction
               icon={<Share2 color={colors.primary} size={20} />}
-              label="Share"
+              label={t('tabs.share')}
               onPress={() => onNavigate('share')}
+              accessibilityHint={t('home.openShareHint')}
             />
             <QuickAction
               icon={<Calendar color={colors.primary} size={20} />}
-              label="Appointments"
+              label={t('home.appointments')}
               onPress={() => onNavigate('records')}
+              accessibilityHint={t('home.openRecordsHint')}
             />
             <QuickAction
               icon={<Activity color={colors.primary} size={20} />}
-              label="Lab Results"
+              label={t('home.labResults')}
               onPress={() => onNavigate('records')}
+              accessibilityHint={t('home.openRecordsHint')}
             />
           </ScrollView>
         )}
@@ -115,14 +127,25 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
 
       <View style={styles.upcomingSection}>
         <SectionHeader
-          title="Upcoming"
-          action={upcomingAppointments.length ? { label: showAllAppointments ? 'View Less' : 'View All', onPress: () => setShowAllAppointments(!showAllAppointments) } : undefined}
+          title={t('home.upcoming')}
+          action={upcomingAppointments.length ? { label: showAllAppointments ? t('home.viewLess') : t('home.viewAll'), onPress: () => setShowAllAppointments(!showAllAppointments) } : undefined}
         />
 
         {upcomingAppointments.length ? (
           <View style={styles.sectionList}>
             {upcomingAppointments.map((appointment) => (
-              <Pressable key={appointment.id} style={[styles.appointmentCard, isCompact ? styles.appointmentCardCompact : null]}>
+              <Pressable
+                key={appointment.id}
+                style={[styles.appointmentCard, isCompact ? styles.appointmentCardCompact : null]}
+                accessible
+                accessibilityLabel={t('home.appointmentA11y', {
+                  title: appointment.title,
+                  date: getAppointmentLabel(appointment.dateTime),
+                  time: format(parseISO(appointment.dateTime), 'h:mm a'),
+                  facility: appointment.facility,
+                  doctor: appointment.doctorName,
+                })}
+              >
                 <View style={[styles.appointmentLeft, isCompact ? styles.appointmentLeftCompact : null]}>
                   <View style={[styles.appointmentDateBox, isCompact ? styles.appointmentDateBoxCompact : null]}>
                     <Text style={styles.appointmentDateLabel}>{getAppointmentLabel(appointment.dateTime)}</Text>
@@ -141,16 +164,16 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
         ) : (
           <EmptyState
             icon={<Calendar color={colors.mutedForeground} size={26} />}
-            title="No upcoming appointments"
-            message="Schedule your next checkup"
+            title={t('home.noUpcoming')}
+            message={t('home.noUpcomingMessage')}
           />
         )}
       </View>
 
       <View style={styles.activitySection}>
         <SectionHeader
-          title="Recent Activity"
-          action={recentActivity.length ? { label: showAllActivity ? 'View Less' : 'View All', onPress: () => setShowAllActivity(!showAllActivity) } : undefined}
+          title={t('home.recentActivity')}
+          action={recentActivity.length ? { label: showAllActivity ? t('home.viewLess') : t('home.viewAll'), onPress: () => setShowAllActivity(!showAllActivity) } : undefined}
         />
         {recentActivity.length ? (
           <View style={styles.sectionList}>
@@ -167,15 +190,15 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
         ) : (
           <EmptyState
             icon={<Activity color={colors.mutedForeground} size={26} />}
-            title="No recent activity"
-            message="Your access log will appear here"
+            title={t('home.noActivity')}
+            message={t('home.noActivityMessage')}
           />
         )}
       </View>
 
       {latestInsight ? (
         <View style={styles.insightSection}>
-          <SectionHeader title="Health Insights" />
+          <SectionHeader title={t('home.healthInsights')} />
           <View
             style={[
               styles.insightCard,
@@ -217,7 +240,11 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
               <Text style={styles.insightTitle}>{latestInsight.title}</Text>
               <Text style={styles.insightDescription}>{latestInsight.description}</Text>
               {latestInsight.previousValue && latestInsight.currentValue ? (
-                <View style={styles.insightMetricRow}>
+                <View
+                  style={styles.insightMetricRow}
+                  accessible
+                  accessibilityLabel={t('home.insightChange', { previous: latestInsight.previousValue, current: latestInsight.currentValue })}
+                >
                   <Text style={styles.insightPrevious}>{latestInsight.previousValue}</Text>
                   <ChevronRight color={colors.mutedForeground} size={14} />
                   <Text style={styles.insightCurrent}>{latestInsight.currentValue}</Text>
