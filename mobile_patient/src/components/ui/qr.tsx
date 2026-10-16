@@ -1,6 +1,6 @@
 import { Maximize2, RefreshCw, Share2, Wifi, WifiOff } from 'lucide-react-native'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native'
+import { AppState, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 
 import { useResponsive } from '../../responsive'
@@ -15,28 +15,43 @@ export function QRDisplay({
   size?: number
   showActions?: boolean
 }) {
-  const { qrValue, qrExpiresAt, regenerateQR, isOnline, activePatient } = usePatientStore()
+  const { qrValue, qrExpiresAt, qrTtlSeconds, regenerateQR, isOnline, activePatient } = usePatientStore()
   const { width, modalMaxWidth, isCompact, isTablet } = useResponsive()
-  const [timeLeft, setTimeLeft] = useState(60)
+  const [timeLeft, setTimeLeft] = useState(qrTtlSeconds)
   const [showFullscreen, setShowFullscreen] = useState(false)
   const qrSize = Math.min(size, isTablet ? 220 : isCompact ? 140 : Math.max(156, width - 140))
   const fullscreenQrSize = Math.min(isTablet ? 320 : 280, width - (isCompact ? 80 : 96))
   const qrCardMaxWidth = isTablet ? 420 : 360
 
+  // Refresh at half the server TTL so the code on screen never reaches its
+  // expiry while the app is open: the countdown runs to the renewal point, not
+  // to the moment the server stops accepting the code.
   const regeneratedForExpiry = useRef(0)
   useEffect(() => {
+    const refreshMarginMs = Math.max(15, Math.floor(qrTtlSeconds / 2)) * 1000
     const timer = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((qrExpiresAt - Date.now()) / 1000))
-      setTimeLeft(remaining)
-      // Fire the refresh once per expiry, not on every tick at zero.
-      if (remaining === 0 && regeneratedForExpiry.current !== qrExpiresAt) {
+      const untilRefresh = Math.max(0, Math.floor((qrExpiresAt - refreshMarginMs - Date.now()) / 1000))
+      setTimeLeft(untilRefresh)
+      // Fire the refresh once per code, not on every tick at zero.
+      if (untilRefresh === 0 && regeneratedForExpiry.current !== qrExpiresAt) {
         regeneratedForExpiry.current = qrExpiresAt
         regenerateQR()
       }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [qrExpiresAt, regenerateQR])
+  }, [qrExpiresAt, qrTtlSeconds, regenerateQR])
+
+  // Returning from the background: the code may have aged past its window
+  // while the app slept, so fetch a fresh one immediately.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && Date.now() >= qrExpiresAt - (qrTtlSeconds * 1000) / 2) {
+        regenerateQR()
+      }
+    })
+    return () => subscription.remove()
+  }, [qrExpiresAt, qrTtlSeconds, regenerateQR])
 
   const badgeColor = timeLeft > 30 ? colors.success : timeLeft > 10 ? colors.secondary : colors.error
 

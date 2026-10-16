@@ -1,24 +1,19 @@
-import * as Clipboard from 'expo-clipboard'
 import { LinearGradient } from 'expo-linear-gradient'
 import {
   AlertCircle,
   Bell,
-  Copy,
   CreditCard,
   Download,
   Edit2,
   FileText,
-  Fingerprint,
   Globe,
   Heart,
   HelpCircle,
-  Key,
   Lock,
   LogOut,
   Moon,
   Phone,
   Shield,
-  Smartphone,
   Sun,
   Trash2,
 } from 'lucide-react-native'
@@ -30,6 +25,7 @@ import {
   ConfirmSheet,
   Header,
   InputField,
+  PinInput,
   PrimaryButton,
   ScreenContainer,
   SectionHeader,
@@ -38,6 +34,7 @@ import {
 } from '../components/ui'
 import { useResponsive } from '../responsive'
 import { mobileApi } from '../lib/api'
+import { hasPin, setPin as savePin, verifyPin } from '../lib/pin'
 import { usePatientStore } from '../store'
 import appConfig from '../../app.json'
 import { colors, radius, shadows, spacing } from '../theme'
@@ -47,10 +44,7 @@ export function ProfileScreen() {
   const {
     activePatient,
     profile,
-    biometricsEnabled,
     emergencyContacts,
-    setBiometricsEnabled,
-    recoveryPhrase,
     logout,
     requestExportData,
     deleteAccount,
@@ -68,14 +62,18 @@ export function ProfileScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [showEmergencyContacts, setShowEmergencyContacts] = useState(false)
-  const [showRecoveryPhrase, setShowRecoveryPhrase] = useState(false)
+  const [showChangePin, setShowChangePin] = useState(false)
+  const [devicePinSet, setDevicePinSet] = useState(false)
+  const [currentPin, setCurrentPin] = useState('')
+  const [newPin, setNewPin] = useState('')
+  const [confirmNewPin, setConfirmNewPin] = useState('')
+  const [pinError, setPinError] = useState('')
+  const [isSavingPin, setIsSavingPin] = useState(false)
   const [editFirstName, setEditFirstName] = useState(profile?.firstName || '')
   const [editLastName, setEditLastName] = useState(profile?.lastName || '')
   const [editPhone, setEditPhone] = useState(profile?.phoneNumber || '')
   const [editEmail, setEditEmail] = useState(profile?.email || '')
-  const { isCompact, isLargePhone, recoveryColumns, stackedActions } = useResponsive()
-  const recoveryCellWidth = recoveryColumns === 4 ? '23.5%' : recoveryColumns === 3 ? '31.4%' : '48.2%'
-  const recoveryWords = (recoveryPhrase ?? '').split(/\s+/).filter(Boolean)
+  const { isCompact, isLargePhone, stackedActions } = useResponsive()
 
   const handleLogout = async () => {
     await logout()
@@ -86,6 +84,44 @@ export function ProfileScreen() {
   const handleDelete = async () => {
     await deleteAccount()
     setShowDeleteConfirm(false)
+  }
+
+  const closeChangePin = () => {
+    setShowChangePin(false)
+    setCurrentPin('')
+    setNewPin('')
+    setConfirmNewPin('')
+    setPinError('')
+  }
+
+  const handleChangePin = async () => {
+    if (newPin.length !== 6) {
+      setPinError('PIN must be 6 digits')
+      return
+    }
+
+    if (newPin !== confirmNewPin) {
+      setPinError('PINs do not match')
+      return
+    }
+
+    setIsSavingPin(true)
+    if (devicePinSet && !(await verifyPin(currentPin))) {
+      setIsSavingPin(false)
+      setPinError('Current PIN is incorrect')
+      return
+    }
+
+    const saved = await savePin(newPin)
+    setIsSavingPin(false)
+
+    if (!saved) {
+      setPinError('Could not save your PIN on this device.')
+      return
+    }
+
+    closeChangePin()
+    showToast('PIN updated.', 'success')
   }
 
   return (
@@ -170,29 +206,13 @@ export function ProfileScreen() {
         <SectionHeader title="Security" />
         <View style={styles.settingsCard}>
           <SettingRow
-            icon={<Fingerprint color={colors.textSecondary} size={18} />}
-            label="Biometric Authentication"
-            description="Use fingerprint or face to unlock"
-            toggle
-            value={biometricsEnabled}
-            onToggle={setBiometricsEnabled}
-          />
-          <SettingRow
-            icon={<Key color={colors.textSecondary} size={18} />}
-            label="Recovery Phrase"
-            description="View your 12-word backup phrase"
-            badge="Important"
-            onPress={() => setShowRecoveryPhrase(true)}
-          />
-          <SettingRow
             icon={<Lock color={colors.textSecondary} size={18} />}
             label="Change PIN"
             description="Update your security PIN"
-          />
-          <SettingRow
-            icon={<Smartphone color={colors.textSecondary} size={18} />}
-            label="Trusted Devices"
-            description="Manage devices with access"
+            onPress={() => {
+              void hasPin().then(setDevicePinSet)
+              setShowChangePin(true)
+            }}
             last
           />
         </View>
@@ -377,47 +397,47 @@ export function ProfileScreen() {
         </View>
       </BottomSheet>
 
-      <BottomSheet
-        isOpen={showRecoveryPhrase}
-        onClose={() => setShowRecoveryPhrase(false)}
-        title="Recovery Phrase"
-        subtitle="Write down these 12 words in order"
-        height="half"
-      >
+      <BottomSheet isOpen={showChangePin} onClose={closeChangePin} title="Change PIN" height="half">
         <View style={styles.sheetStack}>
-          <View style={styles.warningCard}>
-            <AlertCircle color={colors.error} size={18} />
-            <View style={styles.warningCopy}>
-              <Text style={styles.warningTitle}>Keep this secret!</Text>
-              <Text style={styles.warningText}>
-                Anyone with these words can access your account. Never share them with anyone.
-              </Text>
-            </View>
-          </View>
+          {devicePinSet ? (
+            <>
+              <Text style={styles.pinLabel}>Current PIN</Text>
+              <PinInput
+                value={currentPin}
+                onChange={(value) => {
+                  setCurrentPin(value)
+                  setPinError('')
+                }}
+              />
+            </>
+          ) : null}
 
-          <View style={styles.recoveryGrid}>
-            {recoveryWords.map((word, index) => (
-              <View key={word} style={[styles.recoveryCell, { width: recoveryCellWidth }]}>
-                <Text style={styles.recoveryIndex}>{index + 1}.</Text>
-                <Text style={styles.recoveryWord}>{word}</Text>
-              </View>
-            ))}
-          </View>
+          <Text style={styles.pinLabel}>New PIN</Text>
+          <PinInput
+            value={newPin}
+            onChange={(value) => {
+              setNewPin(value)
+              setPinError('')
+            }}
+          />
+
+          <Text style={styles.pinLabel}>Confirm New PIN</Text>
+          <PinInput
+            value={confirmNewPin}
+            onChange={(value) => {
+              setConfirmNewPin(value)
+              setPinError('')
+            }}
+            error={pinError}
+          />
 
           <PrimaryButton
             fullWidth
-            variant="ghost"
-            leftIcon={<Copy color={colors.textPrimary} size={16} />}
-            onPress={() => {
-              Clipboard.setStringAsync(recoveryWords.join(' '))
-              showToast('Recovery phrase copied.', 'success')
-            }}
-            disabled={!recoveryWords.length}
+            isLoading={isSavingPin}
+            onPress={handleChangePin}
+            disabled={newPin.length !== 6 || confirmNewPin.length !== 6 || (devicePinSet && currentPin.length !== 6)}
           >
-            Copy to Clipboard
-          </PrimaryButton>
-          <PrimaryButton fullWidth onPress={() => setShowRecoveryPhrase(false)}>
-            I&apos;ve Written It Down
+            Save PIN
           </PrimaryButton>
         </View>
       </BottomSheet>
@@ -427,7 +447,7 @@ export function ProfileScreen() {
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={handleLogout}
         title="Log Out?"
-        message="You will need to use biometrics or your PIN to log back in."
+        message="You will need to sign in again with your email and password."
         confirmLabel="Log Out"
       />
 
@@ -708,50 +728,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
   },
-  warningCard: {
-    borderRadius: radius.lg,
-    backgroundColor: colors.allergyBg,
-    borderWidth: 1,
-    borderColor: '#F3B6B1',
-    padding: spacing.lg,
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'flex-start',
-  },
-  warningCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  warningTitle: {
-    color: colors.error,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  warningText: {
-    color: colors.error,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  recoveryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  recoveryCell: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.muted,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  recoveryIndex: {
-    color: colors.mutedForeground,
-    fontSize: 11,
-  },
-  recoveryWord: {
+  pinLabel: {
     color: colors.textPrimary,
+    fontSize: 15,
     fontWeight: '700',
-    marginTop: 3,
   },
 })

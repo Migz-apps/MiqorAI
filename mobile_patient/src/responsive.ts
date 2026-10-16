@@ -13,7 +13,6 @@ export function useResponsive() {
   const contentMaxWidth = isDesktopLike ? 920 : isTablet ? 760 : 560
   const modalMaxWidth = isDesktopLike ? 760 : isTablet ? 680 : Math.max(320, width - horizontalPadding * 2)
   const cardColumns = isTablet ? 3 : isLargePhone ? 2 : 1
-  const recoveryColumns = isTablet ? 4 : isLargePhone ? 3 : 2
   const stackedActions = width < 400
 
   return {
@@ -30,7 +29,6 @@ export function useResponsive() {
     contentMaxWidth,
     modalMaxWidth,
     cardColumns,
-    recoveryColumns,
     stackedActions,
   }
 }

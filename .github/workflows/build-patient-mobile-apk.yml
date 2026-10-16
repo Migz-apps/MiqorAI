@@ -1,8 +1,22 @@
+# Builds a release-signed patient APK.
+#
+# Signing requires four repository secrets (Settings > Secrets and variables > Actions):
+#   ANDROID_KEYSTORE_BASE64    base64 of the upload keystore (.jks)
+#   ANDROID_KEYSTORE_PASSWORD  keystore (store) password
+#   ANDROID_KEY_ALIAS          key alias inside the keystore
+#   ANDROID_KEY_PASSWORD       key password
+# The job fails before building if any is missing; it never falls back to debug signing.
+# Keystore generation and encoding steps: mobile_patient/README.md, "Release signing (CI)".
+#
+# Pushes to master/main upload the APK as a workflow artifact only.
+# Pushing a v* tag (e.g. v1.2.0) also publishes it as a GitHub Release.
+
 name: Build Patient Mobile APK
 
 on:
   push:
     branches: [master, main]
+    tags: ["v*"]
     paths:
       - "mobile_patient/**"
       - ".github/workflows/build-patient-mobile-apk.yml"
@@ -20,6 +34,23 @@ jobs:
         working-directory: mobile_patient
 
     steps:
+      - name: Check signing secrets
+        working-directory: .
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=""
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Release signing not configured::Missing repository secrets:$missing. Add them under Settings > Secrets and variables > Actions (see mobile_patient/README.md, 'Release signing (CI)'). Release APKs are never signed with the debug keystore."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -50,12 +81,60 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: https://miqorai.onrender.com
 
-      - name: Sign release builds with the debug keystore (standalone installable APK)
+      - name: Install upload keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          # No production keystore is configured in CI; reuse the debug keystore so
-          # the release-mode APK (JS bundle embedded, __DEV__=false) is installable.
-          sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.debug/' android/app/build.gradle || true
-          sed -i 's/signingConfig = signingConfigs.release/signingConfig = signingConfigs.debug/' android/app/build.gradle || true
+          set -euo pipefail
+          KEYSTORE="$PWD/android/app/miqorai-upload.keystore"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          if ! keytool -list -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" > /dev/null; then
+            echo "::error title=Invalid keystore::ANDROID_KEYSTORE_BASE64 did not decode to a keystore that opens with ANDROID_KEYSTORE_PASSWORD and contains ANDROID_KEY_ALIAS."
+            exit 1
+          fi
+          # Credentials go to the user-level Gradle properties, outside the workspace.
+          mkdir -p "$HOME/.gradle"
+          {
+            echo "MIQORAI_UPLOAD_STORE_FILE=$KEYSTORE"
+            echo "MIQORAI_UPLOAD_STORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+            echo "MIQORAI_UPLOAD_KEY_ALIAS=$ANDROID_KEY_ALIAS"
+            echo "MIQORAI_UPLOAD_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
+          } >> "$HOME/.gradle/gradle.properties"
+
+      - name: Configure release signing
+        run: |
+          set -euo pipefail
+          GRADLE_FILE=android/app/build.gradle
+          # Anchors the generated project must have; fail loudly if the Expo template changes.
+          grep -Eq '^\s*apply plugin: *"com\.android\.application"' "$GRADLE_FILE" \
+            || { echo "::error::$GRADLE_FILE does not apply com.android.application; signing patch not applied."; exit 1; }
+          grep -Eq '^\s*signingConfigs\s*\{' "$GRADLE_FILE" \
+            || { echo "::error::$GRADLE_FILE has no signingConfigs block; signing patch not applied."; exit 1; }
+          grep -Eq '^\s*buildTypes\s*\{' "$GRADLE_FILE" \
+            || { echo "::error::$GRADLE_FILE has no buildTypes block; signing patch not applied."; exit 1; }
+          # Appended block runs after the template's android {} block, so it overrides
+          # whatever signingConfig the template assigned to the release build type.
+          cat >> "$GRADLE_FILE" <<'GRADLE'
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(MIQORAI_UPLOAD_STORE_FILE)
+                      storePassword MIQORAI_UPLOAD_STORE_PASSWORD
+                      keyAlias MIQORAI_UPLOAD_KEY_ALIAS
+                      keyPassword MIQORAI_UPLOAD_KEY_PASSWORD
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          GRADLE
 
       - name: Configure Android SDK path
         run: |
@@ -74,6 +153,27 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: https://miqorai.onrender.com
 
+      - name: Verify APK is signed with the upload key
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)apksigner
+          expected=$(keytool -exportcert -keystore android/app/miqorai-upload.keystore \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" | sha256sum | cut -d' ' -f1)
+          actual=$("$APKSIGNER" verify --print-certs "$APK" | grep -m1 'certificate SHA-256 digest' | awk '{print $NF}')
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::APK signer ($actual) does not match the upload key ($expected)."
+            exit 1
+          fi
+          echo "APK signed with upload key SHA-256 $actual"
+
+      - name: Remove keystore from workspace
+        if: always()
+        run: rm -f android/app/miqorai-upload.keystore
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -81,10 +181,9 @@ jobs:
           path: mobile_patient/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
-      - name: Publish APK to release
+      - name: Publish APK to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: patient-mobile-apk-latest
-          name: MiqorAI Patient Mobile APK
-          make_latest: true
+          name: MiqorAI Patient Mobile APK ${{ github.ref_name }}
           files: mobile_patient/android/app/build/outputs/apk/release/app-release.apk

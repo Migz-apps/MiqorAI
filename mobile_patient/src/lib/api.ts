@@ -143,6 +143,8 @@ export type QrCodeResponse = {
   hash: string
   version: number
   generated_at: string
+  expires_at?: string
+  ttl_seconds?: number
 }
 
 export type ProviderSearchResult = {
@@ -235,7 +237,25 @@ function buildHeaders(init?: RequestInit) {
   return headers
 }
 
-async function refreshAccessToken() {
+// Concurrent 401s share a single refresh instead of each firing their own,
+// which would race and invalidate one another's rotated refresh tokens.
+let refreshInFlight: Promise<boolean> | null = null
+
+function refreshAccessToken() {
+  if (!sessionTokens?.refresh_token) {
+    return Promise.resolve(false)
+  }
+
+  if (!refreshInFlight) {
+    refreshInFlight = performTokenRefresh().finally(() => {
+      refreshInFlight = null
+    })
+  }
+
+  return refreshInFlight
+}
+
+async function performTokenRefresh() {
   if (!sessionTokens?.refresh_token) {
     return false
   }
@@ -345,7 +365,6 @@ export const mobileApi = {
       method: 'DELETE',
     }),
   qrCode: () => request<QrCodeResponse>('/api/patient/qr-code'),
-  recoveryPhrase: () => request<{ recovery_phrase?: string; phrase?: string }>('/api/patient/recovery-phrase'),
   exportData: () =>
     request<{ download_url: string }>('/api/patient/export-data', {
       method: 'POST',

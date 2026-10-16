@@ -326,6 +326,38 @@ For production deployment, ensure:
 - Environment variables properly configured
 - Release notes prepared
 
+### Release signing (CI)
+
+`.github/workflows/build-patient-mobile-apk.yml` signs the release APK with an upload keystore from repository secrets and fails if they are missing. Pushes to `master`/`main` produce a workflow artifact; pushing a `v*` tag also publishes a GitHub Release.
+
+1. Generate the keystore once (JDK `keytool`) and keep it, plus its passwords, somewhere safe outside the repo. Losing it means existing installs can no longer be updated.
+
+   ```bash
+   keytool -genkeypair -v -storetype JKS -keystore miqorai-upload.jks \
+     -alias miqorai-upload -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+2. Base64-encode it.
+
+   ```powershell
+   # Windows PowerShell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\miqorai-upload.jks")) | Set-Clipboard
+   ```
+
+   ```bash
+   # macOS / Linux
+   base64 < miqorai-upload.jks | tr -d '\n'
+   ```
+
+3. Add these secrets under **Settings > Secrets and variables > Actions**:
+
+   | Secret | Value |
+   | --- | --- |
+   | `ANDROID_KEYSTORE_BASE64` | output of step 2 |
+   | `ANDROID_KEYSTORE_PASSWORD` | keystore password |
+   | `ANDROID_KEY_ALIAS` | `miqorai-upload` (the `-alias` used above) |
+   | `ANDROID_KEY_PASSWORD` | key password (same as the keystore password unless set separately) |
+
 ## Additional Resources
 
 - [Expo Documentation](https://docs.expo.dev)

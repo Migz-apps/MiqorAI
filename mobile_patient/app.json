@@ -20,6 +20,9 @@
       "usesCleartextTraffic": false,
       "package": "com.miqorai.patient",
       "versionCode": 1
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

@@ -1,35 +1,31 @@
-import * as Clipboard from 'expo-clipboard'
 import {
-  AlertTriangle,
   Check,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  Fingerprint,
-  KeyRound,
   Lock,
   QrCode,
   Shield,
   Users,
 } from 'lucide-react-native'
-import React, { useMemo, useState } from 'react'
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native'
+import React, { useState } from 'react'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import {
   CheckboxField,
   InputField,
-  LoadingOverlay,
-  OptionCards,
   PinInput,
   PrimaryButton,
   TextButton,
 } from '../components/ui'
+import { setPin as savePin } from '../lib/pin'
 import { useResponsive } from '../responsive'
 import { usePatientStore } from '../store'
+import { PrivacyScreen } from './PrivacyScreen'
+import { TermsScreen } from './TermsScreen'
 import { colors, radius, spacing } from '../theme'
 
-type OnboardingStep = 'welcome' | 'features' | 'create' | 'recovery' | 'confirm' | 'biometrics' | 'complete'
+type OnboardingStep = 'welcome' | 'features' | 'create' | 'pin' | 'complete'
 
 const features = [
   {
@@ -50,85 +46,32 @@ const features = [
   },
   {
     icon: Lock,
-    title: 'Bank-Level Security',
-    description: 'Your data is encrypted with the same technology that protects financial institutions.',
+    title: 'Encrypted Storage',
+    description: 'Your data is encrypted on this device and in transit to MiqorAI servers.',
   },
 ]
 
-const recoveryWords = [
-  'apple',
-  'banana',
-  'cherry',
-  'diamond',
-  'eagle',
-  'forest',
-  'garden',
-  'harbor',
-  'island',
-  'jungle',
-  'kingdom',
-  'lighthouse',
-]
-
 export function OnboardingScreen() {
-  const { setBiometricsEnabled, setOnboardingComplete } = usePatientStore()
-  const { isCompact, isLargePhone, isTablet, recoveryColumns, stackedActions, horizontalPadding, contentMaxWidth } = useResponsive()
+  const { setOnboardingComplete } = usePatientStore()
+  const { isCompact, isLargePhone, isTablet, stackedActions, horizontalPadding, contentMaxWidth } = useResponsive()
   const shellPadding = horizontalPadding + (isTablet ? spacing.xl : spacing.md)
   const stepMaxWidth = Math.min(contentMaxWidth, 560)
-  const phraseCellWidth = recoveryColumns === 4 ? '23.5%' : recoveryColumns === 3 ? '31.4%' : '48.2%'
 
   const [step, setStep] = useState<OnboardingStep>('welcome')
+  const [legalView, setLegalView] = useState<'terms' | 'privacy' | null>(null)
   const [featureIndex, setFeatureIndex] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isGeneratingKeys, setIsGeneratingKeys] = useState(false)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
-  const [showPhrase, setShowPhrase] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [confirmWords, setConfirmWords] = useState(['', '', ''])
-  const [confirmError, setConfirmError] = useState('')
   const [pin, setPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
   const [pinError, setPinError] = useState('')
-  const [enableBiometrics, setEnableBiometricsState] = useState(true)
+  const [isSavingPin, setIsSavingPin] = useState(false)
 
-  const confirmIndices = useMemo(() => [2, 6, 10], [])
   const activeFeature = features[featureIndex]
 
-  const handleCreate = async () => {
-    if (!firstName || !lastName || !phoneNumber || !acceptedTerms) {
-      return
-    }
-
-    setIsGeneratingKeys(true)
-    await new Promise((resolve) => setTimeout(resolve, 1800))
-    setIsGeneratingKeys(false)
-    setStep('recovery')
-  }
-
-  const handleCopyPhrase = async () => {
-    await Clipboard.setStringAsync(recoveryWords.join(' '))
-    setCopied(true)
-  }
-
-  const handleConfirmRecovery = () => {
-    const valid = confirmIndices.every(
-      (index, wordIndex) =>
-        recoveryWords[index].toLowerCase() === confirmWords[wordIndex].trim().toLowerCase(),
-    )
-
-    if (!valid) {
-      setConfirmError("The words you entered don't match. Please try again.")
-      return
-    }
-
-    setConfirmError('')
-    setStep('biometrics')
-  }
-
-  const handlePin = () => {
+  const handlePin = async () => {
     if (pin.length !== 6) {
       setPinError('PIN must be 6 digits')
       return
@@ -140,23 +83,24 @@ export function OnboardingScreen() {
     }
 
     setPinError('')
-    setBiometricsEnabled(enableBiometrics)
+    setIsSavingPin(true)
+    const saved = await savePin(pin)
+    setIsSavingPin(false)
+
+    if (!saved) {
+      setPinError('Could not save your PIN on this device. Please try again.')
+      return
+    }
+
     setStep('complete')
   }
 
-  const handleComplete = async () => {
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    setOnboardingComplete(true)
-    setIsLoading(false)
+  if (legalView === 'terms') {
+    return <TermsScreen onBack={() => setLegalView(null)} />
   }
 
-  const handleRestore = () => {
-    setOnboardingComplete(true)
-  }
-
-  if (isGeneratingKeys) {
-    return <LoadingOverlay fullScreen message="Generating your secure keys..." />
+  if (legalView === 'privacy') {
+    return <PrivacyScreen onBack={() => setLegalView(null)} />
   }
 
   return (
@@ -174,11 +118,18 @@ export function OnboardingScreen() {
             <PrimaryButton fullWidth size="lg" onPress={() => setStep('features')}>
               Get Started
             </PrimaryButton>
-            <TextButton onPress={handleRestore}>Restore from Backup</TextButton>
           </View>
 
           <Text style={styles.legalText}>
-            By continuing, you agree to our Terms and Privacy Policy.
+            By continuing, you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalView('terms')}>
+              Terms of Service
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalView('privacy')}>
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </View>
       ) : null}
@@ -261,12 +212,24 @@ export function OnboardingScreen() {
             onChange={setAcceptedTerms}
           />
 
+          <Text style={styles.legalInline}>
+            Read the{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalView('terms')}>
+              Terms of Service
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalView('privacy')}>
+              Privacy Policy
+            </Text>
+            .
+          </Text>
+
           <View style={styles.flexSpacer} />
 
           <PrimaryButton
             fullWidth
             size="lg"
-            onPress={handleCreate}
+            onPress={() => setStep('pin')}
             disabled={!firstName || !lastName || !phoneNumber || !acceptedTerms}
           >
             Continue
@@ -274,112 +237,16 @@ export function OnboardingScreen() {
         </View>
       ) : null}
 
-      {step === 'recovery' ? (
+      {step === 'pin' ? (
         <View style={[styles.stepShell, { paddingHorizontal: shellPadding, maxWidth: stepMaxWidth }]}>
-          <View style={styles.sheetTitleRow}>
-            <KeyRound color={colors.primary} size={24} />
-            <Text style={styles.stepTitle}>Recovery Phrase</Text>
-          </View>
-
-          <View style={styles.warningCard}>
-            <AlertTriangle color={colors.error} size={20} />
-            <View style={styles.warningCopy}>
-              <Text style={styles.warningTitle}>Write these words down!</Text>
-              <Text style={styles.warningText}>
-                Without this phrase, no one can recover your records if you lose access.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.phraseWrap}>
-            {!showPhrase ? (
-              <Pressable style={styles.revealOverlay} onPress={() => setShowPhrase(true)}>
-                <Eye color="#FFFFFF" size={18} />
-                <Text style={styles.revealText}>Reveal Phrase</Text>
-              </Pressable>
-            ) : null}
-
-            <View style={styles.phraseGrid}>
-              {recoveryWords.map((word, index) => (
-                <View
-                  key={word}
-                  style={[
-                    styles.phraseCell,
-                    { width: phraseCellWidth },
-                  ]}
-                >
-                  <Text style={styles.phraseIndex}>{index + 1}.</Text>
-                  <Text style={styles.phraseWord}>{showPhrase ? word : '****'}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {showPhrase ? (
-            <PrimaryButton variant="ghost" fullWidth onPress={handleCopyPhrase}>
-              {copied ? 'Copied!' : 'Copy to Clipboard'}
-            </PrimaryButton>
-          ) : null}
-
-          <View style={styles.flexSpacer} />
-
-          <PrimaryButton fullWidth size="lg" onPress={() => setStep('confirm')} disabled={!showPhrase}>
-            I&apos;ve Written It Down
-          </PrimaryButton>
-        </View>
-      ) : null}
-
-      {step === 'confirm' ? (
-        <View style={[styles.stepShell, { paddingHorizontal: shellPadding, maxWidth: stepMaxWidth }]}>
-          <BackLink label="Back" onPress={() => setStep('recovery')} />
-          <Text style={styles.stepTitle}>Confirm Your Phrase</Text>
-          <Text style={styles.stepSubtitle}>Enter the following words from your recovery phrase.</Text>
-
-          {confirmIndices.map((wordIndex, index) => (
-            <InputField
-              key={wordIndex}
-              label={`Word #${wordIndex + 1}`}
-              placeholder={`Enter word ${wordIndex + 1}`}
-              value={confirmWords[index]}
-              onChangeText={(value) => {
-                setConfirmWords((current) => current.map((entry, wordPosition) => (wordPosition === index ? value : entry)))
-                setConfirmError('')
-              }}
-            />
-          ))}
-
-          {confirmError ? <Text style={styles.inlineError}>{confirmError}</Text> : null}
-
-          <View style={styles.flexSpacer} />
-
-          <PrimaryButton
-            fullWidth
-            size="lg"
-            onPress={handleConfirmRecovery}
-            disabled={confirmWords.some((word) => !word.trim())}
-          >
-            Verify
-          </PrimaryButton>
-        </View>
-      ) : null}
-
-      {step === 'biometrics' ? (
-        <View style={[styles.stepShell, { paddingHorizontal: shellPadding, maxWidth: stepMaxWidth }]}>
+          <BackLink label="Back" onPress={() => setStep('create')} />
           <View style={styles.sheetTitleRow}>
             <Lock color={colors.primary} size={24} />
-            <Text style={styles.stepTitle}>Secure Your Account</Text>
+            <Text style={styles.stepTitle}>Secure Your App</Text>
           </View>
-
-          <View style={[styles.securityCard, isCompact ? styles.securityCardCompact : null]}>
-            <View style={styles.securityIcon}>
-              <Fingerprint color={colors.primary} size={26} />
-            </View>
-            <View style={styles.securityCopy}>
-              <Text style={styles.securityTitle}>Biometric Login</Text>
-              <Text style={styles.securityDescription}>Use fingerprint or Face ID</Text>
-            </View>
-            <Switch value={enableBiometrics} onValueChange={setEnableBiometricsState} trackColor={{ true: colors.primary }} />
-          </View>
+          <Text style={styles.stepSubtitle}>
+            Your PIN unlocks MiqorAI on this device. It is stored only on this phone.
+          </Text>
 
           <Text style={styles.pinTitle}>Create a 6-digit PIN</Text>
           <PinInput value={pin} onChange={setPin} />
@@ -397,6 +264,7 @@ export function OnboardingScreen() {
             fullWidth
             size="lg"
             onPress={handlePin}
+            isLoading={isSavingPin}
             disabled={pin.length !== 6 || confirmPin.length !== 6}
           >
             Continue
@@ -411,10 +279,10 @@ export function OnboardingScreen() {
           </View>
           <Text style={styles.completeTitle}>You&apos;re All Set!</Text>
           <Text style={styles.completeText}>
-            Your MiqorAI account is ready. Your health records are now secure and always with you.
+            This device is ready. Sign in with your patient account to load your health records.
           </Text>
           <View style={styles.completeButtonWrap}>
-            <PrimaryButton fullWidth size="lg" onPress={handleComplete} isLoading={isLoading}>
+            <PrimaryButton fullWidth size="lg" onPress={() => setOnboardingComplete(true)}>
               Start Using MiqorAI
             </PrimaryButton>
           </View>
@@ -524,6 +392,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
+  },
+  legalInline: {
+    color: colors.mutedForeground,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: -10,
+  },
+  legalLink: {
+    color: colors.primary,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   stepShell: {
     flex: 1,
@@ -663,112 +542,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  warningCard: {
-    borderRadius: radius.lg,
-    backgroundColor: colors.allergyBg,
-    borderWidth: 1,
-    borderColor: '#F3B6B1',
-    padding: spacing.lg,
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'flex-start',
-  },
-  warningCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  warningTitle: {
-    color: colors.error,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  warningText: {
-    color: colors.error,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  phraseWrap: {
-    position: 'relative',
-  },
-  revealOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: radius.lg,
-    backgroundColor: 'rgba(26,43,60,0.48)',
-    zIndex: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  revealText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  phraseGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  phraseCell: {
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    alignItems: 'center',
-  },
-  phraseIndex: {
-    color: colors.mutedForeground,
-    fontSize: 11,
-  },
-  phraseWord: {
-    marginTop: 3,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  inlineError: {
-    color: colors.error,
-    fontSize: 13,
-  },
-  securityCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    padding: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  securityCardCompact: {
-    alignItems: 'flex-start',
-  },
-  securityIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.md,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  securityCopy: {
-    flex: 1,
-  },
-  securityTitle: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  securityDescription: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    marginTop: 2,
   },
   pinTitle: {
     color: colors.textPrimary,

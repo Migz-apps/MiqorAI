@@ -1,5 +1,5 @@
 import { registerAuthHooks } from './lib/api'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { secureStorage } from './lib/secure-storage'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
@@ -172,7 +172,6 @@ type FamilyMemberDraft = {
 interface PatientStore {
   isAuthenticated: boolean
   hasCompletedOnboarding: boolean
-  biometricsEnabled: boolean
   lastUnlockTime: number | null
   profile: PatientProfile | null
   activePatient: PatientProfile | null
@@ -195,13 +194,12 @@ interface PatientStore {
   lastSyncTime: string | null
   qrValue: string
   qrExpiresAt: number
+  qrTtlSeconds: number
   language: LanguageCode
   theme: ThemeMode
-  recoveryPhrase: string | null
   authTokens: AuthTokens | null
   setAuthenticated: (value: boolean) => void
   setOnboardingComplete: (value: boolean) => void
-  setBiometricsEnabled: (value: boolean) => void
   setLastUnlockTime: (value: number) => void
   setProfile: (value: PatientProfile) => void
   setActiveFamilyMember: (value: string | null) => void
@@ -244,7 +242,6 @@ const resolveDurationDate = (value: string) => {
 const initialState = {
   isAuthenticated: false,
   hasCompletedOnboarding: false,
-  biometricsEnabled: false,
   lastUnlockTime: null,
   profile: null,
   activePatient: null,
@@ -267,9 +264,9 @@ const initialState = {
   lastSyncTime: null,
   qrValue: '',
   qrExpiresAt: 0,
+  qrTtlSeconds: 300,
   language: 'en' as LanguageCode,
   theme: 'system' as ThemeMode,
-  recoveryPhrase: null,
   authTokens: null as AuthTokens | null,
 }
 
@@ -624,6 +621,19 @@ function buildQrPayload(qr: QrCodeResponse) {
   return `miqorai://patient/${qr.patient_id}?v=${qr.hash}`
 }
 
+const DEFAULT_QR_TTL_SECONDS = 300
+
+function qrTtlSecondsOf(qr: QrCodeResponse) {
+  return qr.ttl_seconds && qr.ttl_seconds > 0 ? qr.ttl_seconds : DEFAULT_QR_TTL_SECONDS
+}
+
+function qrExpiryMs(qr: QrCodeResponse) {
+  if (qr.expires_at) {
+    return new Date(qr.expires_at).getTime()
+  }
+  return new Date(qr.generated_at).getTime() + qrTtlSecondsOf(qr) * 1000
+}
+
 function resolveActivePatient(state: Pick<PatientStore, 'profile' | 'familyMembers' | 'activeFamilyMemberId'>) {
   if (!state.activeFamilyMemberId) {
     return state.profile
@@ -648,7 +658,7 @@ async function syncAllRemoteData() {
   // Only the profile is required to sign in; every other dataset degrades to its
   // empty default if its endpoint fails, instead of failing the whole login.
   const settle = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback)
-  const [profile, dashboard, records, prescriptions, labs, accessGrants, accessLogs, family, settings, emergencyContacts, qr, recovery] =
+  const [profile, dashboard, records, prescriptions, labs, accessGrants, accessLogs, family, settings, emergencyContacts, qr] =
     await Promise.all([
       mobileApi.profile(),
       settle(mobileApi.dashboard(), { quick_stats: undefined, upcoming_appointments: [], recent_activity: [], health_insights: undefined } as Awaited<ReturnType<typeof mobileApi.dashboard>>),
@@ -661,7 +671,6 @@ async function syncAllRemoteData() {
       settle(mobileApi.settings(), { biometric_enabled: false, language: "en", theme: "system" } as Awaited<ReturnType<typeof mobileApi.settings>>),
       settle(mobileApi.emergencyContacts(), [] as Awaited<ReturnType<typeof mobileApi.emergencyContacts>>),
       settle(mobileApi.qrCode(), { qr_code: "", patient_id: "", hash: "", generated_at: new Date().toISOString() } as Awaited<ReturnType<typeof mobileApi.qrCode>>),
-      mobileApi.recoveryPhrase().catch(() => ({ recovery_phrase: undefined, phrase: undefined })),
     ])
 
   const recordCollections = mapRecordCollections(records.items)
@@ -693,12 +702,11 @@ async function syncAllRemoteData() {
     familyMembers: mapFamilyMembers(family),
     emergencyContacts: mapEmergencyContacts(emergencyContacts),
     healthInsights: mapHealthInsights(dashboard),
-    biometricsEnabled: settings.biometric_enabled,
     language: (settings.language as LanguageCode) || 'en',
     theme: (settings.theme as ThemeMode) || 'system',
-    recoveryPhrase: recovery.recovery_phrase ?? recovery.phrase ?? null,
     qrValue: buildQrPayload(qr),
-    qrExpiresAt: new Date(qr.generated_at).getTime() + 60_000,
+    qrExpiresAt: qrExpiryMs(qr),
+    qrTtlSeconds: qrTtlSecondsOf(qr),
     lastSyncTime: new Date().toISOString(),
   }
 }
@@ -709,12 +717,6 @@ export const usePatientStore = create<PatientStore>()(
       ...initialState,
       setAuthenticated: (value) => set({ isAuthenticated: value }),
       setOnboardingComplete: (value) => set({ hasCompletedOnboarding: value }),
-      setBiometricsEnabled: (value) => {
-        set({ biometricsEnabled: value })
-        if (get().isAuthenticated) {
-          void mobileApi.updateSettings({ biometric_enabled: value }).catch(() => undefined)
-        }
-      },
       setLastUnlockTime: (value) => set({ lastUnlockTime: value }),
       setProfile: (value) =>
         set((state) => ({
@@ -748,7 +750,8 @@ export const usePatientStore = create<PatientStore>()(
           .then((qr) => {
             set({
               qrValue: buildQrPayload(qr),
-              qrExpiresAt: Math.max(new Date(qr.generated_at).getTime() + 60_000, Date.now() + 15_000),
+              qrExpiresAt: Math.max(qrExpiryMs(qr), Date.now() + 15_000),
+              qrTtlSeconds: qrTtlSecondsOf(qr),
             })
           })
           .catch(() => {
@@ -788,7 +791,6 @@ export const usePatientStore = create<PatientStore>()(
           hasCompletedOnboarding: get().hasCompletedOnboarding,
           language: get().language,
           theme: get().theme,
-          biometricsEnabled: get().biometricsEnabled,
         })
       },
       async syncRemoteData() {
@@ -920,11 +922,10 @@ export const usePatientStore = create<PatientStore>()(
     }),
     {
       name: 'MiqorAI-mobile-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => secureStorage),
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
-        biometricsEnabled: state.biometricsEnabled,
         lastUnlockTime: state.lastUnlockTime,
         profile: state.profile,
         conditions: state.conditions,
@@ -943,9 +944,9 @@ export const usePatientStore = create<PatientStore>()(
         lastSyncTime: state.lastSyncTime,
         qrValue: state.qrValue,
         qrExpiresAt: state.qrExpiresAt,
+        qrTtlSeconds: state.qrTtlSeconds,
         language: state.language,
         theme: state.theme,
-        recoveryPhrase: state.recoveryPhrase,
         authTokens: state.authTokens,
       }),
       onRehydrateStorage: () => (state) => {

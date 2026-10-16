@@ -6,8 +6,10 @@ import { View } from 'react-native'
 import { LoadingOverlay, OfflineBanner, SplashScreen, TabBar, ToastProvider, type TabId } from './src/components/ui'
 import { usePatientStore } from './src/store'
 import { colors } from './src/theme'
+import { hasPin } from './src/lib/pin'
 import { FamilyScreen } from './src/screens/FamilyScreen'
 import { HomeScreen } from './src/screens/HomeScreen'
+import { LockScreen } from './src/screens/LockScreen'
 import { LoginScreen } from './src/screens/LoginScreen'
 import { OnboardingScreen } from './src/screens/OnboardingScreen'
 import { ProfileScreen } from './src/screens/ProfileScreen'
@@ -29,6 +31,7 @@ function MiqorAIApp() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
   const [isHydrated, setIsHydrated] = useState(usePatientStore.persist.hasHydrated())
   const [showSplash, setShowSplash] = useState(true)
+  const [lockState, setLockState] = useState<'checking' | 'locked' | 'unlocked'>('checking')
 
   useEffect(() => {
     const unsubscribe = usePatientStore.persist.onFinishHydration(() => {
@@ -48,6 +51,29 @@ function MiqorAIApp() {
     const timer = setTimeout(() => setShowSplash(false), 2000)
     return () => clearTimeout(timer)
   }, [])
+
+  // Decide once at startup whether the PIN lock applies to this session.
+  useEffect(() => {
+    if (!isHydrated) {
+      return
+    }
+
+    if (!usePatientStore.getState().isAuthenticated) {
+      setLockState('unlocked')
+      return
+    }
+
+    let cancelled = false
+    void hasPin().then((pinSet) => {
+      if (!cancelled) {
+        setLockState(pinSet ? 'locked' : 'unlocked')
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isHydrated])
 
   useEffect(() => {
     if (!isHydrated || !isAuthenticated) {
@@ -71,6 +97,14 @@ function MiqorAIApp() {
 
   if (!isAuthenticated) {
     return <LoginScreen />
+  }
+
+  if (lockState === 'checking') {
+    return <LoadingOverlay fullScreen message="Loading MiqorAI..." />
+  }
+
+  if (lockState === 'locked') {
+    return <LockScreen onUnlocked={() => setLockState('unlocked')} />
   }
 
   return (
