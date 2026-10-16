@@ -9,7 +9,9 @@ describe("Test environment", () => {
   it("loaded config reflects the vitest test.env overrides", () => {
     expect(config.nodeEnv).toBe("test");
     expect(config.authChallengeResendCooldownSeconds).toBe(0);
-    expect(config.rateLimitPerMinute).toBe(10000);
+    expect(config.rateLimit.perIpPerMinute).toBe(10000);
+    expect(config.rateLimit.perUserPerMinute).toBe(10000);
+    expect(config.platformTimezone).toBe("Africa/Kigali");
     expect(config.smtp.host).toBe("log");
     expect(config.sms.provider).toBe("log");
     expect(config.aiMock).toBe(true);

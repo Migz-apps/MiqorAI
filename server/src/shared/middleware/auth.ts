@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { AppError, forbidden, unauthorized } from "../utils/errors.js";
-import { verifyAccessToken } from "../utils/crypto.js";
+import { verifyAccessToken, type TokenPayload } from "../utils/crypto.js";
 import { getRedis, isRedisReady } from "../lib/redis.js";
 import { hashToken } from "../utils/crypto.js";
 import { prisma } from "../lib/prisma.js";
@@ -48,13 +48,24 @@ export async function invalidateUserActiveCache(userId: string): Promise<void> {
     .catch(() => undefined);
 }
 
+/** Verifies a request's access token once per request: the global rate limiter
+ * verifies it to key by user, and authenticate/optionalAuth reuse that result.
+ * Throws like verifyAccessToken. */
+export function verifyRequestAccessToken(req: Request, token: string): TokenPayload {
+  const cached = req.verifiedAccessToken;
+  if (cached && cached.token === token) return cached.payload;
+  const payload = verifyAccessToken(token);
+  req.verifiedAccessToken = { token, payload };
+  return payload;
+}
+
 export async function authenticate(req: Request, _res: Response, next: NextFunction) {
   try {
     const header = req.headers.authorization;
     if (!header?.startsWith("Bearer ")) throw unauthorized();
     const token = header.slice(7);
     if (await isTokenBlacklisted(token)) throw unauthorized("Session revoked");
-    const payload = verifyAccessToken(token);
+    const payload = verifyRequestAccessToken(req, token);
     if (!(await isUserActive(payload.sub))) throw unauthorized("Account inactive");
     req.user = payload;
     next();
@@ -78,7 +89,7 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
     const token = header.slice(7);
     try {
       if (!(await isTokenBlacklisted(token))) {
-        const payload = verifyAccessToken(token);
+        const payload = verifyRequestAccessToken(req, token);
         if (await isUserActive(payload.sub)) {
           req.user = payload;
         }

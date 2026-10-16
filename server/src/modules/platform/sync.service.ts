@@ -6,6 +6,21 @@ import { logger } from "../../shared/lib/logger.js";
 
 const MAX_RETRIES = 3;
 
+export const SYNC_CONFLICT_CODE = "SYNC_CONFLICT";
+
+/** The server holds a newer version than the queued change. Recognised by type,
+ * never by message text. */
+export class SyncConflictError extends AppError {
+  constructor(message = "Sync conflict: server version is newer", details?: unknown) {
+    super(SYNC_CONFLICT_CODE, message, 409, details);
+    this.name = "SyncConflictError";
+  }
+}
+
+export type SyncProcessResult =
+  | { status: "synced" }
+  | { status: "conflict"; code: typeof SYNC_CONFLICT_CODE; message: string };
+
 export async function enqueueSyncItem(
   userId: string,
   operation: SyncOperation,
@@ -25,13 +40,21 @@ export async function enqueueSyncItem(
 
 export async function listUserSyncQueue(userId: string) {
   return prisma.syncQueue.findMany({
-    where: { userId, status: { in: [SyncStatus.pending, SyncStatus.failed] } },
+    where: { userId, status: { in: [SyncStatus.pending, SyncStatus.failed, SyncStatus.conflict] } },
     orderBy: { createdAt: "asc" },
     take: 100,
   });
 }
 
-export async function processSyncItem(itemId: string, userId: string) {
+/** Applies a queued item. A conflict is an expected outcome, not an error: the
+ * item is parked with status "conflict" and `{ status: "conflict" }` is returned
+ * so the client can offer resolution. Other failures are recorded and rethrown.
+ * `force` (client wins) skips the newer-server-version check. */
+export async function processSyncItem(
+  itemId: string,
+  userId: string,
+  options: { force?: boolean } = {},
+): Promise<SyncProcessResult> {
   const item = await prisma.syncQueue.findFirst({
     where: { id: itemId, userId },
   });
@@ -39,26 +62,31 @@ export async function processSyncItem(itemId: string, userId: string) {
   if (item.status === SyncStatus.synced) return { status: "synced" };
 
   try {
-    await applySyncOperation(item.operation, item.resourceType, item.resourceData as Record<string, unknown>, userId);
+    await applySyncOperation(
+      item.operation,
+      item.resourceType,
+      item.resourceData as Record<string, unknown>,
+      userId,
+      options.force === true,
+    );
     await prisma.syncQueue.update({
       where: { id: item.id },
       data: { status: SyncStatus.synced, errorMessage: null },
     });
     return { status: "synced" };
   } catch (err) {
+    if (err instanceof SyncConflictError) {
+      await prisma.syncQueue.update({
+        where: { id: item.id },
+        data: { status: SyncStatus.conflict, errorMessage: err.message },
+      });
+      return { status: "conflict", code: SYNC_CONFLICT_CODE, message: err.message };
+    }
     const retryCount = item.retryCount + 1;
-    const isConflict =
-      err instanceof AppError
-        ? (err.details as { code?: string } | undefined)?.code === "CONFLICT"
-        : false;
     await prisma.syncQueue.update({
       where: { id: item.id },
       data: {
-        status: isConflict
-          ? SyncStatus.conflict
-          : retryCount >= MAX_RETRIES
-            ? SyncStatus.failed
-            : SyncStatus.pending,
+        status: retryCount >= MAX_RETRIES ? SyncStatus.failed : SyncStatus.pending,
         retryCount,
         errorMessage: (err as Error).message,
       },
@@ -72,6 +100,7 @@ async function applySyncOperation(
   resourceType: string,
   data: Record<string, unknown>,
   userId: string,
+  force = false,
 ) {
   if (resourceType === "medical_record") {
     const patient = await prisma.patient.findUnique({ where: { userId } });
@@ -113,8 +142,12 @@ async function applySyncOperation(
       const existing = data.id
         ? await prisma.visit.findFirst({ where: { id: String(data.id), hospitalId: staff.hospitalId } })
         : null;
-      if (existing && data.updated_at && existing.updatedAt > new Date(String(data.updated_at))) {
-        throw badRequest("Sync conflict: server version is newer", { code: "CONFLICT" });
+      if (!force && existing && data.updated_at && existing.updatedAt > new Date(String(data.updated_at))) {
+        throw new SyncConflictError("Sync conflict: server version is newer", {
+          resource_type: resourceType,
+          resource_id: existing.id,
+          server_updated_at: existing.updatedAt.toISOString(),
+        });
       }
       if (existing) {
         await prisma.visit.update({
@@ -202,8 +235,12 @@ export async function pushSyncBatch(
   for (const item of items) {
     const row = await enqueueSyncItem(userId, item.operation, item.resource_type, item.resource_data);
     try {
-      await processSyncItem(row.id, userId);
-      results.push({ id: row.id, status: "synced" });
+      const outcome = await processSyncItem(row.id, userId);
+      results.push(
+        outcome.status === "conflict"
+          ? { id: row.id, status: "conflict", code: outcome.code, error: outcome.message }
+          : { id: row.id, status: "synced" },
+      );
     } catch (err) {
       results.push({ id: row.id, status: "failed", error: (err as Error).message });
     }
@@ -266,7 +303,7 @@ export async function resolveSyncConflict(itemId: string, userId: string, resolu
   if (!item) throw notFound("Conflict item not found");
   if (resolution === "client") {
     await prisma.syncQueue.update({ where: { id: itemId }, data: { status: SyncStatus.pending } });
-    return processSyncItem(itemId, userId);
+    return processSyncItem(itemId, userId, { force: true });
   }
   await prisma.syncQueue.update({ where: { id: itemId }, data: { status: SyncStatus.synced } });
   return { status: "synced", resolution: "server" };

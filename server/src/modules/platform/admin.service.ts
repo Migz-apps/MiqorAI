@@ -443,27 +443,51 @@ export async function deleteSyncQueueItem(id: string) {
   await prisma.syncQueue.delete({ where: { id } });
 }
 
-export async function getPlatformSettings() {
-  const rows = await prisma.platformSetting.findMany();
-  const settings: Record<string, unknown> = {};
-  for (const row of rows) settings[row.key] = row.value;
-  return {
-    default_pilot_duration_days: settings.default_pilot_duration_days ?? 90,
-    infrastructure_fee_usd: settings.infrastructure_fee_usd ?? 0.01,
-    savings_fee_percentage: settings.savings_fee_percentage ?? 20,
-    invitation_expiry_days: settings.invitation_expiry_days ?? 7,
-    ...settings,
-  };
+/** The only platform-wide settings exposed by /api/admin/settings, with defaults.
+ * The platform_settings table may hold other (legacy or per-user) rows; those
+ * are never read or returned here. */
+const PLATFORM_SETTING_DEFAULTS = {
+  default_pilot_duration_days: 90,
+  infrastructure_fee_usd: 0.01,
+  savings_fee_percentage: 20,
+  invitation_expiry_days: 7,
+} as const;
+
+type PlatformSettingKey = keyof typeof PLATFORM_SETTING_DEFAULTS;
+const PLATFORM_SETTING_KEYS = Object.keys(PLATFORM_SETTING_DEFAULTS) as PlatformSettingKey[];
+
+export async function getPlatformSettings(): Promise<Record<PlatformSettingKey, number>> {
+  const rows = await prisma.platformSetting.findMany({
+    where: { key: { in: PLATFORM_SETTING_KEYS } },
+    take: PLATFORM_SETTING_KEYS.length,
+  });
+  const settings: Record<PlatformSettingKey, number> = { ...PLATFORM_SETTING_DEFAULTS };
+  for (const row of rows) {
+    const value = Number(row.value);
+    if (Number.isFinite(value)) settings[row.key as PlatformSettingKey] = value;
+  }
+  return settings;
 }
 
 export async function updatePlatformSettings(data: Record<string, unknown>) {
-  for (const [key, value] of Object.entries(data)) {
-    await prisma.platformSetting.upsert({
-      where: { key },
-      create: { key, value: value as object },
-      update: { value: value as object },
-    });
+  const unknownKeys = Object.keys(data).filter((key) => !(PLATFORM_SETTING_KEYS as string[]).includes(key));
+  if (unknownKeys.length > 0) {
+    throw badRequest("Unknown platform setting", { keys: unknownKeys, allowed: PLATFORM_SETTING_KEYS });
   }
+  const updates: Array<[PlatformSettingKey, number]> = [];
+  for (const key of PLATFORM_SETTING_KEYS) {
+    if (!(key in data)) continue;
+    const value = Number(data[key]);
+    if (!Number.isFinite(value) || value < 0) {
+      throw badRequest("Platform setting must be a non-negative number", { key });
+    }
+    updates.push([key, value]);
+  }
+  await prisma.$transaction(
+    updates.map(([key, value]) =>
+      prisma.platformSetting.upsert({ where: { key }, create: { key, value }, update: { value } }),
+    ),
+  );
   return getPlatformSettings();
 }
 

@@ -6,6 +6,7 @@ import {
 } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
+import { dayRangeFor, rangeEnd, rangeStart, startOfDay } from "../../shared/utils/day-range.js";
 import { config } from "../../config.js";
 import { prisma } from "../../shared/lib/prisma.js";
 import { publishEvent } from "../../shared/events.js";
@@ -191,6 +192,8 @@ const referralSchema = z
     urgency: z.enum(["routine", "urgent", "emergency"]).default("routine"),
     reason: z.string().min(1),
     notes: z.string().optional(),
+    icd_codes: z.array(z.string().min(1).max(20)).max(20).optional(),
+    notify_patient: z.boolean().optional(),
   })
   .refine((d) => d.to_hospital_id || d.to_department, {
     message: "to_hospital_id or to_department required",
@@ -255,12 +258,11 @@ const saveVisitDraftSchema = z.object({
 router.get("/dashboard", async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const todayStart = startOfDay();
 
     const [todayCheckins, waitingPatients, activeStaff, recentVisits] = await Promise.all([
       prisma.visit.count({
-        where: { hospitalId, checkedInAt: { gte: startOfDay } },
+        where: { hospitalId, checkedInAt: { gte: todayStart } },
       }),
       prisma.visit.count({
         where: { hospitalId, status: { in: ["waiting", "with_nurse", "with_doctor"] } },
@@ -303,10 +305,7 @@ router.get("/patients", async (req, res, next) => {
     const offset = parseInt(String(req.query.offset ?? "0"), 10);
     const search = req.query.search as string | undefined;
 
-    const dateFilter = dateStr ? new Date(dateStr) : new Date();
-    if (!dateStr) dateFilter.setHours(0, 0, 0, 0);
-    const nextDay = new Date(dateFilter);
-    nextDay.setDate(nextDay.getDate() + 1);
+    const { start: dateFilter, end: nextDay } = dayRangeFor(dateStr);
 
     const visits = await prisma.visit.findMany({
       where: {
@@ -687,11 +686,10 @@ router.post("/lab-order", requireHospitalPermission("labs"), validateBody(labOrd
 router.get("/checkins/today", async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const { start: todayStart, end: todayEnd } = dayRangeFor(undefined);
 
     const visits = await prisma.visit.findMany({
-      where: { hospitalId, checkedInAt: { gte: startOfDay } },
+      where: { hospitalId, checkedInAt: { gte: todayStart, lt: todayEnd } },
       include: {
         patient: { select: { id: true, firstName: true, lastName: true } },
       },
@@ -770,20 +768,9 @@ router.post("/referral", requireHospitalPermission("referrals"), validateBody(re
     const body = req.body;
     await assertHospitalPatientAccess(hospitalId, String(body.patient_id), userId);
 
-    const referral = await prisma.referral.create({
-      data: {
-        patientId: body.patient_id,
-        visitId: body.visit_id,
-        fromHospitalId: hospitalId,
-        toHospitalId: body.to_hospital_id ?? hospitalId,
-        fromDepartment: body.from_department,
-        toDepartment: body.to_department,
-        referralType: body.to_department && !body.to_hospital_id ? "intra_department" : "inter_hospital",
-        urgency: body.urgency,
-        reason: body.reason,
-        notes: body.notes,
-      },
-    });
+    // Persists the referral plus its outbox event; patient SMS is sent by the
+    // worker, so this never fails because SMS is unconfigured or down.
+    const referral = await createReferralWithIcd(hospitalId, body);
 
     res.status(201).json(referral);
   } catch (err) {
@@ -922,9 +909,9 @@ router.get("/analytics", async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     const startDate = req.query.start_date
-      ? new Date(String(req.query.start_date))
+      ? rangeStart(String(req.query.start_date))
       : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const endDate = req.query.end_date ? new Date(String(req.query.end_date)) : new Date();
+    const endDate = req.query.end_date ? rangeEnd(String(req.query.end_date)) : new Date();
 
     const visits = await prisma.visit.findMany({
       where: {
@@ -979,8 +966,8 @@ router.get("/audit-logs", async (req, res, next) => {
       organizationId: hospitalId,
       userId: req.query.user_id ? String(req.query.user_id) : undefined,
       action: req.query.action ? String(req.query.action) : undefined,
-      startDate: req.query.start_date ? new Date(String(req.query.start_date)) : undefined,
-      endDate: req.query.end_date ? new Date(String(req.query.end_date)) : undefined,
+      startDate: req.query.start_date ? rangeStart(String(req.query.start_date)) : undefined,
+      endDate: req.query.end_date ? rangeEnd(String(req.query.end_date)) : undefined,
       limit,
       offset,
     });
@@ -994,9 +981,9 @@ router.get("/analytics/extended", async (req, res, next) => {
   try {
     const { hospitalId } = await requireHospitalContext(req.user!);
     const start = req.query.start_date
-      ? new Date(String(req.query.start_date))
+      ? rangeStart(String(req.query.start_date))
       : new Date(Date.now() - 30 * 86400000);
-    const end = req.query.end_date ? new Date(String(req.query.end_date)) : new Date();
+    const end = req.query.end_date ? rangeEnd(String(req.query.end_date)) : new Date();
     res.json(await getExtendedHospitalAnalytics(hospitalId, start, end));
   } catch (err) {
     next(err);

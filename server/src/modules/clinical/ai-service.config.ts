@@ -1,12 +1,8 @@
+import { resolveAiServiceBaseUrl } from "../../config.js";
+
 /** Shared AI service configuration (Colab tunnel / local FastAPI). */
 export function getAiServiceConfig() {
-  const baseUrl = (
-    process.env.AI_SERVICE_BASE_URL ??
-    process.env.AI_SERVICE_URL ??
-    ""
-  )
-    .trim()
-    .replace(/\/$/, "");
+  const baseUrl = resolveAiServiceBaseUrl(process.env).url;
 
   const enabled = process.env.AI_SERVICE_ENABLED !== "false";
   const mock = process.env.MIQORAI_AI_MOCK === "true";

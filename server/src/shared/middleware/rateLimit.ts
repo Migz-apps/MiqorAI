@@ -1,15 +1,7 @@
 ﻿import type { NextFunction, Request, Response } from "express";
-import rateLimit from "express-rate-limit";
 import { config } from "../../config.js";
 import { getRedis, isRedisReady } from "../lib/redis.js";
-
-export const apiRateLimiter = rateLimit({
-  windowMs: 60_000,
-  max: config.rateLimitPerMinute,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: { code: "RATE_LIMIT", message: "Too many requests" } },
-});
+import { verifyRequestAccessToken } from "./auth.js";
 
 interface RateLimiterOptions {
   /** Distinct per limiter so different routes never share counters. */
@@ -93,3 +85,34 @@ export function createRateLimiter({ name, windowMs, max, keyFn }: RateLimiterOpt
     next();
   };
 }
+
+/** User id from a valid bearer token, or null (missing/invalid/expired token). */
+function bearerUserId(req: Request): string | null {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return null;
+  try {
+    return verifyRequestAccessToken(req, header.slice(7)).sub;
+  } catch {
+    return null;
+  }
+}
+
+/** Global API limiter: authenticated requests are counted per user (many staff
+ * behind one clinic NAT share an IP), everything else per client IP (req.ip,
+ * which honours the app's `trust proxy` setting). */
+export function createApiRateLimiter(
+  limits: { perUserPerMinute: number; perIpPerMinute: number },
+  name = "api",
+) {
+  const perUser = createRateLimiter({
+    name: `${name}:user`,
+    windowMs: 60_000,
+    max: limits.perUserPerMinute,
+    keyFn: (req) => bearerUserId(req) ?? "anonymous",
+  });
+  const perIp = createRateLimiter({ name: `${name}:ip`, windowMs: 60_000, max: limits.perIpPerMinute });
+  return (req: Request, res: Response, next: NextFunction) =>
+    bearerUserId(req) ? perUser(req, res, next) : perIp(req, res, next);
+}
+
+export const apiRateLimiter = createApiRateLimiter(config.rateLimit);

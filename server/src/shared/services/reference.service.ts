@@ -1,27 +1,53 @@
+import type { DrugCatalog, IcdCode } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
-export async function searchIcdCodes(query?: string, limit = 50) {
-  const where = query
-    ? {
-        OR: [
-          { code: { contains: query, mode: "insensitive" as const } },
-          { description: { contains: query, mode: "insensitive" as const } },
-        ],
-      }
-    : {};
-  return prisma.icdCode.findMany({ where, take: limit, orderBy: { code: "asc" } });
+export const CATALOG_DEFAULT_LIMIT = 50;
+export const CATALOG_MAX_LIMIT = 100;
+
+export interface CatalogSearchOptions {
+  /** Case-insensitive search text (trimmed, max 100 chars). */
+  query?: string;
+  /** "contains" (default) or "prefix" (starts-with). */
+  match?: "contains" | "prefix";
+  limit?: number;
+  offset?: number;
 }
 
-export async function searchDrugCatalog(query?: string, limit = 50) {
-  const where = query
-    ? {
-        OR: [
-          { name: { contains: query, mode: "insensitive" as const } },
-          { genericName: { contains: query, mode: "insensitive" as const } },
-        ],
-      }
-    : {};
-  return prisma.drugCatalog.findMany({ where, take: limit, orderBy: { name: "asc" } });
+export interface CatalogPage<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+function normalizeCatalogOptions(options: CatalogSearchOptions) {
+  const query = options.query?.trim().slice(0, 100) || undefined;
+  const limit = Math.min(Math.max(Math.floor(options.limit ?? CATALOG_DEFAULT_LIMIT), 1), CATALOG_MAX_LIMIT);
+  const offset = Math.max(Math.floor(options.offset ?? 0), 0);
+  const op = options.match === "prefix" ? "startsWith" : "contains";
+  const filter = (value: string) => ({ [op]: value, mode: "insensitive" as const });
+  return { query, limit, offset, filter };
+}
+
+export async function searchIcdCodes(options: CatalogSearchOptions = {}): Promise<CatalogPage<IcdCode>> {
+  const { query, limit, offset, filter } = normalizeCatalogOptions(options);
+  const where = query ? { OR: [{ code: filter(query) }, { description: filter(query) }] } : {};
+  const [items, total] = await Promise.all([
+    prisma.icdCode.findMany({ where, skip: offset, take: limit, orderBy: { code: "asc" } }),
+    prisma.icdCode.count({ where }),
+  ]);
+  return { items, total, limit, offset, has_more: offset + items.length < total };
+}
+
+export async function searchDrugCatalog(options: CatalogSearchOptions = {}): Promise<CatalogPage<DrugCatalog>> {
+  const { query, limit, offset, filter } = normalizeCatalogOptions(options);
+  const where = query ? { OR: [{ name: filter(query) }, { genericName: filter(query) }] } : {};
+  const [items, total] = await Promise.all([
+    prisma.drugCatalog.findMany({ where, skip: offset, take: limit, orderBy: [{ name: "asc" }, { id: "asc" }] }),
+    prisma.drugCatalog.count({ where }),
+  ]);
+  return { items, total, limit, offset, has_more: offset + items.length < total };
 }
 
 export async function checkDrugInteractions(drugNames: string[]) {

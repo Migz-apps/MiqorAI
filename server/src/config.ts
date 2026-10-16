@@ -56,6 +56,61 @@ function resolvePortalUrl(target: PortalTarget, envName: string, localFallback: 
   return baseUrl;
 }
 
+/** Non-fatal configuration problems, logged once at startup (src/index.ts). */
+export const configWarnings: string[] = [];
+
+/** AI_SERVICE_BASE_URL is canonical; AI_SERVICE_URL is a deprecated fallback.
+ * Read at call time too (getAiServiceConfig), so it takes the env explicitly. */
+export function resolveAiServiceBaseUrl(env: NodeJS.ProcessEnv = process.env): {
+  url: string;
+  warning?: string;
+} {
+  const canonical = normalizeUrl(env.AI_SERVICE_BASE_URL ?? "");
+  const legacy = normalizeUrl(env.AI_SERVICE_URL ?? "");
+  if (canonical) {
+    return legacy && legacy !== canonical
+      ? {
+          url: canonical,
+          warning: "AI_SERVICE_URL (deprecated) differs from AI_SERVICE_BASE_URL and is ignored; remove AI_SERVICE_URL",
+        }
+      : { url: canonical };
+  }
+  if (legacy) {
+    return { url: legacy, warning: "AI_SERVICE_URL is deprecated; rename it to AI_SERVICE_BASE_URL" };
+  }
+  return { url: "" };
+}
+
+const aiServiceBase = resolveAiServiceBaseUrl();
+if (aiServiceBase.warning) configWarnings.push(aiServiceBase.warning);
+
+function resolvePlatformTimezone(): string {
+  const tz = process.env.PLATFORM_TIMEZONE?.trim() || "Africa/Kigali";
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+  } catch {
+    throw new Error(`Invalid PLATFORM_TIMEZONE "${tz}" (expected an IANA zone such as Africa/Kigali)`);
+  }
+  return tz;
+}
+
+/** Express `trust proxy`: "true"/"false", a hop count, or a comma list of
+ * addresses/subnets. Defaults to 1 hop (Render router / ingress-nginx) in
+ * production and off elsewhere, so req.ip is the real client IP. */
+function resolveTrustProxy(): boolean | number | string {
+  const raw = process.env.TRUST_PROXY?.trim();
+  if (!raw) return isProduction ? 1 : false;
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  if (/^\d+$/.test(raw)) return parseInt(raw, 10);
+  return raw;
+}
+
+function intEnv(name: string, fallback: number): number {
+  const parsed = parseInt(process.env[name] ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export const config = {
   port: parseInt(process.env.PORT ?? "3000", 10),
   nodeEnv,
@@ -94,7 +149,20 @@ export const config = {
   corsOrigins,
   uploadDir: process.env.UPLOAD_DIR ?? "./uploads",
   invitationExpiryDays: parseInt(process.env.INVITATION_EXPIRY_DAYS ?? "7", 10),
-  rateLimitPerMinute: parseInt(process.env.RATE_LIMIT_PER_MINUTE ?? "100", 10),
+  rateLimit: {
+    // Authenticated requests are counted per user (a clinic NAT shares one IP).
+    perUserPerMinute: intEnv("RATE_LIMIT_PER_USER_PER_MINUTE", 300),
+    // Unauthenticated requests are counted per client IP. RATE_LIMIT_PER_MINUTE is the legacy name.
+    perIpPerMinute: intEnv(
+      process.env.RATE_LIMIT_PER_IP_PER_MINUTE ? "RATE_LIMIT_PER_IP_PER_MINUTE" : "RATE_LIMIT_PER_MINUTE",
+      600,
+    ),
+  },
+  trustProxy: resolveTrustProxy(),
+  // IANA zone that defines "today"/"this month" for dashboards and day filters.
+  platformTimezone: resolvePlatformTimezone(),
+  // Grace period for in-flight requests on SIGTERM/SIGINT before a forced exit.
+  shutdownTimeoutMs: intEnv("SHUTDOWN_TIMEOUT_MS", 10_000),
   auditArchiveDays: parseInt(process.env.AUDIT_ARCHIVE_DAYS ?? "365", 10),
   otpExpiresMinutes: parseInt(process.env.OTP_EXPIRES_MINUTES ?? "10", 10),
   passwordResetExpiresMinutes: parseInt(process.env.PASSWORD_RESET_EXPIRES_MINUTES ?? "60", 10),
@@ -108,11 +176,7 @@ export const config = {
     pharmacy: resolvePortalUrl("pharmacy", "PHARMACY_PORTAL_URL", "http://localhost:8082"),
     admin: resolvePortalUrl("admin", "ADMIN_PORTAL_URL", "http://localhost:8083"),
   },
-  aiServiceUrl: (
-    process.env.AI_SERVICE_BASE_URL ??
-    process.env.AI_SERVICE_URL ??
-    ""
-  ).replace(/\/$/, ""),
+  aiServiceUrl: aiServiceBase.url,
   aiServiceApiKey: process.env.AI_SERVICE_API_KEY ?? "",
   aiServiceTimeoutSeconds: parseInt(process.env.AI_SERVICE_TIMEOUT_SECONDS ?? "60", 10),
   aiServiceEnabled: process.env.AI_SERVICE_ENABLED !== "false",

@@ -10,6 +10,7 @@ const testEnv: Record<string, string> = {
   NODE_ENV: "test",
   DATABASE_URL: resolveTestDatabaseUrl(),
   RATE_LIMIT_PER_MINUTE: "10000",
+  RATE_LIMIT_PER_USER_PER_MINUTE: "10000",
   MIQORAI_AI_MOCK: "true",
   // AI_SERVICE_BASE_URL takes precedence over AI_SERVICE_URL; pin both so a
   // developer's .env never routes tests to a real AI service.

@@ -209,39 +209,39 @@ enum InteractionSeverity {
 }
 
 model User {
-  id                  String    @id @default(uuid()) @db.Uuid
-  email               String    @unique
-  phone               String?   @unique
-  passwordHash        String    @map("password_hash")
-  role                UserRole
-  displayName         String?   @map("display_name")
+  id                     String                    @id @default(uuid()) @db.Uuid
+  email                  String                    @unique
+  phone                  String?                   @unique
+  passwordHash           String                    @map("password_hash")
+  role                   UserRole
+  displayName            String?                   @map("display_name")
   /// Polymorphic reference: points at a Hospital, Pharmacy or Insurer id depending on
   /// organizationType, so no FK is possible. Validated in identity (auth/staff services)
   /// when staff accounts are created or linked to an organization.
-  organizationId      String?   @map("organization_id") @db.Uuid
+  organizationId         String?                   @map("organization_id") @db.Uuid
   /// Discriminator for organizationId ("hospital" | "pharmacy" | "insurer" | "none").
-  organizationType    String?   @map("organization_type")
-  isActive            Boolean   @default(true) @map("is_active")
-  twoFactorEnabled    Boolean   @default(false) @map("two_factor_enabled")
-  twoFactorSecret     String?   @map("two_factor_secret")
-  lastLoginAt         DateTime? @map("last_login_at")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-  patient             Patient?
-  hospitalStaff       HospitalStaff?
-  pharmacyStaff       PharmacyStaff?
-  insurerStaff        InsurerStaff?
-  auditLogs           AuditLog[]
-  accessLogs          AccessLog[]
-  syncQueue           SyncQueue[]
-  refreshTokens       RefreshToken[]
-  passwordResetTokens PasswordResetToken[]
-  clinicalSafetyActions AiPendingClinicalAction[] @relation("ClinicalSafetyDoctor")
-  recordedMedicalRecords MedicalRecord[] @relation("MedicalRecordRecorder")
-  recordedVisits      Visit[]        @relation("VisitRecorder")
-  grantedAccessGrants AccessGrant[]  @relation("AccessGrantGrantor")
-  visitDrafts         VisitDraft[]
-  patientPreference   PatientPreference?
+  organizationType       String?                   @map("organization_type")
+  isActive               Boolean                   @default(true) @map("is_active")
+  twoFactorEnabled       Boolean                   @default(false) @map("two_factor_enabled")
+  twoFactorSecret        String?                   @map("two_factor_secret")
+  lastLoginAt            DateTime?                 @map("last_login_at")
+  createdAt              DateTime                  @default(now()) @map("created_at")
+  updatedAt              DateTime                  @updatedAt @map("updated_at")
+  patient                Patient?
+  hospitalStaff          HospitalStaff?
+  pharmacyStaff          PharmacyStaff?
+  insurerStaff           InsurerStaff?
+  auditLogs              AuditLog[]
+  accessLogs             AccessLog[]
+  syncQueue              SyncQueue[]
+  refreshTokens          RefreshToken[]
+  passwordResetTokens    PasswordResetToken[]
+  clinicalSafetyActions  AiPendingClinicalAction[] @relation("ClinicalSafetyDoctor")
+  recordedMedicalRecords MedicalRecord[]           @relation("MedicalRecordRecorder")
+  recordedVisits         Visit[]                   @relation("VisitRecorder")
+  grantedAccessGrants    AccessGrant[]             @relation("AccessGrantGrantor")
+  visitDrafts            VisitDraft[]
+  patientPreference      PatientPreference?
 
   @@map("users")
 }
@@ -287,81 +287,81 @@ model AuthChallenge {
 }
 
 model Patient {
-  id                    String   @id @default(uuid()) @db.Uuid
-  userId                String   @unique @map("user_id") @db.Uuid
-  firstName             String   @map("first_name")
-  lastName              String   @map("last_name")
-  nationalId            String?  @unique @map("national_id")
-  insuranceId           String?  @map("insurance_id")
-  dateOfBirth           DateTime @map("date_of_birth") @db.Date
-  gender                String?
-  bloodType             String?  @map("blood_type")
-  emergencyContactName  String?  @map("emergency_contact_name")
-  emergencyContactPhone String?  @map("emergency_contact_phone")
-  recoveryPhraseEnc     String?  @map("recovery_phrase_enc")
-  qrCodeHash            String?  @map("qr_code_hash")
-  qrVersion             Int      @default(0) @map("qr_version")
-  qrUpdatedAt           DateTime? @map("qr_updated_at")
-  qrPrevCodeHash        String?  @map("qr_prev_code_hash")
-  qrPrevUpdatedAt       DateTime? @map("qr_prev_updated_at")
-  isActive              Boolean  @default(true) @map("is_active")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Restrict)
-  medicalRecords        MedicalRecord[]
-  visits                Visit[]
-  prescriptions         Prescription[]
-  labOrders             LabOrder[]
-  accessGrants          AccessGrant[]
-  accessLogs            AccessLog[]
-  familyAsPrimary       FamilyMember[] @relation("PrimaryPatient")
-  familyAsDependent     FamilyMember[] @relation("DependentPatient")
-  disputes              Dispute[]
-  insurerMembers        InsurerMember[]
-  claims                Claim[]
-  savingsRecords        SavingsRecord[]
-  appointments          Appointment[]
-  emergencyContacts     EmergencyContact[]
-  deletionRequests      DataDeletionRequest[]
+  id                       String                     @id @default(uuid()) @db.Uuid
+  userId                   String                     @unique @map("user_id") @db.Uuid
+  firstName                String                     @map("first_name")
+  lastName                 String                     @map("last_name")
+  nationalId               String?                    @unique @map("national_id")
+  insuranceId              String?                    @map("insurance_id")
+  dateOfBirth              DateTime                   @map("date_of_birth") @db.Date
+  gender                   String?
+  bloodType                String?                    @map("blood_type")
+  emergencyContactName     String?                    @map("emergency_contact_name")
+  emergencyContactPhone    String?                    @map("emergency_contact_phone")
+  recoveryPhraseEnc        String?                    @map("recovery_phrase_enc")
+  qrCodeHash               String?                    @map("qr_code_hash")
+  qrVersion                Int                        @default(0) @map("qr_version")
+  qrUpdatedAt              DateTime?                  @map("qr_updated_at")
+  qrPrevCodeHash           String?                    @map("qr_prev_code_hash")
+  qrPrevUpdatedAt          DateTime?                  @map("qr_prev_updated_at")
+  isActive                 Boolean                    @default(true) @map("is_active")
+  createdAt                DateTime                   @default(now()) @map("created_at")
+  updatedAt                DateTime                   @updatedAt @map("updated_at")
+  user                     User                       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  medicalRecords           MedicalRecord[]
+  visits                   Visit[]
+  prescriptions            Prescription[]
+  labOrders                LabOrder[]
+  accessGrants             AccessGrant[]
+  accessLogs               AccessLog[]
+  familyAsPrimary          FamilyMember[]             @relation("PrimaryPatient")
+  familyAsDependent        FamilyMember[]             @relation("DependentPatient")
+  disputes                 Dispute[]
+  insurerMembers           InsurerMember[]
+  claims                   Claim[]
+  savingsRecords           SavingsRecord[]
+  appointments             Appointment[]
+  emergencyContacts        EmergencyContact[]
+  deletionRequests         DataDeletionRequest[]
   aiPendingClinicalActions AiPendingClinicalAction[]
-  adherenceSnapshots    PatientAdherenceSnapshot[]
-  visitDrafts           VisitDraft[]
-  qrAccessRequests      QrAccessRequest[]
+  adherenceSnapshots       PatientAdherenceSnapshot[]
+  visitDrafts              VisitDraft[]
+  qrAccessRequests         QrAccessRequest[]
 
   @@map("patients")
 }
 
 model Hospital {
-  id                 String    @id @default(uuid()) @db.Uuid
-  code               String    @unique
-  name               String
-  registrationNumber String    @unique @map("registration_number")
-  emailDomain        String    @unique @map("email_domain")
-  address            String?
-  city               String?
-  country            String?
-  phone              String?
-  verified           Boolean   @default(false)
-  verifiedBy         String?   @map("verified_by") @db.Uuid
-  verifiedAt         DateTime? @map("verified_at")
-  pilotEndDate       DateTime? @map("pilot_end_date")
-  isActive           Boolean   @default(true) @map("is_active")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-  staff              HospitalStaff[]
-  visits             Visit[]
-  prescriptions      Prescription[]
-  labOrders          LabOrder[]
-  referralsFrom      Referral[] @relation("FromHospital")
-  referralsTo        Referral[] @relation("ToHospital")
-  disputes           Dispute[]
-  providerRisk       ProviderRiskScore[]
-  appointments       Appointment[]
-  departments        Department[]
-  notifications      HospitalNotification[]
-  subscriptions      HospitalSubscription[]
+  id                       String                    @id @default(uuid()) @db.Uuid
+  code                     String                    @unique
+  name                     String
+  registrationNumber       String                    @unique @map("registration_number")
+  emailDomain              String                    @unique @map("email_domain")
+  address                  String?
+  city                     String?
+  country                  String?
+  phone                    String?
+  verified                 Boolean                   @default(false)
+  verifiedBy               String?                   @map("verified_by") @db.Uuid
+  verifiedAt               DateTime?                 @map("verified_at")
+  pilotEndDate             DateTime?                 @map("pilot_end_date")
+  isActive                 Boolean                   @default(true) @map("is_active")
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
+  staff                    HospitalStaff[]
+  visits                   Visit[]
+  prescriptions            Prescription[]
+  labOrders                LabOrder[]
+  referralsFrom            Referral[]                @relation("FromHospital")
+  referralsTo              Referral[]                @relation("ToHospital")
+  disputes                 Dispute[]
+  providerRisk             ProviderRiskScore[]
+  appointments             Appointment[]
+  departments              Department[]
+  notifications            HospitalNotification[]
+  subscriptions            HospitalSubscription[]
   aiPendingClinicalActions AiPendingClinicalAction[]
-  visitDrafts        VisitDraft[]
+  visitDrafts              VisitDraft[]
 
   @@map("hospitals")
 }
@@ -381,20 +381,20 @@ model HospitalStaff {
 }
 
 model Pharmacy {
-  id                   String    @id @default(uuid()) @db.Uuid
-  code                 String    @unique
+  id                   String                     @id @default(uuid()) @db.Uuid
+  code                 String                     @unique
   name                 String
-  licenseNumber        String    @unique @map("license_number")
+  licenseNumber        String                     @unique @map("license_number")
   address              String?
   city                 String?
   country              String?
   phone                String?
-  verified             Boolean   @default(false)
-  verifiedBy           String?   @map("verified_by") @db.Uuid
-  verifiedAt           DateTime? @map("verified_at")
-  isActive             Boolean   @default(true) @map("is_active")
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
+  verified             Boolean                    @default(false)
+  verifiedBy           String?                    @map("verified_by") @db.Uuid
+  verifiedAt           DateTime?                  @map("verified_at")
+  isActive             Boolean                    @default(true) @map("is_active")
+  createdAt            DateTime                   @default(now()) @map("created_at")
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
   staff                PharmacyStaff[]
   inventory            PharmacyInventory[]
   prescriptions        Prescription[]
@@ -421,22 +421,22 @@ model PharmacyStaff {
 }
 
 model Insurer {
-  id                 String    @id @default(uuid()) @db.Uuid
-  code               String    @unique
+  id                 String            @id @default(uuid()) @db.Uuid
+  code               String            @unique
   name               String
-  registrationNumber String    @unique @map("registration_number")
+  registrationNumber String            @unique @map("registration_number")
   address            String?
   city               String?
   country            String?
-  currency           String    @default("KES")
+  currency           String            @default("KES")
   phone              String?
-  memberCount        Int       @default(0) @map("member_count")
-  contractStartDate  DateTime? @map("contract_start_date")
-  contractEndDate    DateTime? @map("contract_end_date")
-  feePercentage      Decimal   @default(20.0) @map("fee_percentage") @db.Decimal(5, 2)
-  isActive           Boolean   @default(true) @map("is_active")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
+  memberCount        Int               @default(0) @map("member_count")
+  contractStartDate  DateTime?         @map("contract_start_date")
+  contractEndDate    DateTime?         @map("contract_end_date")
+  feePercentage      Decimal           @default(20.0) @map("fee_percentage") @db.Decimal(5, 2)
+  isActive           Boolean           @default(true) @map("is_active")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
   staff              InsurerStaff[]
   members            InsurerMember[]
   claims             Claim[]
@@ -495,30 +495,30 @@ model MedicalRecord {
 }
 
 model Visit {
-  id             String      @id @default(uuid()) @db.Uuid
-  patientId      String      @map("patient_id") @db.Uuid
-  hospitalId     String      @map("hospital_id") @db.Uuid
-  checkedInAt    DateTime    @default(now()) @map("checked_in_at")
-  checkedOutAt   DateTime?   @map("checked_out_at")
-  department     String
-  visitType      String      @default("consultation") @map("visit_type")
-  reason         String?
-  priority       String      @default("normal")
-  vitals         Json?
-  chiefComplaint String?     @map("chief_complaint")
-  diagnosisCodes String[]    @map("diagnosis_codes")
-  notes          String?
-  recordedBy     String?     @map("recorded_by") @db.Uuid
-  assignedStaffId String?    @map("assigned_staff_id") @db.Uuid
-  status         VisitStatus @default(waiting)
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  patient        Patient     @relation(fields: [patientId], references: [id], onDelete: Restrict)
-  hospital       Hospital    @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
-  recorder       User?       @relation("VisitRecorder", fields: [recordedBy], references: [id], onDelete: SetNull)
-  prescriptions  Prescription[]
-  labOrders      LabOrder[]
-  referrals      Referral[]
+  id              String         @id @default(uuid()) @db.Uuid
+  patientId       String         @map("patient_id") @db.Uuid
+  hospitalId      String         @map("hospital_id") @db.Uuid
+  checkedInAt     DateTime       @default(now()) @map("checked_in_at")
+  checkedOutAt    DateTime?      @map("checked_out_at")
+  department      String
+  visitType       String         @default("consultation") @map("visit_type")
+  reason          String?
+  priority        String         @default("normal")
+  vitals          Json?
+  chiefComplaint  String?        @map("chief_complaint")
+  diagnosisCodes  String[]       @map("diagnosis_codes")
+  notes           String?
+  recordedBy      String?        @map("recorded_by") @db.Uuid
+  assignedStaffId String?        @map("assigned_staff_id") @db.Uuid
+  status          VisitStatus    @default(waiting)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  patient         Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital        Hospital       @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  recorder        User?          @relation("VisitRecorder", fields: [recordedBy], references: [id], onDelete: SetNull)
+  prescriptions   Prescription[]
+  labOrders       LabOrder[]
+  referrals       Referral[]
 
   @@index([hospitalId, status])
   @@map("visits")
@@ -557,17 +557,17 @@ model Prescription {
 }
 
 model PrescriptionItem {
-  id             String     @id @default(uuid()) @db.Uuid
-  prescriptionId String     @map("prescription_id") @db.Uuid
-  inventoryId    String?    @map("inventory_id") @db.Uuid
-  drugName       String     @map("drug_name")
-  genericName    String?    @map("generic_name")
+  id             String             @id @default(uuid()) @db.Uuid
+  prescriptionId String             @map("prescription_id") @db.Uuid
+  inventoryId    String?            @map("inventory_id") @db.Uuid
+  drugName       String             @map("drug_name")
+  genericName    String?            @map("generic_name")
   strength       String
-  dosageForm     DosageForm @default(tablet) @map("dosage_form")
+  dosageForm     DosageForm         @default(tablet) @map("dosage_form")
   dose           String
-  durationDays   Int        @map("duration_days")
+  durationDays   Int                @map("duration_days")
   quantity       Int
-  unitPrice      Decimal    @map("unit_price") @db.Decimal(10, 2)
+  unitPrice      Decimal            @map("unit_price") @db.Decimal(10, 2)
   frequency      String?
   prescription   Prescription       @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
   inventory      PharmacyInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
@@ -597,48 +597,50 @@ model LabOrder {
 }
 
 model Referral {
-  id             String   @id @default(uuid()) @db.Uuid
-  patientId      String   @map("patient_id") @db.Uuid
-  visitId        String?  @map("visit_id") @db.Uuid
-  fromHospitalId String   @map("from_hospital_id") @db.Uuid
-  toHospitalId   String   @map("to_hospital_id") @db.Uuid
-  fromDepartment String?  @map("from_department")
-  toDepartment   String?  @map("to_department")
-  referralType   String   @default("inter_hospital") @map("referral_type")
-  urgency        String   @default("routine")
-  reason         String
-  notes          String?
-  icdCodes       String[] @default([]) @map("icd_codes")
-  status         String   @default("pending")
-  createdAt      DateTime @default(now()) @map("created_at")
-  visit          Visit?   @relation(fields: [visitId], references: [id], onDelete: SetNull)
-  fromHospital   Hospital @relation("FromHospital", fields: [fromHospitalId], references: [id])
-  toHospital     Hospital @relation("ToHospital", fields: [toHospitalId], references: [id])
+  id                 String   @id @default(uuid()) @db.Uuid
+  patientId          String   @map("patient_id") @db.Uuid
+  visitId            String?  @map("visit_id") @db.Uuid
+  fromHospitalId     String   @map("from_hospital_id") @db.Uuid
+  toHospitalId       String   @map("to_hospital_id") @db.Uuid
+  fromDepartment     String?  @map("from_department")
+  toDepartment       String?  @map("to_department")
+  referralType       String   @default("inter_hospital") @map("referral_type")
+  urgency            String   @default("routine")
+  reason             String
+  notes              String?
+  icdCodes           String[] @default([]) @map("icd_codes")
+  status             String   @default("pending")
+  /// Patient SMS outcome, set by the ReferralCreated worker: queued | sent | not_sent | skipped | failed
+  notificationStatus String?  @map("notification_status")
+  createdAt          DateTime @default(now()) @map("created_at")
+  visit              Visit?   @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  fromHospital       Hospital @relation("FromHospital", fields: [fromHospitalId], references: [id])
+  toHospital         Hospital @relation("ToHospital", fields: [toHospitalId], references: [id])
 
   @@map("referrals")
 }
 
 model PharmacyInventory {
-  id                   String     @id @default(uuid()) @db.Uuid
-  pharmacyId           String     @map("pharmacy_id") @db.Uuid
-  drugName             String     @map("drug_name")
-  genericName          String?    @map("generic_name")
+  id                   String                @id @default(uuid()) @db.Uuid
+  pharmacyId           String                @map("pharmacy_id") @db.Uuid
+  drugName             String                @map("drug_name")
+  genericName          String?               @map("generic_name")
   strength             String
-  dosageForm           DosageForm @default(tablet) @map("dosage_form")
+  dosageForm           DosageForm            @default(tablet) @map("dosage_form")
   barcode              String?
   category             String?
-  stock                Int        @default(0)
-  reorderPoint         Int        @default(10) @map("reorder_point")
-  unitPrice            Decimal    @map("unit_price") @db.Decimal(10, 2)
-  costPrice            Decimal    @default(0) @map("cost_price") @db.Decimal(10, 2)
+  stock                Int                   @default(0)
+  reorderPoint         Int                   @default(10) @map("reorder_point")
+  unitPrice            Decimal               @map("unit_price") @db.Decimal(10, 2)
+  costPrice            Decimal               @default(0) @map("cost_price") @db.Decimal(10, 2)
   supplier             String?
-  expiryDate           DateTime?  @map("expiry_date") @db.Date
-  requiresPrescription Boolean    @default(true) @map("requires_prescription")
-  controlled           Boolean    @default(false)
-  isActive             Boolean    @default(true) @map("is_active")
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
-  pharmacy             Pharmacy   @relation(fields: [pharmacyId], references: [id], onDelete: Restrict)
+  expiryDate           DateTime?             @map("expiry_date") @db.Date
+  requiresPrescription Boolean               @default(true) @map("requires_prescription")
+  controlled           Boolean               @default(false)
+  isActive             Boolean               @default(true) @map("is_active")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  pharmacy             Pharmacy              @relation(fields: [pharmacyId], references: [id], onDelete: Restrict)
   prescriptionItems    PrescriptionItem[]
   adjustments          InventoryAdjustment[]
 
@@ -647,28 +649,28 @@ model PharmacyInventory {
 }
 
 model InventoryAdjustment {
-  id             String   @id @default(uuid()) @db.Uuid
-  inventoryId    String   @map("inventory_id") @db.Uuid
+  id             String            @id @default(uuid()) @db.Uuid
+  inventoryId    String            @map("inventory_id") @db.Uuid
   adjustment     Int
   reason         String
-  prescriptionId String?  @map("prescription_id") @db.Uuid
-  adjustedBy     String   @map("adjusted_by") @db.Uuid
-  createdAt      DateTime @default(now()) @map("created_at")
+  prescriptionId String?           @map("prescription_id") @db.Uuid
+  adjustedBy     String            @map("adjusted_by") @db.Uuid
+  createdAt      DateTime          @default(now()) @map("created_at")
   inventory      PharmacyInventory @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
 
   @@map("inventory_adjustments")
 }
 
 model DispenseEvent {
-  id             String   @id @default(uuid()) @db.Uuid
-  prescriptionId String   @map("prescription_id") @db.Uuid
-  pharmacyId     String   @map("pharmacy_id") @db.Uuid
-  dispensedBy    String   @map("dispensed_by") @db.Uuid
-  itemsJson      Json     @map("items_json")
-  paymentMethod  String?  @map("payment_method")
-  copay          Decimal? @db.Decimal(10, 2)
-  receiptUrl     String?  @map("receipt_url")
-  createdAt      DateTime @default(now()) @map("created_at")
+  id             String       @id @default(uuid()) @db.Uuid
+  prescriptionId String       @map("prescription_id") @db.Uuid
+  pharmacyId     String       @map("pharmacy_id") @db.Uuid
+  dispensedBy    String       @map("dispensed_by") @db.Uuid
+  itemsJson      Json         @map("items_json")
+  paymentMethod  String?      @map("payment_method")
+  copay          Decimal?     @db.Decimal(10, 2)
+  receiptUrl     String?      @map("receipt_url")
+  createdAt      DateTime     @default(now()) @map("created_at")
   prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Restrict)
   pharmacy       Pharmacy     @relation(fields: [pharmacyId], references: [id], onDelete: Restrict)
 
@@ -767,13 +769,13 @@ model SavingsRecord {
 }
 
 model ProviderRiskScore {
-  id           String   @id @default(uuid()) @db.Uuid
-  hospitalId   String?  @map("hospital_id") @db.Uuid
-  providerName String   @map("provider_name")
-  totalClaims  Int      @default(0) @map("total_claims")
-  anomalyScore Int      @default(0) @map("anomaly_score")
-  flaggedCount Int      @default(0) @map("flagged_count")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  hospitalId   String?   @map("hospital_id") @db.Uuid
+  providerName String    @map("provider_name")
+  totalClaims  Int       @default(0) @map("total_claims")
+  anomalyScore Int       @default(0) @map("anomaly_score")
+  flaggedCount Int       @default(0) @map("flagged_count")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
   hospital     Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
 
   @@map("provider_risk_scores")
@@ -1229,17 +1231,17 @@ model HospitalNotification {
 }
 
 model HospitalSubscription {
-  id           String   @id @default(uuid()) @db.Uuid
-  hospitalId   String   @unique @map("hospital_id") @db.Uuid
-  plan         String   @default("standard")
-  monthlyFee   Decimal  @default(0) @map("monthly_fee") @db.Decimal(12, 2)
-  scriptsUsed  Int      @default(0) @map("scripts_used")
-  scriptsLimit Int      @default(1000) @map("scripts_limit")
-  status       String   @default("active")
+  id           String    @id @default(uuid()) @db.Uuid
+  hospitalId   String    @unique @map("hospital_id") @db.Uuid
+  plan         String    @default("standard")
+  monthlyFee   Decimal   @default(0) @map("monthly_fee") @db.Decimal(12, 2)
+  scriptsUsed  Int       @default(0) @map("scripts_used")
+  scriptsLimit Int       @default(1000) @map("scripts_limit")
+  status       String    @default("active")
   pilotEndDate DateTime? @map("pilot_end_date")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  hospital     Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  hospital     Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
 
   @@map("hospital_subscriptions")
 }
@@ -1280,12 +1282,12 @@ model IcdCode {
 }
 
 model DrugCatalog {
-  id           String  @id @default(uuid()) @db.Uuid
-  name         String
-  genericName  String? @map("generic_name")
-  strength     String?
-  dosageForm   String? @map("dosage_form")
-  category     String?
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  genericName String? @map("generic_name")
+  strength    String?
+  dosageForm  String? @map("dosage_form")
+  category    String?
 
   @@index([name])
   @@map("drug_catalog")
@@ -1302,16 +1304,16 @@ model LoginAttempt {
 }
 
 model ReportSchedule {
-  id         String   @id @default(uuid()) @db.Uuid
-  ownerType  String   @map("owner_type")
-  ownerId    String   @map("owner_id") @db.Uuid
-  reportType String   @map("report_type")
+  id         String    @id @default(uuid()) @db.Uuid
+  ownerType  String    @map("owner_type")
+  ownerId    String    @map("owner_id") @db.Uuid
+  reportType String    @map("report_type")
   frequency  String
   email      String?
-  isActive   Boolean  @default(true) @map("is_active")
+  isActive   Boolean   @default(true) @map("is_active")
   lastRunAt  DateTime? @map("last_run_at")
   nextRunAt  DateTime? @map("next_run_at")
-  createdAt  DateTime @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@map("report_schedules")
 }

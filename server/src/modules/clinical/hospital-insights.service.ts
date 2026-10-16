@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { diagnosisName } from "./medical-record-payload.js";
+import { dateKey } from "../../shared/utils/day-range.js";
 import { prisma } from "../../shared/lib/prisma.js";
 import { saveExportFile } from "../../shared/services/file.service.js";
 import { generatePdfReport, toCsv } from "../../shared/services/report.service.js";
@@ -292,10 +293,8 @@ function formatLabResults(results: unknown): string {
 }
 
 function formatDisplayDate(d: Date): string {
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = String(d.getFullYear()).slice(-2);
-  return `${day}/${month}/${year}`;
+  const [year, month, day] = dateKey(d).split("-");
+  return `${day}/${month}/${year!.slice(-2)}`;
 }
 
 export async function findPriorLabTest(patientId: string, testName: string) {

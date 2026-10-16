@@ -7,10 +7,10 @@ import { saveExportFile } from "../../shared/services/file.service.js";
 import { generatePdfReport, toCsv } from "../../shared/services/report.service.js";
 import { sendSms } from "../../shared/services/sms.service.js";
 import { getDoctorPatientCensusMeta } from "./doctor-workspace.service.js";
+import { startOfDay } from "../../shared/utils/day-range.js";
 
 export async function getHospitalDashboardKpis(hospitalId: string) {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = startOfDay();
   const weekAgo = new Date(Date.now() - 7 * 86400000);
 
   const [waiting, inTreatment, completedToday, visitsThisWeek, qrScansToday] = await Promise.all([
@@ -204,34 +204,44 @@ export async function createReferralWithIcd(
   });
   if (!patient) throw notFound("Patient not found");
 
-  const referral = await prisma.referral.create({
-    data: {
-      patientId: input.patient_id,
-      visitId: input.visit_id,
-      fromHospitalId: hospitalId,
-      toHospitalId: input.to_hospital_id ?? hospitalId,
-      fromDepartment: input.from_department,
-      toDepartment: input.to_department,
-      urgency: input.urgency,
-      reason: input.reason,
-      notes: input.notes,
-      icdCodes: input.icd_codes ?? [],
-      referralType: input.to_hospital_id ? "inter_hospital" : "intra_department",
-    },
-  });
+  const notifyPhone = input.notify_patient !== false ? patient.user.phone : null;
 
-  // Patient SMS is delivered asynchronously by the worker (ReferralCreated consumer),
-  // so an SMS-provider failure can no longer fail a referral that is already saved.
-  await publishEvent("ReferralCreated", {
-    referral_id: referral.id,
-    patient_id: input.patient_id,
-    from_hospital_id: hospitalId,
-    to_hospital_id: input.to_hospital_id ?? hospitalId,
-    urgency: input.urgency,
-    reason: input.reason,
-    notify_phone: input.notify_patient !== false ? patient.user.phone : null,
+  // The referral and its ReferralCreated outbox event commit together. Patient
+  // SMS is delivered asynchronously by the worker, so an SMS-provider failure
+  // (or SMS being unconfigured) can never fail a referral that is saved; the
+  // outcome is tracked on referral.notificationStatus.
+  return prisma.$transaction(async (tx) => {
+    const referral = await tx.referral.create({
+      data: {
+        patientId: input.patient_id,
+        visitId: input.visit_id,
+        fromHospitalId: hospitalId,
+        toHospitalId: input.to_hospital_id ?? hospitalId,
+        fromDepartment: input.from_department,
+        toDepartment: input.to_department,
+        urgency: input.urgency,
+        reason: input.reason,
+        notes: input.notes,
+        icdCodes: input.icd_codes ?? [],
+        referralType: input.to_hospital_id ? "inter_hospital" : "intra_department",
+        notificationStatus: notifyPhone ? "queued" : "skipped",
+      },
+    });
+    await publishEvent(
+      "ReferralCreated",
+      {
+        referral_id: referral.id,
+        patient_id: input.patient_id,
+        from_hospital_id: hospitalId,
+        to_hospital_id: input.to_hospital_id ?? hospitalId,
+        urgency: input.urgency,
+        reason: input.reason,
+        notify_phone: notifyPhone,
+      },
+      tx,
+    );
+    return referral;
   });
-  return referral;
 }
 
 export async function deleteDepartment(hospitalId: string, id: string) {

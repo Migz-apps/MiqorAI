@@ -1,4 +1,5 @@
 import type { ClaimStatus, Prisma } from "@prisma/client";
+import { dateKey, rangeEnd, rangeStart, startOfMonth } from "../../shared/utils/day-range.js";
 import { prisma } from "../../shared/lib/prisma.js";
 import { publishEvent } from "../../shared/events.js";
 import { saveExportFile } from "../../shared/services/file.service.js";
@@ -18,8 +19,7 @@ export async function getInsurerDashboard(insurerId: string) {
   const insurer = await prisma.insurer.findUnique({ where: { id: insurerId } });
   if (!insurer) throw notFound("Insurer not found");
 
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthStart = startOfMonth();
   const memberRows = await prisma.insurerMember.findMany({
     where: { insurerId, isActive: true },
     select: { patientId: true },
@@ -92,8 +92,8 @@ export async function getInsurerSavings(
   startDate?: string,
   endDate?: string,
 ) {
-  const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 86400000);
-  const end = endDate ? new Date(endDate) : new Date();
+  const start = startDate ? rangeStart(startDate) : new Date(Date.now() - 30 * 86400000);
+  const end = endDate ? rangeEnd(endDate) : new Date();
   const insurer = await prisma.insurer.findUnique({ where: { id: insurerId } });
   if (!insurer) throw notFound("Insurer not found");
 
@@ -285,8 +285,8 @@ export async function updateClaimStatus(
 }
 
 export async function getUtilization(insurerId: string, startDate?: string, endDate?: string) {
-  const start = startDate ? new Date(startDate) : new Date(Date.now() - 90 * 86400000);
-  const end = endDate ? new Date(endDate) : new Date();
+  const start = startDate ? rangeStart(startDate) : new Date(Date.now() - 90 * 86400000);
+  const end = endDate ? rangeEnd(endDate) : new Date();
 
   const claims = await prisma.claim.findMany({
     where: { insurerId, createdAt: { gte: start, lte: end } },
@@ -294,7 +294,7 @@ export async function getUtilization(insurerId: string, startDate?: string, endD
 
   const volumeByDay: Record<string, number> = {};
   for (const c of claims) {
-    const day = c.createdAt.toISOString().slice(0, 10);
+    const day = dateKey(c.createdAt);
     volumeByDay[day] = (volumeByDay[day] ?? 0) + 1;
   }
 
@@ -428,8 +428,8 @@ export async function payInsurerInvoice(insurerId: string, invoiceId: string) {
 }
 
 export async function getInsurerAnalytics(insurerId: string, startDate?: string, endDate?: string) {
-  const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 86400000);
-  const end = endDate ? new Date(endDate) : new Date();
+  const start = startDate ? rangeStart(startDate) : new Date(Date.now() - 30 * 86400000);
+  const end = endDate ? rangeEnd(endDate) : new Date();
 
   const [claims, members] = await Promise.all([
     prisma.claim.findMany({ where: { insurerId, createdAt: { gte: start, lte: end } } }),

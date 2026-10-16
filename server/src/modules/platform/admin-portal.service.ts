@@ -4,14 +4,14 @@ import { notFound } from "../../shared/utils/errors.js";
 import { saveExportFile } from "../../shared/services/file.service.js";
 import { generatePdfReport } from "../../shared/services/report.service.js";
 import { getOrgSettings, setOrgSettings } from "./org-settings.service.js";
+import { monthKey, startOfDay } from "../../shared/utils/day-range.js";
 
 export async function getAdminActivityFeed() {
   return prisma.activityFeedEntry.findMany({ orderBy: { createdAt: "desc" }, take: 50 });
 }
 
 export async function getComplianceSummary() {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = startOfDay();
   const [eventsToday, failedLogins, dataExports] = await Promise.all([
     prisma.auditLog.count({ where: { createdAt: { gte: todayStart } } }),
     prisma.loginAttempt.count({ where: { lockedUntil: { gte: todayStart } } }),
@@ -111,7 +111,7 @@ export async function createAdminInvoice(input: {
   amount: number;
   due_date: string;
 }) {
-  const period = new Date().toISOString().slice(0, 7);
+  const period = monthKey(new Date());
   return prisma.platformInvoice.create({
     data: {
       customerType: input.customer_type,

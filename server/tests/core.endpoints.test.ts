@@ -21,7 +21,9 @@ describe("Health", () => {
   it("GET /health", async () => {
     const res = await request(app).get("/health");
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe("ok");
+    // Redis is optional in tests (memory fallback): "degraded" when configured but not connected.
+    expect(["ok", "degraded"]).toContain(res.body.status);
+    expect(res.body.checks.database.status).toBe("up");
   });
 
   it("reflects allowed browser origins for CORS preflight and requests", async () => {

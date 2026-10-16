@@ -34,7 +34,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   // body-parser: malformed JSON and oversized payloads are client errors, not 500s
   const httpErr = err as { type?: string; status?: number; code?: string; message?: string };
   if (httpErr?.type === "entity.parse.failed") {
-    return res.status(400).json({ error: { code: "BAD_REQUEST", message: "Malformed JSON body" } });
+    return res.status(400).json({ error: { code: "INVALID_JSON", message: "Malformed JSON body" } });
   }
   if (httpErr?.type === "entity.too.large" || httpErr?.status === 413) {
     return res.status(413).json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body too large" } });

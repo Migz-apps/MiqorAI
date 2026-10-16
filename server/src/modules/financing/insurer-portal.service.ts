@@ -5,6 +5,8 @@ import { saveExportFile } from "../../shared/services/file.service.js";
 import { generatePdfReport, toCsv } from "../../shared/services/report.service.js";
 import { sendSms } from "../../shared/services/sms.service.js";
 
+import { startOfMonth } from "../../shared/utils/day-range.js";
+
 export async function listSavingsRecords(insurerId: string) {
   return prisma.savingsRecord.findMany({
     where: { insurerId },
@@ -74,9 +76,7 @@ export async function exportFraudClaims(insurerId: string, userId: string) {
 }
 
 export async function getInsurerMemberStats(insurerId: string) {
-  const monthStart = new Date();
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
+  const monthStart = startOfMonth();
   const memberRows = await prisma.insurerMember.findMany({
     where: { insurerId },
     select: { patientId: true, isActive: true, enrolledAt: true },

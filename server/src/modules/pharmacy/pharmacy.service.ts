@@ -11,6 +11,7 @@ import { writeAuditLog } from "../../shared/services/audit.service.js";
 import { assertAccessGrant, logPatientAccess } from "../patient/access.service.js";
 import { resolveQrScan, touchPatientData } from "../patient/qr.service.js";
 import { allergyLabel, diagnosisName } from "../clinical/medical-record-payload.js";
+import { dateKey, dayRange, dayRangeFor, rangeEnd, rangeStart, startOfDay } from "../../shared/utils/day-range.js";
 import { badRequest, forbidden, notFound } from "../../shared/utils/errors.js";
 import { sendSms } from "../../shared/services/sms.service.js";
 import { sendEmail } from "../../shared/services/notification.service.js";
@@ -84,8 +85,7 @@ export function pharmacyContextFromRequest(req: Request): AuditCtx {
 }
 
 export async function getPharmacyDashboard(pharmacyId: string) {
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = startOfDay();
   const expiringCutoff = new Date();
   expiringCutoff.setDate(expiringCutoff.getDate() + 30);
 
@@ -196,10 +196,8 @@ export async function listPharmacyPrescriptions(
   const where: Prisma.PrescriptionWhereInput = { pharmacyId };
   if (filters.patientId) where.patientId = filters.patientId;
   if (filters.date) {
-    const day = new Date(filters.date);
-    const next = new Date(day);
-    next.setDate(next.getDate() + 1);
-    where.prescribedAt = { gte: day, lt: next };
+    const { start, end } = dayRangeFor(filters.date);
+    where.prescribedAt = { gte: start, lt: end };
   }
   if (filters.status) {
     const statusMap: Record<string, PrescriptionStatus[]> = {
@@ -918,9 +916,8 @@ export async function getPharmacyReports(
   startDate?: string,
   endDate?: string,
 ) {
-  const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 86400000);
-  const end = endDate ? new Date(endDate) : new Date();
-  end.setHours(23, 59, 59, 999);
+  const start = startDate ? rangeStart(startDate) : new Date(Date.now() - 30 * 86400000);
+  const end = endDate ? rangeEnd(endDate) : new Date(dayRange().end.getTime() - 1);
 
   const [dispenseEvents, adherenceSnapshots] = await Promise.all([
     prisma.dispenseEvent.findMany({
@@ -947,7 +944,7 @@ export async function getPharmacyReports(
     dispense_count: dispenseEvents.length,
     adherence_average: Math.round(avgAdherence * 100) / 100,
     trend: dispenseEvents.map((e) => ({
-      date: e.createdAt.toISOString().slice(0, 10),
+      date: dateKey(e.createdAt),
       amount: (e.itemsJson as Array<{ unit_price?: number; quantity?: number }>).reduce(
         (s, i) => s + (i.unit_price ?? 0) * (i.quantity ?? 0),
         0,

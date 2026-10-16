@@ -241,6 +241,36 @@ describe("Admin endpoints", () => {
     expect(res.status).toBe(200);
   });
 
+  it("GET /api/admin/settings returns only the platform-wide allowlist", async () => {
+    const rogueKey = `patient_prefs:leak-check-${Date.now()}`;
+    await prisma.platformSetting.create({
+      data: { key: rogueKey, value: { national_id: "TEST-000", notes: "clinical note" } },
+    });
+    try {
+      const res = await authed("admin").get("/api/admin/settings");
+      expect(res.status).toBe(200);
+      expect(Object.keys(res.body).sort()).toEqual([
+        "default_pilot_duration_days",
+        "infrastructure_fee_usd",
+        "invitation_expiry_days",
+        "savings_fee_percentage",
+      ]);
+      expect(JSON.stringify(res.body)).not.toContain("clinical note");
+      for (const value of Object.values(res.body)) expect(typeof value).toBe("number");
+    } finally {
+      await prisma.platformSetting.delete({ where: { key: rogueKey } });
+    }
+  });
+
+  it("PUT /api/admin/settings rejects keys outside the allowlist", async () => {
+    const res = await authed("admin")
+      .put("/api/admin/settings")
+      .send({ "patient_prefs:anyone": { theme: "dark" } });
+    expect(res.status).toBe(400);
+    const stored = await prisma.platformSetting.findUnique({ where: { key: "patient_prefs:anyone" } });
+    expect(stored).toBeNull();
+  });
+
   it("GET /api/admin/approvals/pending", async () => {
     const res = await authed("admin").get("/api/admin/approvals/pending");
     expect(res.status).toBe(200);

@@ -4,6 +4,7 @@ import { saveExportFile } from "../../shared/services/file.service.js";
 import { generatePdfReport, toCsv } from "../../shared/services/report.service.js";
 
 import { allergyLabel, diagnosisName } from "../clinical/medical-record-payload.js";
+import { dayRangeFor, monthKey, recentMonthKeys } from "../../shared/utils/day-range.js";
 
 export async function listPharmacyPatients(pharmacyId: string) {
   const dispensed = await prisma.prescription.findMany({
@@ -78,7 +79,7 @@ export async function getPharmacyAdherenceAggregate(pharmacyId: string) {
   // Trend from real dispense history: average the duration-based score per month.
   const byMonth = new Map<string, { sum: number; n: number }>();
   for (const r of rx) {
-    const month = r.dispensedAt?.toISOString().slice(0, 7);
+    const month = r.dispensedAt ? monthKey(r.dispensedAt) : undefined;
     if (!month) continue;
     const days = r.items[0]?.durationDays ?? 30;
     const score = Math.min(100, 60 + days);
@@ -87,10 +88,7 @@ export async function getPharmacyAdherenceAggregate(pharmacyId: string) {
     entry.n += 1;
     byMonth.set(month, entry);
   }
-  const trend = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - (5 - i));
-    const month = d.toISOString().slice(0, 7);
+  const trend = recentMonthKeys(6).map((month) => {
     const entry = byMonth.get(month);
     return { month, adherence_rate: entry ? Math.round(entry.sum / entry.n) : null };
   });
@@ -105,16 +103,13 @@ export async function getPatientAdherenceHistory(pharmacyId: string, patientId: 
     take: 24,
   });
   return rx.map((r) => ({
-    month: r.dispensedAt?.toISOString().slice(0, 7) ?? "",
+    month: r.dispensedAt ? monthKey(r.dispensedAt) : "",
     adherence_pct: r.items.length > 0 ? Math.min(100, 60 + r.items[0]!.durationDays) : 75,
   }));
 }
 
 export async function listPharmacyReceipts(pharmacyId: string, date?: string) {
-  const start = date ? new Date(date) : new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  const { start, end } = dayRangeFor(date);
 
   const rx = await prisma.prescription.findMany({
     where: { pharmacyId, status: "dispensed", dispensedAt: { gte: start, lt: end } },

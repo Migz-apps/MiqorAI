@@ -29,6 +29,16 @@ import {
   readCsv,
 } from "./csv-utils.js";
 
+// The seed truncates every table before loading demo data.
+if (process.env.NODE_ENV === "production" && process.env.FORCE_SEED !== "1") {
+  console.error(
+    "Refusing to seed: NODE_ENV=production and this script DELETES ALL DATA in the target database " +
+      "before loading synthetic demo rows. Set FORCE_SEED=1 (and SEED_PASSWORD) only if you really " +
+      "intend to wipe that database.",
+  );
+  process.exit(1);
+}
+
 const PASSWORD = (() => {
   const fromEnv = process.env.SEED_PASSWORD;
   if (fromEnv) return fromEnv;

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { rangeEnd, rangeStart } from "../../shared/utils/day-range.js";
 import { authenticate, requireRoles } from "../../shared/middleware/auth.js";
 import { validateBody } from "../../shared/middleware/errorHandler.js";
 import { param, clampLimit } from "../../shared/utils/param.js";
@@ -232,8 +233,8 @@ router.get("/audit-logs", async (req, res, next) => {
       await listAuditLogsAdmin({
         userId: req.query.user_id ? String(req.query.user_id) : undefined,
         action: req.query.action ? String(req.query.action) : undefined,
-        startDate: req.query.start_date ? new Date(String(req.query.start_date)) : undefined,
-        endDate: req.query.end_date ? new Date(String(req.query.end_date)) : undefined,
+        startDate: req.query.start_date ? rangeStart(String(req.query.start_date)) : undefined,
+        endDate: req.query.end_date ? rangeEnd(String(req.query.end_date)) : undefined,
         limit: clampLimit(req.query.limit, undefined),
         offset: req.query.offset ? parseInt(String(req.query.offset), 10) : undefined,
       }),
