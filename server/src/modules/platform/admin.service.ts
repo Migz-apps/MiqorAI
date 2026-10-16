@@ -243,7 +243,7 @@ export async function createInsurer(data: {
       code: data.code ?? data.registration_number,
       feePercentage: data.fee_percentage,
       country: data.country,
-      currency: data.currency ?? "KES",
+      currency: data.currency ?? "RWF",
     },
   });
 }

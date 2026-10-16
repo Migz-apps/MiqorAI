@@ -428,7 +428,7 @@ model Insurer {
   address            String?
   city               String?
   country            String?
-  currency           String            @default("KES")
+  currency           String            @default("RWF")
   phone              String?
   memberCount        Int               @default(0) @map("member_count")
   contractStartDate  DateTime?         @map("contract_start_date")
