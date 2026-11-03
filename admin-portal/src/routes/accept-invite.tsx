@@ -157,6 +157,7 @@ function AcceptInvitePage() {
                 <input
                   id="invite-email"
                   type="email"
+                  autoComplete="email"
                   value={invite.email}
                   readOnly
                   disabled

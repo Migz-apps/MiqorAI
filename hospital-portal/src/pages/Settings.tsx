@@ -138,12 +138,12 @@ export default function Settings() {
           <Separator />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
             <div className="space-y-xs">
-              <Label>Hospital name</Label>
-              <Input value={hospitalName} onChange={e => setHospitalName(e.target.value)} disabled={!isAdmin} />
+              <Label htmlFor="settings-hospital-name">Hospital name</Label>
+              <Input id="settings-hospital-name" value={hospitalName} onChange={e => setHospitalName(e.target.value)} disabled={!isAdmin} />
             </div>
             <div className="space-y-xs">
-              <Label>City</Label>
-              <Input value={hospitalCity} onChange={e => setHospitalCity(e.target.value)} disabled={!isAdmin} />
+              <Label htmlFor="settings-hospital-city">City</Label>
+              <Input id="settings-hospital-city" value={hospitalCity} onChange={e => setHospitalCity(e.target.value)} disabled={!isAdmin} />
             </div>
           </div>
           {isAdmin ? (

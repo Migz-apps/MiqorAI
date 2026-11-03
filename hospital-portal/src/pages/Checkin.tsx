@@ -108,9 +108,9 @@ export default function Checkin() {
             )}
 
             <div className="space-y-xs">
-              <Label>Department</Label>
+              <Label htmlFor="checkin-department">Department</Label>
               <Select value={department} onValueChange={v => setDepartment(v as Department)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id="checkin-department"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {departments.filter(d => d.isActive).map(d => (
                     <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
@@ -121,8 +121,8 @@ export default function Checkin() {
             </div>
 
             <div className="space-y-xs">
-              <Label>Priority</Label>
-              <div className="grid grid-cols-3 gap-xs">
+              <Label id="checkin-priority-label">Priority</Label>
+              <div role="group" aria-labelledby="checkin-priority-label" className="grid grid-cols-3 gap-xs">
                 {(["normal","urgent","emergency"] as Priority[]).map(p => (
                   <button key={p} type="button" onClick={() => setPriority(p)}
                     className={`h-10 rounded-md border text-sm font-medium capitalize transition-colors ${
@@ -138,8 +138,8 @@ export default function Checkin() {
             </div>
 
             <div className="space-y-xs">
-              <Label>Reason (optional)</Label>
-              <Input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. BP follow-up" />
+              <Label htmlFor="checkin-reason">Reason (optional)</Label>
+              <Input id="checkin-reason" value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. BP follow-up" />
             </div>
 
             <Button onClick={checkIn} disabled={!patient || !!alreadyHere || checkingIn}

@@ -59,7 +59,7 @@ export default function AuditLog() {
 
       <Card>
         <CardHeader className="pb-sm">
-          <Input placeholder="Filter by staff, patient ID or action…" value={q} onChange={e => setQ(e.target.value)} className="max-w-md" />
+          <Input aria-label="Filter audit log" placeholder="Filter by staff, patient ID or action…" value={q} onChange={e => setQ(e.target.value)} className="max-w-md" />
         </CardHeader>
         <CardContent className="p-0">
           <div className="hidden md:grid grid-cols-12 px-md py-sm bg-background-grey text-xs font-medium text-text-secondary border-b">

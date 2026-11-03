@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@miqorai/ui/card";
 import { Button } from "@miqorai/ui/button";
@@ -33,6 +33,7 @@ const trackPill: Record<string, string> = {
 };
 
 export default function Staff() {
+  const editRoleId = useId();
   const session = useAuth((s) => s.session)!;
   const queryClient = useQueryClient();
   const [inviteEmail, setInviteEmail] = useState("");
@@ -104,13 +105,13 @@ export default function Staff() {
               </DialogHeader>
               <div className="space-y-md">
                 <div className="space-y-xs">
-                  <Label>Email</Label>
-                  <Input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="teammate@insurer.com" />
+                  <Label htmlFor="invite-email">Email</Label>
+                  <Input id="invite-email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="teammate@insurer.com" />
                 </div>
                 <div className="space-y-xs">
-                  <Label>Role</Label>
+                  <Label htmlFor="invite-role">Role</Label>
                   <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as Role)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="invite-role"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="analyst">Analyst</SelectItem>
                       <SelectItem value="fraud">Fraud Investigator</SelectItem>
@@ -196,9 +197,9 @@ export default function Staff() {
                         </DialogHeader>
                         <div className="space-y-md">
                           <div className="space-y-xs">
-                            <Label>Role</Label>
+                            <Label htmlFor={`${editRoleId}-${s.id}`}>Role</Label>
                             <Select value={editRole} onValueChange={(value) => setEditRole(value as Role)}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger id={`${editRoleId}-${s.id}`}><SelectValue /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="analyst">Analyst</SelectItem>
                                 <SelectItem value="fraud">Fraud Investigator</SelectItem>

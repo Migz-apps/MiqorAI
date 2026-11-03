@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ export const AiActionAlertDialog = ({
   closeLabel,
   proceedLabel,
 }: Props) => {
+  const id = useId();
   const [overrideReason, setOverrideReason] = useState("");
   const canProceed = allowProceed && typeof onProceed === "function";
 
@@ -78,8 +79,9 @@ export const AiActionAlertDialog = ({
 
         {alert.requiresOverrideReason && (
           <div className="space-y-xs">
-            <Label>Override reason (required)</Label>
+            <Label htmlFor={`${id}-override-reason`}>Override reason (required)</Label>
             <Textarea
+              id={`${id}-override-reason`}
               value={overrideReason}
               onChange={(e) => setOverrideReason(e.target.value)}
               placeholder="Document clinical justification…"

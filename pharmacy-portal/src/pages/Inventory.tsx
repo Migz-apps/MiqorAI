@@ -77,7 +77,7 @@ export default function Inventory() {
         <Card>
           <CardHeader className="pb-sm"><CardTitle className="h3 flex items-center gap-sm"><Search className="h-4 w-4" /> Search</CardTitle></CardHeader>
           <CardContent>
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Drug name, barcode, category…" className="h-10" />
+            <Input aria-label="Search inventory" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Drug name, barcode, category…" className="h-10" />
           </CardContent>
         </Card>
         <Card>
@@ -85,6 +85,7 @@ export default function Inventory() {
           <CardContent>
             <div className="flex gap-sm">
               <Input
+                aria-label="Barcode"
                 value={scan}
                 onChange={(e) => setScan(e.target.value)}
                 placeholder="Scan or type barcode"

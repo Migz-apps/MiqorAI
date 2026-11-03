@@ -50,7 +50,7 @@ export default function Prescriptions() {
           <div className="flex flex-col md:flex-row md:items-center gap-md">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by patient, RX-ID, doctor…" className="pl-9 h-10" />
+              <Input aria-label="Search prescriptions" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by patient, RX-ID, doctor…" className="pl-9 h-10" />
             </div>
             <div className="flex items-center gap-1 flex-wrap">
               <Filter className="h-3.5 w-3.5 text-text-secondary mr-1" />

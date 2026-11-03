@@ -5,6 +5,8 @@ const LOCAL_API_PATTERN = /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|10\.
 
 function resolveApiUrl(): string {
   const rawApiUrl = import.meta.env.VITE_API_URL?.trim() ?? "";
+  // "/" means same-origin: the host proxies /api to the backend (see vercel.json).
+  if (rawApiUrl === "/") return "";
   if (import.meta.env.DEV) return rawApiUrl;
   return !rawApiUrl || LOCAL_API_PATTERN.test(rawApiUrl) ? PROD_API_FALLBACK : rawApiUrl;
 }

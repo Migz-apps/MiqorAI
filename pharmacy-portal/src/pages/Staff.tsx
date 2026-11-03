@@ -68,17 +68,18 @@ export default function Staff() {
             </DialogHeader>
             <div className="space-y-md">
               <div className="space-y-xs">
-                <Label>Email</Label>
+                <Label htmlFor="invite-email">Email</Label>
                 <Input
+                  id="invite-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="staff@example.com"
                 />
               </div>
               <div className="space-y-xs">
-                <Label>Role</Label>
+                <Label htmlFor="invite-role">Role</Label>
                 <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger>
+                  <SelectTrigger id="invite-role">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

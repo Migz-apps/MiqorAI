@@ -71,22 +71,22 @@ export default function Reports() {
           </CardHeader>
           <CardContent className="space-y-lg">
             <div>
-              <Label className="text-xs uppercase tracking-wide text-text-secondary mb-sm block">Date range</Label>
+              <Label className="text-xs uppercase tracking-wide text-text-secondary mb-sm block" htmlFor="report-from">Date range</Label>
               <div className="grid grid-cols-2 gap-sm">
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-                  <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="pl-9 h-10" />
+                  <Input id="report-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="pl-9 h-10" />
                 </div>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-                  <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="pl-9 h-10" />
+                  <Input id="report-to" aria-label="End date" type="date" value={to} onChange={(e) => setTo(e.target.value)} className="pl-9 h-10" />
                 </div>
               </div>
             </div>
 
             <div>
-              <Label className="text-xs uppercase tracking-wide text-text-secondary mb-sm block">Metrics to include</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-sm">
+              <Label id="report-metrics-label" className="text-xs uppercase tracking-wide text-text-secondary mb-sm block">Metrics to include</Label>
+              <div role="group" aria-labelledby="report-metrics-label" className="grid grid-cols-1 md:grid-cols-2 gap-sm">
                 {[
                   { k: "savings", label: "Savings dashboard", desc: "Verified duplicate-test savings + audit trail" },
                   { k: "adherence", label: "Adherence outcomes", desc: "Medication adherence + at-risk patients" },
@@ -111,17 +111,17 @@ export default function Reports() {
             </div>
 
             <div>
-              <Label className="text-xs uppercase tracking-wide text-text-secondary mb-sm block">Format</Label>
-              <RadioGroup value={format} onValueChange={(v) => setFormat(v as "pdf" | "csv" | "excel")} className="grid grid-cols-3 gap-sm">
+              <Label id="report-format-label" className="text-xs uppercase tracking-wide text-text-secondary mb-sm block">Format</Label>
+              <RadioGroup aria-labelledby="report-format-label" value={format} onValueChange={(v) => setFormat(v as "pdf" | "csv" | "excel")} className="grid grid-cols-3 gap-sm">
                 {[
                   { v: "pdf", label: "PDF", desc: "Board-ready", icon: FileText },
                   { v: "excel", label: "Excel", desc: "Pivots", icon: FileSpreadsheet },
                   { v: "csv", label: "CSV", desc: "Raw data", icon: FileSpreadsheet },
                 ].map(f => (
-                  <label key={f.v} className={`flex flex-col gap-1 p-sm rounded-md border cursor-pointer transition ${format === f.v ? "border-insurer bg-insurer-light" : "border-border hover:border-insurer/40"}`}>
+                  <label key={f.v} htmlFor={`report-format-${f.v}`} className={`flex flex-col gap-1 p-sm rounded-md border cursor-pointer transition ${format === f.v ? "border-insurer bg-insurer-light" : "border-border hover:border-insurer/40"}`}>
                     <div className="flex items-center justify-between">
                       <f.icon className={`h-4 w-4 ${format === f.v ? "text-insurer" : "text-text-secondary"}`} />
-                      <RadioGroupItem value={f.v} className="h-3.5 w-3.5" />
+                      <RadioGroupItem id={`report-format-${f.v}`} value={f.v} className="h-3.5 w-3.5" />
                     </div>
                     <div className="text-sm font-medium">{f.label}</div>
                     <div className="text-[11px] text-text-secondary">{f.desc}</div>

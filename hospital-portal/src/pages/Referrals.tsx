@@ -102,9 +102,9 @@ export default function Referrals() {
           <CardContent>
             <form onSubmit={create} className="space-y-md">
               <div className="space-y-xs">
-                <Label>Patient</Label>
+                <Label htmlFor="referral-patient">Patient</Label>
                 <Select value={patientId} onValueChange={setPatientId}>
-                  <SelectTrigger><SelectValue placeholder="Select patient…" /></SelectTrigger>
+                  <SelectTrigger id="referral-patient"><SelectValue placeholder="Select patient…" /></SelectTrigger>
                   <SelectContent>
                     {patients.map((p) => (
                       <SelectItem key={p.id} value={p.id}>{p.name} ({p.id.slice(0, 8)}…)</SelectItem>
@@ -114,9 +114,9 @@ export default function Referrals() {
               </div>
               <div className="grid grid-cols-2 gap-sm">
                 <div className="space-y-xs">
-                  <Label>Refer to</Label>
+                  <Label htmlFor="referral-to">Refer to</Label>
                   <Select value={referTo} onValueChange={setReferTo}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="referral-to"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {departments.map((d) => (
                         <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
@@ -126,9 +126,9 @@ export default function Referrals() {
                   </Select>
                 </div>
                 <div className="space-y-xs">
-                  <Label>Urgency</Label>
+                  <Label htmlFor="referral-urgency">Urgency</Label>
                   <Select value={urgency} onValueChange={(v) => setUrgency(v as typeof urgency)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="referral-urgency"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Routine">Routine</SelectItem>
                       <SelectItem value="Urgent">Urgent</SelectItem>
@@ -138,9 +138,9 @@ export default function Referrals() {
                 </div>
               </div>
               <div className="space-y-xs">
-                <Label>ICD-11 code (optional)</Label>
+                <Label htmlFor="referral-icd">ICD-11 code (optional)</Label>
                 <Select value={icd} onValueChange={setIcd}>
-                  <SelectTrigger><SelectValue placeholder="Pick a diagnosis…" /></SelectTrigger>
+                  <SelectTrigger id="referral-icd"><SelectValue placeholder="Pick a diagnosis…" /></SelectTrigger>
                   <SelectContent>
                     {icdCodes.map((c) => (
                       <SelectItem key={c.code} value={c.code}>{c.code} — {c.label}</SelectItem>
@@ -149,8 +149,8 @@ export default function Referrals() {
                 </Select>
               </div>
               <div className="space-y-xs">
-                <Label>Reason</Label>
-                <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Clinical reason for referral…" />
+                <Label htmlFor="referral-reason">Reason</Label>
+                <Textarea id="referral-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Clinical reason for referral…" />
               </div>
               <Button type="submit" disabled={submitting} className="w-full bg-[hsl(var(--clinical-accent))] hover:bg-[hsl(var(--clinical-accent))]/90 text-white">
                 <Send className="h-4 w-4 mr-1" /> Send referral + SMS patient

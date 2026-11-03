@@ -142,6 +142,7 @@ export default function Contract() {
                 <DialogTitle>Request contract amendment</DialogTitle>
               </DialogHeader>
               <Textarea
+                aria-label="Amendment details"
                 value={amendmentNotes}
                 onChange={(e) => setAmendmentNotes(e.target.value)}
                 placeholder="Describe the amendment you want MiqorAI to review."

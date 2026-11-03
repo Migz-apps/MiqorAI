@@ -56,7 +56,7 @@ export default function Patients() {
           <div className="flex gap-sm">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-              <Input className="pl-9" placeholder="Search by name, Patient ID, or phone…" value={q} onChange={e => setQ(e.target.value)} />
+              <Input className="pl-9" aria-label="Search patients" placeholder="Search by name, Patient ID, or phone…" value={q} onChange={e => setQ(e.target.value)} />
             </div>
             <Dialog>
               <DialogTrigger asChild>
@@ -69,8 +69,9 @@ export default function Patients() {
                 <DialogHeader><DialogTitle>Filters</DialogTitle></DialogHeader>
                 <div className="space-y-md">
                   <div className="space-y-xs">
-                    <Label>Diagnosis</Label>
+                    <Label htmlFor="patients-filter-diagnosis">Diagnosis</Label>
                     <CatalogFilter
+                      id="patients-filter-diagnosis"
                       label="Diagnosis"
                       value={diag}
                       onChange={setDiag}
@@ -84,8 +85,9 @@ export default function Patients() {
                     />
                   </div>
                   <div className="space-y-xs">
-                    <Label>Prescribed medication</Label>
+                    <Label htmlFor="patients-filter-medication">Prescribed medication</Label>
                     <CatalogFilter
+                      id="patients-filter-medication"
                       label="Prescribed medication"
                       value={drug}
                       onChange={setDrug}
@@ -100,9 +102,9 @@ export default function Patients() {
                     />
                   </div>
                   <div className="space-y-xs">
-                    <Label>Age range</Label>
+                    <Label htmlFor="patients-filter-age">Age range</Label>
                     <Select value={age} onValueChange={setAge}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger id="patients-filter-age"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="any">Any</SelectItem>
                         <SelectItem value="0-17">0-17</SelectItem>

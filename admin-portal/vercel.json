@@ -2,9 +2,13 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "cd .. && npm ci -w admin-portal -w @miqorai/ui -w @miqorai/api-client",
-  "buildCommand": "cd .. && npm run build -w admin-portal && cd admin-portal/dist/client && (test -f index.html || cp _shell.html index.html)",
+  "buildCommand": "cd .. && VITE_API_URL=/ npm run build -w admin-portal && cd admin-portal/dist/client && (test -f index.html || cp _shell.html index.html)",
   "outputDirectory": "dist/client",
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://miqorai.onrender.com/api/:path*"
+    },
     {
       "source": "/((?!api/|api$|assets/).*)",
       "destination": "/index.html"

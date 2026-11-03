@@ -59,7 +59,7 @@ export default function Login() {
         </div>
         <div className="space-y-xs">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@pharmacy.co.ke" />
+          <Input id="email" type="email" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@pharmacy.co.ke" autoComplete="email" />
         </div>
         <div className="space-y-xs">
           <div className="flex items-center justify-between">
@@ -67,7 +67,7 @@ export default function Login() {
             <span className="text-xs text-text-secondary">Forgot? Ask your pharmacy admin</span>
           </div>
           <div className="relative">
-            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="pr-10 h-11" placeholder="Enter your password" />
+            <Input id="pw" type={showPw ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="pr-10 h-11" placeholder="Enter your password" autoComplete="current-password" />
             <button aria-label={showPw ? "Hide password" : "Show password"} type="button" onClick={() => setShowPw((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-foreground">
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>

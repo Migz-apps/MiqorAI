@@ -243,6 +243,7 @@ export const AddVisitForm = ({
       <section className="space-y-sm p-md rounded-md border bg-card">
         <h3 className="h3">1. Chief complaint</h3>
         <Textarea
+          aria-label="Chief complaint"
           placeholder="What is the patient here for?"
           value={draft.chief}
           onChange={e => update({ chief: e.target.value })}
@@ -250,18 +251,18 @@ export const AddVisitForm = ({
         />
         <div className="grid grid-cols-2 gap-sm">
           <div className="space-y-xs">
-            <Label>Duration</Label>
+            <Label htmlFor="visit-duration">Duration</Label>
             <Select value={draft.duration} onValueChange={v => update({ duration: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="visit-duration"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {["Today","1 day","3 days","1 week","2 weeks","1 month","3+ months"].map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-xs">
-            <Label>Severity</Label>
+            <Label htmlFor="visit-severity">Severity</Label>
             <Select value={draft.severity} onValueChange={v => update({ severity: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="visit-severity"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {["Mild","Moderate","Severe","Critical"].map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
@@ -274,8 +275,9 @@ export const AddVisitForm = ({
         <h3 className="h3">2. Symptoms & assessment</h3>
         <div className="space-y-sm">
           <div className="space-y-xs">
-            <Label>Symptoms</Label>
+            <Label htmlFor="visit-symptoms">Symptoms</Label>
             <Textarea
+              id="visit-symptoms"
               placeholder="Current symptoms, onset, progression…"
               value={draft.symptoms}
               onChange={e => update({ symptoms: e.target.value })}
@@ -283,8 +285,9 @@ export const AddVisitForm = ({
             />
           </div>
           <div className="space-y-xs">
-            <Label>Assessment</Label>
+            <Label htmlFor="visit-assessment">Assessment</Label>
             <Textarea
+              id="visit-assessment"
               placeholder="Clinical assessment and working impression…"
               value={draft.assessment}
               onChange={e => update({ assessment: e.target.value })}
@@ -298,12 +301,12 @@ export const AddVisitForm = ({
         <section className="space-y-sm p-md rounded-md border bg-card">
           <h3 className="h3">3. Vitals</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-sm">
-            <div className="space-y-xs"><Label>BP (mmHg)</Label><Input placeholder="120/80" value={draft.bp} onChange={e => update({ bp: e.target.value })} /></div>
-            <div className="space-y-xs"><Label>HR (bpm)</Label><Input placeholder="72" value={draft.hr} onChange={e => update({ hr: e.target.value })} /></div>
-            <div className="space-y-xs"><Label>Temp (°C)</Label><Input placeholder="36.8" value={draft.temp} onChange={e => update({ temp: e.target.value })} /></div>
-            <div className="space-y-xs"><Label>SpO₂ (%)</Label><Input placeholder="98" value={draft.spo2} onChange={e => update({ spo2: e.target.value })} /></div>
-            <div className="space-y-xs"><Label>Height (cm)</Label><Input placeholder="165" value={draft.height} onChange={e => update({ height: e.target.value })} /></div>
-            <div className="space-y-xs"><Label>Weight (kg)</Label><Input placeholder="70" value={draft.weight} onChange={e => update({ weight: e.target.value })} /></div>
+            <div className="space-y-xs"><Label htmlFor="visit-bp">BP (mmHg)</Label><Input id="visit-bp" placeholder="120/80" value={draft.bp} onChange={e => update({ bp: e.target.value })} /></div>
+            <div className="space-y-xs"><Label htmlFor="visit-hr">HR (bpm)</Label><Input id="visit-hr" placeholder="72" value={draft.hr} onChange={e => update({ hr: e.target.value })} /></div>
+            <div className="space-y-xs"><Label htmlFor="visit-temp">Temp (°C)</Label><Input id="visit-temp" placeholder="36.8" value={draft.temp} onChange={e => update({ temp: e.target.value })} /></div>
+            <div className="space-y-xs"><Label htmlFor="visit-spo2">SpO₂ (%)</Label><Input id="visit-spo2" placeholder="98" value={draft.spo2} onChange={e => update({ spo2: e.target.value })} /></div>
+            <div className="space-y-xs"><Label htmlFor="visit-height">Height (cm)</Label><Input id="visit-height" placeholder="165" value={draft.height} onChange={e => update({ height: e.target.value })} /></div>
+            <div className="space-y-xs"><Label htmlFor="visit-weight">Weight (kg)</Label><Input id="visit-weight" placeholder="70" value={draft.weight} onChange={e => update({ weight: e.target.value })} /></div>
           </div>
         </section>
       )}
@@ -313,7 +316,7 @@ export const AddVisitForm = ({
           <h3 className="h3">4. Diagnosis (ICD-11)</h3>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-            <Input className="pl-9" placeholder="Search ICD-11 code or term…" value={diagSearch} onChange={e => setDiagSearch(e.target.value)} />
+            <Input className="pl-9" aria-label="Search ICD-11 diagnosis" placeholder="Search ICD-11 code or term…" value={diagSearch} onChange={e => setDiagSearch(e.target.value)} />
           </div>
           {diagSearch && (
             <div className="border rounded-md divide-y">
@@ -419,7 +422,7 @@ export const AddVisitForm = ({
 
       <section className="space-y-sm p-md rounded-md border bg-card">
         <h3 className="h3">7. Notes</h3>
-        <Textarea placeholder="Clinical notes, observations, follow-up plan…" value={draft.notes} onChange={e => update({ notes: e.target.value })} rows={4} />
+        <Textarea aria-label="Clinical notes" placeholder="Clinical notes, observations, follow-up plan…" value={draft.notes} onChange={e => update({ notes: e.target.value })} rows={4} />
       </section>
 
       <div className="flex flex-wrap gap-sm justify-end sticky bottom-0 bg-background-grey/95 backdrop-blur py-sm -mx-md px-md border-t">

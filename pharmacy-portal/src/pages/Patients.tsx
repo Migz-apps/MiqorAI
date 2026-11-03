@@ -42,7 +42,7 @@ export default function Patients() {
         <CardHeader className="pb-sm">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or patient ID" className="pl-9 h-10" />
+            <Input aria-label="Search patients" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or patient ID" className="pl-9 h-10" />
           </div>
         </CardHeader>
         <CardContent className="p-0">

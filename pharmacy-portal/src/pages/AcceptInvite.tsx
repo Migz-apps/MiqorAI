@@ -105,10 +105,10 @@ export default function AcceptInvite() {
 
           <form onSubmit={submit} className="space-y-md">
             <div className="space-y-xs">
-              <Label>Email</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-                <Input className="pl-9 h-11" value={invite.email} readOnly disabled />
+                <Input id="email" className="pl-9 h-11" value={invite.email} readOnly disabled />
               </div>
             </div>
             <div className="space-y-xs">

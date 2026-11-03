@@ -183,7 +183,7 @@ export async function createPatientPasswordResetChallenge(email: string) {
 
 
 /** Validates the emailed code; returns the normalized email. The reset token itself is
- * minted fresh by the caller â€” no plaintext token is ever stored at rest. */
+ * minted fresh by the caller — no plaintext token is ever stored at rest. */
 export async function consumePatientPasswordResetChallenge(email: string, code: string): Promise<string> {
   const normalizedEmail = normalizeEmail(email);
   const challenge = await getLatestChallenge(normalizedEmail, PURPOSE_PASSWORD_RESET);

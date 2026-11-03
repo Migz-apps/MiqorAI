@@ -57,6 +57,7 @@ export const TopBar = () => {
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-secondary" />
           <Input
+            aria-label="Search"
             className="pl-8 h-9 bg-background-grey border-transparent focus-visible:bg-background"
             placeholder="Search claims, members, providers..."
           />

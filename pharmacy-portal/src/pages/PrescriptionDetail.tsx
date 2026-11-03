@@ -226,14 +226,14 @@ export default function PrescriptionDetail() {
                 <DialogHeader><DialogTitle>Hold prescription</DialogTitle></DialogHeader>
                 <div className="space-y-md">
                   <Select value={holdReason} onValueChange={setHoldReason}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Hold reason"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Need clarification from doctor">Need clarification from doctor</SelectItem>
                       <SelectItem value="Out of stock (expected 2-3 days)">Out of stock (expected 2-3 days)</SelectItem>
                       <SelectItem value="Insurance verification pending">Insurance verification pending</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Textarea value={holdNote} onChange={(e) => setHoldNote(e.target.value)} placeholder="Additional notes for the doctor or patient…" />
+                  <Textarea aria-label="Hold notes" value={holdNote} onChange={(e) => setHoldNote(e.target.value)} placeholder="Additional notes for the doctor or patient…" />
                 </div>
                 <DialogFooter>
                   <Button onClick={() => actionMutation.mutate("hold")} className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
@@ -254,7 +254,7 @@ export default function PrescriptionDetail() {
                   <DialogHeader><DialogTitle>Reject prescription</DialogTitle></DialogHeader>
                   <div className="space-y-md">
                     <Select value={rejectReason} onValueChange={setRejectReason}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger aria-label="Rejection reason"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Drug contraindicated">Drug contraindicated</SelectItem>
                         <SelectItem value="Allergy risk">Allergy risk</SelectItem>
@@ -262,7 +262,7 @@ export default function PrescriptionDetail() {
                         <SelectItem value="Expired prescription">Expired prescription</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Textarea value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Explanation for patient and doctor…" />
+                    <Textarea aria-label="Rejection notes" value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Explanation for patient and doctor…" />
                   </div>
                   <DialogFooter>
                     <Button onClick={() => actionMutation.mutate("reject")} variant="destructive">Reject prescription</Button>

@@ -181,6 +181,7 @@ for (const file of [
   "deploy/k8s/README.md",
   ".github/workflows/build-images.yml",
   ".github/workflows/validate-k8s.yml",
+  ".github/workflows/ci.yml",
   "LICENSE",
 ]) {
   read(file);
@@ -217,6 +218,10 @@ expectIncludes(renderYaml, "healthCheckPath: /health", "render.yaml");
 expectIncludes(renderYaml, "npm ci", "render.yaml");
 expectIncludes(renderYaml, "preDeployCommand: npx prisma migrate deploy", "render.yaml");
 expectIncludes(renderYaml, "WORKER_INLINE", "render.yaml");
+// BASE_URL builds signed file links, so it must be the host the clients reach.
+const renderBaseUrl = renderYaml?.match(/key: BASE_URL\s+value: (\S+)/)?.[1];
+expect(renderBaseUrl === "https://miqorai.onrender.com", "render.yaml BASE_URL should be https://miqorai.onrender.com");
+expectIncludes(serverProdExample, "BASE_URL=https://miqorai.onrender.com", "server/.env.production.example");
 
 for (const portal of portals) {
   const vercelPath = `${portal}/vercel.json`;
@@ -224,9 +229,21 @@ for (const portal of portals) {
   if (vercel === null) continue;
   const rewrites = vercel.rewrites ?? [];
   expect(rewrites.length > 0, `${vercelPath} should rewrite client routes to /index.html`);
+  const apiProxy = rewrites.find((rewrite) => rewrite.source === "/api/:path*");
+  expect(
+    apiProxy && /^https:\/\/[^/]+\/api\/:path\*$/.test(String(apiProxy.destination)),
+    `${vercelPath} should proxy /api/:path* to the backend's /api/:path* (same-origin session cookie)`,
+  );
+  expect(
+    !renderBaseUrl || String(apiProxy?.destination).startsWith(`${renderBaseUrl}/`),
+    `${vercelPath} /api proxy should target render.yaml BASE_URL (${renderBaseUrl})`,
+  );
+  expect(rewrites[0] === apiProxy, `${vercelPath} /api proxy rewrite must come before the SPA fallback`);
   for (const rewrite of rewrites) {
+    if (rewrite === apiProxy) continue;
     expect(String(rewrite.source).includes("(?!api"), `${vercelPath} rewrite ${rewrite.source} must not catch /api`);
   }
+  expectIncludes(JSON.stringify(vercel.buildCommand ?? ""), "VITE_API_URL=/", `${vercelPath} buildCommand`);
   const headerKeys = (vercel.headers ?? []).flatMap((rule) => (rule.headers ?? []).map((h) => h.key));
   for (const header of ["Content-Security-Policy", "Strict-Transport-Security", "X-Frame-Options", "Cache-Control"]) {
     expect(headerKeys.includes(header), `${vercelPath} should set ${header}`);

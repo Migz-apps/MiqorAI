@@ -83,24 +83,24 @@ export default function ManualRegister() {
         <CardHeader className="pb-sm"><CardTitle className="h3">Patient details</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-md">
-            <Field label="Full name" required>
-              <Input value={form.name} onChange={update("name")} placeholder="Grace Muthoni" />
+            <Field id="register-name" label="Full name" required>
+              <Input id="register-name" value={form.name} onChange={update("name")} placeholder="Grace Muthoni" />
             </Field>
-            <Field label="Phone number" required hint="Must be unique">
-              <Input value={form.phone} onChange={update("phone")} placeholder="+234 803 555 1241" />
+            <Field id="register-phone" label="Phone number" required hint="Must be unique">
+              <Input id="register-phone" value={form.phone} onChange={update("phone")} placeholder="+234 803 555 1241" />
             </Field>
-            <Field label="National ID" hint="Optional">
-              <Input value={form.nationalId} onChange={update("nationalId")} />
+            <Field id="register-national-id" label="National ID" hint="Optional">
+              <Input id="register-national-id" value={form.nationalId} onChange={update("nationalId")} />
             </Field>
-            <Field label="Insurance ID" hint="Will try to auto-fetch">
-              <Input value={form.insuranceId} onChange={update("insuranceId")} />
+            <Field id="register-insurance-id" label="Insurance ID" hint="Will try to auto-fetch">
+              <Input id="register-insurance-id" value={form.insuranceId} onChange={update("insuranceId")} />
             </Field>
-            <Field label="Date of birth" required>
-              <Input type="date" value={form.dob} onChange={update("dob")} />
+            <Field id="register-dob" label="Date of birth" required>
+              <Input id="register-dob" type="date" value={form.dob} onChange={update("dob")} />
             </Field>
-            <Field label="Gender">
+            <Field id="register-gender" label="Gender">
               <Select value={form.gender} onValueChange={update("gender")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id="register-gender"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="F">Female</SelectItem>
                   <SelectItem value="M">Male</SelectItem>
@@ -108,18 +108,18 @@ export default function ManualRegister() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Emergency contact name">
-              <Input value={form.emergencyName} onChange={update("emergencyName")} />
+            <Field id="register-emergency-name" label="Emergency contact name">
+              <Input id="register-emergency-name" value={form.emergencyName} onChange={update("emergencyName")} />
             </Field>
-            <Field label="Emergency contact phone">
-              <Input value={form.emergencyPhone} onChange={update("emergencyPhone")} />
+            <Field id="register-emergency-phone" label="Emergency contact phone">
+              <Input id="register-emergency-phone" value={form.emergencyPhone} onChange={update("emergencyPhone")} />
             </Field>
-            <Field label="Emergency contact relationship" hint="e.g. Spouse, Parent">
-              <Input value={form.emergencyRelationship} onChange={update("emergencyRelationship")} />
+            <Field id="register-emergency-relationship" label="Emergency contact relationship" hint="e.g. Spouse, Parent">
+              <Input id="register-emergency-relationship" value={form.emergencyRelationship} onChange={update("emergencyRelationship")} />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Known allergies" required hint="Free text — comma-separated">
-                <Textarea rows={2} value={form.allergies} onChange={update("allergies")} placeholder="Penicillin, peanuts" />
+              <Field id="register-allergies" label="Known allergies" required hint="Free text — comma-separated">
+                <Textarea id="register-allergies" rows={2} value={form.allergies} onChange={update("allergies")} placeholder="Penicillin, peanuts" />
               </Field>
             </div>
             <div className="sm:col-span-2 flex justify-end gap-sm pt-sm">
@@ -135,9 +135,9 @@ export default function ManualRegister() {
   );
 }
 
-const Field = ({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) => (
+const Field = ({ id, label, required, hint, children }: { id: string; label: string; required?: boolean; hint?: string; children: React.ReactNode }) => (
   <div className="space-y-xs">
-    <Label className="flex items-center gap-1">
+    <Label htmlFor={id} className="flex items-center gap-1">
       {label}{required && <span className="text-error">*</span>}
       {hint && <span className="text-[10px] text-text-secondary font-normal">· {hint}</span>}
     </Label>

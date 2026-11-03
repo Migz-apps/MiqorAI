@@ -292,7 +292,7 @@ export const QRScanner = ({ onResult }: { onResult?: (id: string) => void }) => 
       <div className="flex gap-sm">
         <div className="relative flex-1">
           <Keyboard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-          <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Paste the patient's code, or an RX ID" className="h-10 pl-9" />
+          <Input aria-label="Patient code or RX ID" value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Paste the patient's code, or an RX ID" className="h-10 pl-9" />
         </div>
         <Button onClick={() => manual && void handleInput(manual.trim())} disabled={verifying} className="bg-pharmacy hover:bg-pharmacy/90 text-pharmacy-foreground h-10">
           {verifying ? "…" : "Open"}

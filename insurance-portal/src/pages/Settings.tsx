@@ -108,20 +108,20 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-md">
           <div className="space-y-xs">
-            <Label>Insurer name</Label>
-            <Input defaultValue={session.insurerName} readOnly />
+            <Label htmlFor="settings-insurer-name">Insurer name</Label>
+            <Input id="settings-insurer-name" defaultValue={session.insurerName} readOnly />
           </div>
           <div className="space-y-xs">
-            <Label>Insurer code</Label>
-            <Input defaultValue={session.insurerCode} className="font-mono" readOnly />
+            <Label htmlFor="settings-insurer-code">Insurer code</Label>
+            <Input id="settings-insurer-code" defaultValue={session.insurerCode} className="font-mono" readOnly />
           </div>
           <div className="space-y-xs">
-            <Label>Country</Label>
-            <Input defaultValue={s.country ?? "Rwanda"} readOnly />
+            <Label htmlFor="settings-country">Country</Label>
+            <Input id="settings-country" defaultValue={s.country ?? "Rwanda"} readOnly />
           </div>
           <div className="space-y-xs">
-            <Label>Reporting currency</Label>
-            <Input defaultValue={s.currency ?? DEFAULT_CURRENCY} readOnly />
+            <Label htmlFor="settings-currency">Reporting currency</Label>
+            <Input id="settings-currency" defaultValue={s.currency ?? DEFAULT_CURRENCY} readOnly />
           </div>
         </CardContent>
       </Card>
@@ -156,6 +156,7 @@ export default function Settings() {
         <CardContent className="space-y-md">
           <div className="flex items-center gap-sm">
             <Input
+              aria-label="API key"
               value={primaryKey ? `${primaryKey.key_prefix}••••••••••••` : "No API key configured"}
               readOnly
               className="font-mono"

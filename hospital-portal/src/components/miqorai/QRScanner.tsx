@@ -370,7 +370,7 @@ export const QRScanner = ({ onScanned }: Props) => {
 
       {manual && (
         <form onSubmit={submitManual} className="flex gap-sm">
-          <Input placeholder="Patient ID, phone number, or pasted QR code" value={manualValue} onChange={e => setManualValue(e.target.value)} />
+          <Input aria-label="Patient ID, phone number, or QR code" placeholder="Patient ID, phone number, or pasted QR code" value={manualValue} onChange={e => setManualValue(e.target.value)} />
           <Button type="submit" disabled={searching} className="bg-primary hover:bg-primary/90">{searching ? "…" : "Find"}</Button>
         </form>
       )}

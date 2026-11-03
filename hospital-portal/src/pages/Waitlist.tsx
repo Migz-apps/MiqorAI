@@ -125,9 +125,9 @@ export default function Waitlist() {
       <Card>
         <CardHeader className="pb-sm space-y-sm">
           <div className="flex flex-wrap gap-sm">
-            <Input placeholder="Search by name or ID…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+            <Input aria-label="Search waitlist" placeholder="Search by name or ID…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
             <Select value={filter} onValueChange={v => setFilter(v as Department | "all")}>
-              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[180px]" aria-label="Filter by department"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All departments</SelectItem>
                 {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
@@ -144,7 +144,7 @@ export default function Waitlist() {
               const longWaitRow = wait > 60 && e.status === "waiting";
               return (
                 <div key={e.id} className={`px-md py-sm flex flex-wrap items-center gap-sm ${longWaitRow ? "bg-secondary/5" : ""}`}>
-                  <Checkbox checked={selected.has(e.id)} onCheckedChange={() => toggle(e.id)} />
+                  <Checkbox checked={selected.has(e.id)} onCheckedChange={() => toggle(e.id)} aria-label={`Select ${e.patientName ?? e.patientId}`} />
                   <div className="text-xs text-text-secondary w-14">{e.checkInTime}</div>
                   <button onClick={() => nav(`/patients/${e.patientId}`)} className="flex-1 min-w-[160px] text-left">
                     <div className="text-sm font-medium hover:underline">{e.patientName ?? e.patientId}</div>
@@ -152,7 +152,7 @@ export default function Waitlist() {
                   </button>
                   <Badge variant="outline" className="bg-background-grey">{e.department}</Badge>
                   <Select value={e.priority} onValueChange={v => setPriority(e.id, v as Priority)}>
-                    <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[120px] h-8 text-xs" aria-label={`Priority for ${e.patientName ?? e.patientId}`}><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="normal">Normal</SelectItem>
                       <SelectItem value="urgent">Urgent</SelectItem>
@@ -167,7 +167,7 @@ export default function Waitlist() {
                     const doc = doctors.find(d => d.name === v);
                     if (doc?.userId) assign(e.id, doc.userId, doc.name);
                   }}>
-                    <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue placeholder="Assign…" /></SelectTrigger>
+                    <SelectTrigger className="w-[160px] h-8 text-xs" aria-label={`Assign doctor for ${e.patientName ?? e.patientId}`}><SelectValue placeholder="Assign…" /></SelectTrigger>
                     <SelectContent>
                       {doctors.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
                     </SelectContent>
@@ -180,7 +180,7 @@ export default function Waitlist() {
                       No-show
                     </Button>
                     <Select value={e.status} onValueChange={v => setStatus(e.id, v as typeof e.status)}>
-                      <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-[140px] h-8 text-xs" aria-label={`Status for ${e.patientName ?? e.patientId}`}><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="waiting">Waiting</SelectItem>
                         <SelectItem value="with-nurse">With nurse</SelectItem>

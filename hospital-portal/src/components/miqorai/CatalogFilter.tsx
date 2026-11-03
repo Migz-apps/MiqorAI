@@ -21,6 +21,7 @@ function useDebouncedValue<T>(value: T, delay: number): T {
 }
 
 type Props = {
+  id?: string;
   label: string;
   /** Selected option value, or "any". */
   value: string;
@@ -36,7 +37,7 @@ type Props = {
  * (debounced), shows "N of total" and loads further pages on demand, so every
  * entry is reachable rather than only the first page.
  */
-export function CatalogFilter({ label, value, onChange, queryKey, fetchPage, toOption, placeholder }: Props) {
+export function CatalogFilter({ id, label, value, onChange, queryKey, fetchPage, toOption, placeholder }: Props) {
   const listId = useId();
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +69,7 @@ export function CatalogFilter({ label, value, onChange, queryKey, fetchPage, toO
   return (
     <div className="space-y-xs">
       <Button
+        id={id}
         type="button"
         variant="outline"
         role="combobox"

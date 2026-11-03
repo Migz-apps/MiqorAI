@@ -302,10 +302,11 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
       </div>
 
       <div className="space-y-xs">
-        <Label>Medication</Label>
+        <Label htmlFor="rx-medication">Medication</Label>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
           <Input
+            id="rx-medication"
             className="pl-9"
             placeholder="Search drug database..."
             value={search}
@@ -364,8 +365,9 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-sm">
         <div className="space-y-xs">
-          <Label>Strength</Label>
+          <Label htmlFor="rx-strength">Strength</Label>
           <Input
+            id="rx-strength"
             value={dosage}
             onChange={(e) => setDosage(e.target.value)}
             placeholder="Type strength, e.g. 500mg"
@@ -401,13 +403,13 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
           </div>
         </div>
         <div className="space-y-xs">
-          <Label>Instructions</Label>
-          <Input value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="1 tablet" />
+          <Label htmlFor="rx-instructions">Instructions</Label>
+          <Input id="rx-instructions" value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="1 tablet" />
         </div>
         <div className="space-y-xs">
-          <Label>Frequency</Label>
+          <Label htmlFor="rx-frequency">Frequency</Label>
           <Select value={frequency} onValueChange={setFrequency}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id="rx-frequency"><SelectValue /></SelectTrigger>
             <SelectContent>
               {["1x daily", "2x daily", "3x daily", "4x daily", "Every 6 hours", "Every 8 hours", "PRN", "Weekly"].map((option) => (
                 <SelectItem key={option} value={option}>{option}</SelectItem>
@@ -416,9 +418,9 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
           </Select>
         </div>
         <div className="space-y-xs">
-          <Label>Duration</Label>
+          <Label htmlFor="rx-duration">Duration</Label>
           <Select value={duration} onValueChange={setDuration}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id="rx-duration"><SelectValue /></SelectTrigger>
             <SelectContent>
               {["3 days", "7 days", "14 days", "30 days", "60 days", "90 days", "ongoing"].map((option) => (
                 <SelectItem key={option} value={option}>{option}</SelectItem>
@@ -427,9 +429,9 @@ export const PrescriptionBuilder = ({ patient, visitDraft, onSubmit }: Props) =>
           </Select>
         </div>
         <div className="space-y-xs">
-          <Label>Pharmacy</Label>
+          <Label htmlFor="rx-pharmacy">Pharmacy</Label>
           <Select value={selectedPharmacyId} onValueChange={setPharmacyId}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id="rx-pharmacy"><SelectValue /></SelectTrigger>
             <SelectContent>
               {pharmacyOptions.map((option) => (
                 <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>

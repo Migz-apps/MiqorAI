@@ -154,16 +154,16 @@ export default function Departments() {
           <DialogHeader><DialogTitle>Add department</DialogTitle></DialogHeader>
           <div className="space-y-md">
             <div className="space-y-xs">
-              <Label>Name</Label>
-              <Input value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} placeholder="e.g. Dermatology" />
+              <Label htmlFor="dept-create-name">Name</Label>
+              <Input id="dept-create-name" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} placeholder="e.g. Dermatology" />
             </div>
             <div className="space-y-xs">
-              <Label>Code</Label>
-              <Input value={createForm.code} onChange={(e) => setCreateForm({ ...createForm, code: e.target.value })} placeholder="e.g. DERM" />
+              <Label htmlFor="dept-create-code">Code</Label>
+              <Input id="dept-create-code" value={createForm.code} onChange={(e) => setCreateForm({ ...createForm, code: e.target.value })} placeholder="e.g. DERM" />
             </div>
             <div className="space-y-xs">
-              <Label>Target wait (minutes)</Label>
-              <Input type="number" value={createForm.sla} onChange={(e) => setCreateForm({ ...createForm, sla: e.target.value })} />
+              <Label htmlFor="dept-create-sla">Target wait (minutes)</Label>
+              <Input id="dept-create-sla" type="number" value={createForm.sla} onChange={(e) => setCreateForm({ ...createForm, sla: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
@@ -178,9 +178,9 @@ export default function Departments() {
           <DialogHeader><DialogTitle>Configure {editDept?.name}</DialogTitle></DialogHeader>
           <div className="space-y-md">
             <div className="space-y-xs">
-              <Label>Head doctor</Label>
+              <Label htmlFor="dept-edit-head">Head doctor</Label>
               <Select value={editForm.headId} onValueChange={(v) => setEditForm({ ...editForm, headId: v })}>
-                <SelectTrigger><SelectValue placeholder="Select head…" /></SelectTrigger>
+                <SelectTrigger id="dept-edit-head"><SelectValue placeholder="Select head…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">None</SelectItem>
                   {doctors.map((doc) => (
@@ -190,8 +190,8 @@ export default function Departments() {
               </Select>
             </div>
             <div className="space-y-xs">
-              <Label>Target wait (minutes)</Label>
-              <Input type="number" value={editForm.sla} onChange={(e) => setEditForm({ ...editForm, sla: e.target.value })} />
+              <Label htmlFor="dept-edit-sla">Target wait (minutes)</Label>
+              <Input id="dept-edit-sla" type="number" value={editForm.sla} onChange={(e) => setEditForm({ ...editForm, sla: e.target.value })} />
             </div>
           </div>
           <DialogFooter>

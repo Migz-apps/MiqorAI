@@ -31,7 +31,7 @@ Env templates (all tracked in git; real `.env*` files stay ignored):
 `render.yaml` is a Blueprint with two services built from `server/`:
 
 - **API** (`type: web`): `npm ci --include=dev && npm run build`, pre-deploy
-  `npx prisma migrate deploy`, start `npm run start`, health check `/health`
+  `npx prisma migrate deploy`, start `npm run start`, health check `/health/ready`
   (failed checks block the swap, so deploys are zero-downtime).
 - **Worker** (`type: worker`): same build, start `npm run start:worker`. It runs the
   domain-event outbox and report schedules. The API therefore sets
@@ -42,7 +42,12 @@ Env templates (all tracked in git; real `.env*` files stay ignored):
   file. Choose the Render region closest to the Supabase project region; it cannot be
   changed later. Pre-deploy commands and workers need a paid plan.
 - **Deploy gate**: `autoDeployTrigger: checksPass` deploys a commit only after its
-  GitHub checks pass. Set it to `off` for manual deploys.
+  GitHub checks pass. `.github/workflows/ci.yml` (web, server and mobile lint,
+  typecheck and tests) is that gate: mark its jobs as required checks on `master`.
+  Set the trigger to `off` for manual deploys.
+- **API host**: `https://miqorai.onrender.com`. `BASE_URL` (signed file links), the
+  Vercel `/api` proxies, `eas.json` and the client fallbacks all use it;
+  `npm run test:production:wiring` fails if they drift apart.
 - **Secrets**: `sync: false` entries are prompted for on the first Blueprint apply;
   the worker copies them from the API with `fromService`, so each is entered once.
   Non-secret values live in the `miqorai-shared` env group.
@@ -75,16 +80,21 @@ project installs from the repository root. Per portal project:
 | Include source files outside of the Root Directory in the Build Step | **Enabled** (needed for `packages/*` and the root lockfile) |
 | Framework / Install / Build / Output | taken from `<portal>/vercel.json` - leave the dashboard overrides off |
 | Node.js version | 22.x |
-| Env | `VITE_API_URL=https://api.miqorai.com` (Production + Preview) |
+| Env | none needed: `buildCommand` sets `VITE_API_URL=/` (same-origin API through the proxy below) |
 
 Each `vercel.json`:
 
 - `installCommand`: `cd .. && npm ci -w <portal> -w @miqorai/ui -w @miqorai/api-client`
-- `buildCommand`: `cd .. && npm run build -w <portal>`; `outputDirectory`: `dist`
+- `buildCommand`: `cd .. && VITE_API_URL=/ npm run build -w <portal>`; `outputDirectory`: `dist`
   (`dist/client` for admin)
-- `rewrites`: `/((?!api/|api$|assets/).*)` -> `/index.html`. `/api` is never rewritten,
-  so a misconfigured `VITE_API_URL` fails loudly instead of returning index.html; a
-  missing hashed asset is a 404.
+- `rewrites`, in order:
+  1. `/api/:path*` -> `https://miqorai.onrender.com/api/:path*` (Vercel proxies the
+     request). The browser only ever talks to the portal's own origin, so the
+     `miqorai_refresh` session cookie is first-party and survives reloads in every
+     browser, including Safari and Firefox, which block third-party cookies. No custom
+     domain is required. Change the destination if the API moves.
+  2. `/((?!api/|api$|assets/).*)` -> `/index.html` (SPA fallback; `/api` and missing
+     hashed assets never fall through to index.html).
 - `headers`: the same security headers as the nginx image (CSP, HSTS,
   `X-Frame-Options: DENY`, nosniff, `Referrer-Policy`, `Permissions-Policy` with camera
   for self), `Cache-Control: no-cache` for everything except `/assets/*`
@@ -92,9 +102,18 @@ Each `vercel.json`:
   `https://api.miqorai.com` and `https://miqorai.onrender.com`; edit it if the API
   origin changes.
 
+Backend settings that go with the proxy (already in `render.yaml`):
+
+- `TRUST_PROXY=2` (Vercel, then Render's router), so rate limits see the client IP.
+- `CORS_ORIGINS` must list every portal origin exactly, e.g.
+  `https://miqorai-hospital.vercel.app` - the proxied POSTs still carry the browser's
+  `Origin`, which the API checks for CSRF.
+
 Patient portal on GitHub Pages: built by `.github/workflows/deploy-patient-portal.yml`
-with `VITE_BASE=/MiqorAI/`. GitHub Pages cannot set response headers; use the Vercel
-project (same `vercel.json`) when the security headers are required.
+with `VITE_BASE=/MiqorAI/`. GitHub Pages can neither proxy `/api` nor set response
+headers, so that build calls Render directly and its session cookie is third-party
+(Safari/Firefox users are signed out on reload). Use the patient Vercel project
+(same `vercel.json`) as the primary patient deployment.
 
 ## 4. Admin portal: one host, static SPA
 
@@ -122,11 +141,13 @@ admin image build stops with an explicit error and the Vercel build has no
 ## 5. Mobile app: Expo EAS
 
 - Env template: `mobile_patient/.env.production.example`
-- `EXPO_PUBLIC_API_URL=https://api.miqorai.com`
+- `EXPO_PUBLIC_API_URL=https://miqorai.onrender.com` (set in `eas.json` for the
+  `preview` and `production` profiles)
 
 ## 6. Domains
 
-- `api.miqorai.com` -> Render API
+- API: `miqorai.onrender.com` (Render's own domain; no custom API domain on Render).
+  The Kubernetes prod overlay serves the API at `api.miqorai.com` through its own ingress.
 - `patient.miqorai.com`, `hospital.miqorai.com`, `insurance.miqorai.com`,
   `pharmacy.miqorai.com`, `admin.miqorai.com` -> the portal projects
 

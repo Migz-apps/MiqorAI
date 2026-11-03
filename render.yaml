@@ -22,7 +22,7 @@ envVarGroups:
       - key: NODE_ENV
         value: production
       - key: BASE_URL
-        value: https://api.miqorai.com
+        value: https://miqorai.onrender.com
       - key: CORS_ORIGINS
         value: https://patient.miqorai.com,https://hospital.miqorai.com,https://insurance.miqorai.com,https://pharmacy.miqorai.com,https://admin.miqorai.com
       - key: PATIENT_PORTAL_URL
@@ -71,8 +71,10 @@ envVarGroups:
         value: Africa/Kigali
       - key: SHUTDOWN_TIMEOUT_MS
         value: "10000"
+      # Two hops: browsers reach the API through the portal's Vercel /api rewrite,
+      # then Render's router. Use "1" if every client calls Render directly.
       - key: TRUST_PROXY
-        value: "1"
+        value: "2"
       - key: AUDIT_ARCHIVE_DAYS
         value: "365"
       - key: AI_SERVICE_BASE_URL

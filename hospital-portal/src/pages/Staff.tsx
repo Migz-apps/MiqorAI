@@ -123,14 +123,14 @@ export default function Staff() {
           <DialogHeader><DialogTitle>Invite a staff member</DialogTitle></DialogHeader>
           <div className="space-y-md">
             <div className="space-y-xs">
-              <Label>Email</Label>
-              <Input value={inv.email} onChange={e => setInv({ ...inv, email: e.target.value })} placeholder="name@hospital.med" />
+              <Label htmlFor="invite-email">Email</Label>
+              <Input id="invite-email" value={inv.email} onChange={e => setInv({ ...inv, email: e.target.value })} placeholder="name@hospital.med" />
             </div>
             <div className="grid grid-cols-2 gap-sm">
               <div className="space-y-xs">
-                <Label>Role</Label>
+                <Label htmlFor="invite-role">Role</Label>
                 <Select value={inv.role} onValueChange={v => setInv({ ...inv, role: v as Role })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="invite-role"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="receptionist">Receptionist</SelectItem>
                     <SelectItem value="nurse">Nurse</SelectItem>
@@ -141,9 +141,9 @@ export default function Staff() {
                 </Select>
               </div>
               <div className="space-y-xs">
-                <Label>Department</Label>
+                <Label htmlFor="invite-department">Department</Label>
                 <Select value={inv.department} onValueChange={v => setInv({ ...inv, department: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="invite-department"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
                   </SelectContent>

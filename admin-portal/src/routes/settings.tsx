@@ -154,6 +154,7 @@ function SettingsPage() {
               Email
               <input
                 type="email"
+                autoComplete="off"
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
                 placeholder="name@example.com"

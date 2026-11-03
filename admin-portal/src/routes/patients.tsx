@@ -47,6 +47,7 @@ function PatientsPage() {
       <div className="flex items-center gap-2 h-11 px-3 rounded-md border border-border bg-card/60">
         <Search className="size-4 text-muted-foreground" />
         <input
+          aria-label="Search patients"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search by name, email, or patient ID..."

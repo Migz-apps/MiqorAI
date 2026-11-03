@@ -201,3 +201,10 @@ storybook-static/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Locally generated secrets (python ~/.claude/tools/secretgen.py); never commit
+.secrets/
+*.secrets
+# Local Claude Code settings and hooks (machine-specific)
+.claude/settings.local.json
+.claude/hooks/
